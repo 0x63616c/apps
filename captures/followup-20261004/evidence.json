@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-04",
+  "command": "just verify",
+  "result": "passed",
+  "swiftCoreTests": { "passed": 28, "failed": 0 },
+  "releaseToolTests": { "passed": 15, "failed": 0 },
+  "nativeUITests": { "passed": 10, "failed": 0, "skipped": 0 },
+  "nativeResultBundle": ".release/verify-rzhmq1no/ui/UITests.xcresult",
+  "unsignedDeviceReleaseBuild": "passed",
+  "headerControlledPixelSamples": 320,
+  "headerDateBoundaries": 4,
+  "orientations": ["portrait", "landscape"],
+  "appearances": ["light", "dark"],
+  "unchangedPhotoNotificationIntervalMilliseconds": 500,
+  "personalPhotosAccessed": false,
+  "physicalDeviceValidated": false,
+  "newTestFlightBuildUploaded": false
+}
