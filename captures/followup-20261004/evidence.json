@@ -14,5 +14,20 @@
   "unchangedPhotoNotificationIntervalMilliseconds": 500,
   "personalPhotosAccessed": false,
   "physicalDeviceValidated": false,
-  "newTestFlightBuildUploaded": false
+  "newTestFlightBuildUploaded": true,
+  "release": {
+    "version": "1.0",
+    "build": "3",
+    "buildID": "959ccc48-97c9-46cf-8f60-23f7e434cf28",
+    "sourceRevision": "dc4ab851adc5b3a93f565ce8b675f63d9ac20e3c",
+    "sha256": "7c1d8341729e2235dfb852fc9c052df9ec178d1ff1a4934f25ff80d9fe11d69a",
+    "command": "just release",
+    "processing": "VALID",
+    "internalState": "IN_BETA_TESTING",
+    "group": "Calum",
+    "groupHasBuild": true,
+    "testerPresent": true,
+    "ready": true,
+    "independentReadback": "just release-status 3"
+  }
 }

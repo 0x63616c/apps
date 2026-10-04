@@ -9,7 +9,7 @@ A small native iPhone screenshot organizer. SwiftUI, local AI, search, editable 
 3. Choose your connected iPhone running **iOS 26 or later**, enable Developer Mode if prompted, and press **Run**.
 4. Allow Photos access. Automatic tags require an Apple Intelligence-compatible iPhone, with Apple Intelligence enabled and its model downloaded.
 
-The private source repository is [0x63616c/shots](https://github.com/0x63616c/shots). Shots 1.0 (2) is available in the existing internal TestFlight group. The production target builds locally with Xcode 27; native UI is verified on an iOS 27 simulator with a synthetic library. Physical-device Photos and AI validation remains open; see `REVIEW.md`.
+The private source repository is [0x63616c/shots](https://github.com/0x63616c/shots). **Shots 1.0 (3)** is available in the existing internal TestFlight group, including the scan-interruption and sticky-header handoff fixes. The production target builds locally with Xcode 27; native UI is verified on an iOS 27 simulator with a synthetic library. Physical-device Photos and AI validation remains open; see `REVIEW.md`.
 
 ## Local release
 

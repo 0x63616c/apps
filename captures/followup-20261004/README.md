@@ -6,4 +6,4 @@ Unedited native simulator framebuffer attachments from final `just verify`. PNG 
 - Real LibraryStore refresh receives identical screenshot metadata every 500ms while indexing progresses without pause flashes. Manual pause/resume is verified separately.
 - Final suite: 10 native, 28 portable core, and 15 release-tool tests pass; unsigned production Release compilation passes.
 
-Source fixes are not yet in a new TestFlight build. These checks do not prove physical-device Photos/iCloud behavior, real-library speed, or OS background runtime.
+These fixes subsequently shipped in TestFlight **1.0 (3)** through a successful `just release`; Apple processing and internal tester availability were independently read back. These simulator checks do not prove physical-device Photos/iCloud behavior, real-library speed, or OS background runtime.
