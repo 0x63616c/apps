@@ -47,6 +47,14 @@ public enum TagRules {
         return count - last >= 100
     }
 
+    /// Within one description pass, established categories are revisited at
+    /// geometric milestones of successful descriptions, never per batch.
+    public static func scanDiscoveryIsDue(count: Int, lastCount: Int?, completed: Bool) -> Bool {
+        guard discoveryIsDue(count: count, lastCount: lastCount, completed: completed) else { return false }
+        guard completed, let last = lastCount else { return true }
+        return count >= last * 4
+    }
+
     public static func categoriesToAdd(names: [String], existing: [Tag], dismissed: [String]) -> [Tag] {
         let excluded = Set(dismissed.map(SearchNormalization.fold))
         var result: [Tag] = []
@@ -64,6 +72,17 @@ public enum TagRules {
         let manual = records.reduce(into: Set<UUID>()) { $0.formUnion($1.addedTagIDs); $0.formUnion($1.removedTagIDs) }
         let defaults = Set(IndexSnapshot.defaultTags)
         return Set(tags.filter { defaults.contains($0) && !manual.contains($0.id) }.map(\.id))
+    }
+
+    /// Apply discovered names to the current taxonomy and manual intent; nil when unchanged.
+    public static func discoveredTaxonomy(names: [String], tags: [Tag], records: [Screenshot],
+                                          dismissed: [String], retireDefaults: Bool) -> [Tag]? {
+        guard !names.isEmpty else { return nil }
+        let retiring = retireDefaults ? retireableDefaultIDs(tags: tags, records: records) : []
+        let retained = tags.filter { !retiring.contains($0.id) }
+        let additions = categoriesToAdd(names: names, existing: retained, dismissed: dismissed)
+        guard !additions.isEmpty || retained.count != tags.count else { return nil }
+        return retained + additions
     }
 
     /// Model output is an index into this request's taxonomy, never a stored ID.

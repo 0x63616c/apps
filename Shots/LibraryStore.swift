@@ -874,7 +874,8 @@ final class LibraryStore {
                     let revision = tagRevision
                     // Discover early, then revisit at geometrically spaced milestones;
                     // bounded library sampling never runs for every image.
-                    if !categoryDiscoveryCompleted || [32, 128, 512, 2048, 8192].contains(descriptionCompleted) {
+                    if TagRules.scanDiscoveryIsDue(count: describedCount, lastCount: categoryDiscoveryCount,
+                                                   completed: categoryDiscoveryCompleted) {
                         do { try await discoverCategoriesIfNeeded() }
                         catch is CancellationError { break }
                         catch { if !Task.isCancelled { notice = "Category discovery couldn’t finish. Saved descriptions are kept; reopen Shots to retry." } }
@@ -978,12 +979,15 @@ final class LibraryStore {
             (tagger.canDescribeImages && record.descriptionUsesImage != true)
     }
 
-    private var categoryDiscoveryIsDue: Bool {
-        guard tags.count < 32 else { return false }
-        let count = visibleIDs.reduce(0) { count, id in
+    private var describedCount: Int {
+        visibleIDs.reduce(0) { count, id in
             count + (records[id].map { $0.hiddenAt == nil && $0.describedAt != nil && $0.contentDescription?.isEmpty == false } == true ? 1 : 0)
         }
-        return TagRules.discoveryIsDue(count: count, lastCount: categoryDiscoveryCount, completed: categoryDiscoveryCompleted)
+    }
+
+    private var categoryDiscoveryIsDue: Bool {
+        guard tags.count < 32 else { return false }
+        return TagRules.discoveryIsDue(count: describedCount, lastCount: categoryDiscoveryCount, completed: categoryDiscoveryCompleted)
     }
 
     private func discoverCategoriesIfNeeded() async throws {
@@ -992,18 +996,20 @@ final class LibraryStore {
         let described = visibleIDs.compactMap { records[$0] }.filter { $0.hiddenAt == nil && $0.describedAt != nil }
         let retiring = !categoryDiscoveryCompleted
             ? TagRules.retireableDefaultIDs(tags: tags, records: Array(records.values)) : []
-        let retained = tags.filter { !retiring.contains($0.id) }
         let revision = tagRevision
-        let names = try await tagger.discoverCategories(descriptions: TagRules.discoverySample(records: described), existingTags: retained)
+        let names = try await tagger.discoverCategories(descriptions: TagRules.discoverySample(records: described),
+                                                        existingTags: tags.filter { !retiring.contains($0.id) })
         try Task.checkCancellation()
         guard revision == tagRevision, isActive, !userPaused, !storagePaused else { return }
-        let additions = TagRules.categoriesToAdd(names: names, existing: retained, dismissed: dismissedCategoryNames)
-        if !names.isEmpty, !additions.isEmpty || retained != tags {
-            tags = retained + additions
+        // Manual tag edits made while the model ran must protect their categories.
+        if let updated = TagRules.discoveredTaxonomy(names: names, tags: tags, records: Array(records.values),
+                                                     dismissed: dismissedCategoryNames, retireDefaults: !categoryDiscoveryCompleted) {
+            let retired = !Set(tags).isSubset(of: updated)
+            tags = updated
             tagRevision += 1
             // Old starter AI IDs are ignored by effectiveTags; remove them from
             // stored records too, preserving every manual addition/removal.
-            if !retiring.isEmpty {
+            if retired {
                 for id in Array(records.keys) {
                     guard var record = records[id] else { continue }
                     TagRules.prune(&record, allowed: allowedTagIDs)

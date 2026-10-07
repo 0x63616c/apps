@@ -148,6 +148,44 @@ final class DescriptionPipelineTests: XCTestCase {
         XCTAssertFalse(TagRules.discoveryIsDue(count: 0, lastCount: nil, completed: true))
     }
 
+    func testScanDiscoveryMilestonesTolerateFailuresAndResumeFromWatermark() {
+        // Failed descriptions shift batch boundaries; any count past the milestone still qualifies.
+        XCTAssertFalse(TagRules.scanDiscoveryIsDue(count: 128, lastCount: 32, completed: true))
+        XCTAssertTrue(TagRules.scanDiscoveryIsDue(count: 132, lastCount: 32, completed: true))
+        XCTAssertTrue(TagRules.scanDiscoveryIsDue(count: 157, lastCount: 32, completed: true))
+        // A resumed pass continues from the persisted watermark, not a per-run counter.
+        XCTAssertFalse(TagRules.scanDiscoveryIsDue(count: 300, lastCount: 157, completed: true))
+        XCTAssertFalse(TagRules.scanDiscoveryIsDue(count: 627, lastCount: 157, completed: true))
+        XCTAssertTrue(TagRules.scanDiscoveryIsDue(count: 641, lastCount: 157, completed: true))
+        XCTAssertTrue(TagRules.scanDiscoveryIsDue(count: 32, lastCount: nil, completed: true))
+        XCTAssertTrue(TagRules.scanDiscoveryIsDue(count: 64, lastCount: 32, completed: false))
+        XCTAssertFalse(TagRules.scanDiscoveryIsDue(count: 40, lastCount: 32, completed: false))
+        XCTAssertFalse(TagRules.scanDiscoveryIsDue(count: 1, lastCount: nil, completed: false))
+    }
+
+    func testDiscoveredTaxonomyUsesCurrentManualIntentForStarterRetirement() throws {
+        let starters = IndexSnapshot.defaultTags
+        let assigned = starters[0], removed = starters[1]
+        var record = Screenshot(id: "edited", createdAt: date)
+        // Intent recorded after the discovery request was made.
+        TagRules.set(tagID: assigned.id, assigned: true, on: &record)
+        TagRules.set(tagID: removed.id, assigned: false, on: &record)
+        let updated = try XCTUnwrap(TagRules.discoveredTaxonomy(names: ["Rave Set Times", "Dating Profiles"], tags: starters,
+                                                                records: [record], dismissed: [], retireDefaults: true))
+        XCTAssertEqual(updated.map(\.name), [assigned.name, removed.name, "Rave Set Times", "Dating Profiles"])
+        var pruned = record
+        TagRules.prune(&pruned, allowed: Set(updated.map(\.id)))
+        XCTAssertEqual(pruned.addedTagIDs, [assigned.id])
+        XCTAssertEqual(pruned.removedTagIDs, [removed.id])
+
+        let established = try XCTUnwrap(TagRules.discoveredTaxonomy(names: ["Tickets"], tags: starters, records: [],
+                                                                    dismissed: [], retireDefaults: false))
+        XCTAssertEqual(Array(established.prefix(starters.count)), starters)
+        XCTAssertNil(TagRules.discoveredTaxonomy(names: [], tags: starters, records: [], dismissed: [], retireDefaults: true))
+        XCTAssertNil(TagRules.discoveredTaxonomy(names: [starters[0].name], tags: starters, records: [],
+                                                 dismissed: [], retireDefaults: false))
+    }
+
     func testFavoriteFilterAndSearchApplyAlongsideScreenshotText() {
         let tag = Tag(name: "Tickets")
         var record = Screenshot(id: "favorite", createdAt: date, text: "Saturday admission",
