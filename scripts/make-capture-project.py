@@ -61,6 +61,9 @@ edit('Shots/Views/LibraryView.swift', '.tint(Color.primary)\n    }', '''.tint(Co
                     if let measurement = store.lastScan {
                         let data = try? JSONEncoder().encode(measurement)
                         try? data?.write(to: URL.documentsDirectory.appendingPathComponent("scan-benchmark.json"))
+                        let analysis = IndexSnapshot(tags: store.tags, screenshots: store.items)
+                        let analysisData = try? JSONEncoder().encode(analysis)
+                        try? analysisData?.write(to: URL.documentsDirectory.appendingPathComponent("scan-analysis.json"))
                         break
                     }
                     try? await Task.sleep(for: .milliseconds(100))
@@ -120,6 +123,10 @@ with (dest/'Shots/Services/PhotosClient.swift').open('a') as file:
                 : newest.addingTimeInterval(-Double(index * interval))
             return Screenshot(id: "sample-\\(index)", createdAt: createdAt,
                         title: title, text: item.0 + " " + item.2,
+                        visualLabels: ["poster", "text"],
+                        contentDescription: index == 1 ? nil : "A designed poster titled \\(title). " + item.2.replacingOccurrences(of: "\\n", with: " "),
+                        describedAt: index == 1 ? nil : scannedAt,
+                        descriptionUsesImage: index == 1 ? nil : false,
                         addedTagIDs: [IndexSnapshot.defaultTags[item.4].id], scannedAt: scannedAt, taggedRevision: 1)
         }
     }

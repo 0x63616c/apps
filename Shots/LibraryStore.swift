@@ -9,11 +9,13 @@ enum Appearance: String, CaseIterable, Identifiable {
 }
 
 enum ScanPhase {
-    case indexing, tagging
+    case indexing, describing, discovering, tagging
 
     var title: String {
         switch self {
         case .indexing: "Indexing screenshots"
+        case .describing: "Describing screenshots"
+        case .discovering: "Discovering categories"
         case .tagging: "Adding automatic tags"
         }
     }
@@ -39,6 +41,9 @@ final class LibraryStore {
     private(set) var indexTotal = 0
     private(set) var tagCompleted = 0
     private(set) var tagTotal = 0
+    private(set) var descriptionCompleted = 0
+    private(set) var descriptionTotal = 0
+    private var descriptionElapsed: TimeInterval = 0
     private var indexElapsed: TimeInterval = 0
     private var tagElapsed: TimeInterval = 0
     private var phaseStartedUptime: TimeInterval?
@@ -53,10 +58,24 @@ final class LibraryStore {
         scanMeasurement.elapsed + (scanStartedUptime.map { ProcessInfo.processInfo.systemUptime - $0 } ?? 0)
     }
 
-    var scanPhaseCompleted: Int { scanPhase == .indexing ? indexCompleted : tagCompleted }
-    var scanPhaseTotal: Int { scanPhase == .indexing ? indexTotal : tagTotal }
+    var scanPhaseCompleted: Int {
+        switch scanPhase {
+        case .indexing: indexCompleted
+        case .describing: descriptionCompleted
+        case .discovering: 0
+        case .tagging: tagCompleted
+        }
+    }
+    var scanPhaseTotal: Int {
+        switch scanPhase {
+        case .indexing: indexTotal
+        case .describing: descriptionTotal
+        case .discovering: 1
+        case .tagging: tagTotal
+        }
+    }
     var scanPhaseElapsed: TimeInterval {
-        (scanPhase == .indexing ? indexElapsed : tagElapsed) +
+        (scanPhase == .indexing ? indexElapsed : scanPhase == .describing ? descriptionElapsed : tagElapsed) +
             (phaseStartedUptime.map { ProcessInfo.processInfo.systemUptime - $0 } ?? 0)
     }
     var estimatedPhaseRemaining: TimeInterval? {
@@ -92,6 +111,9 @@ final class LibraryStore {
     @ObservationIgnored private var allowedTagIDs: Set<UUID> = []
     @ObservationIgnored private var resultCache: LibraryResultCache?
     private var tagRevision = 1
+    private var categoryDiscoveryCount: Int?
+    private var categoryDiscoveryCompleted = false
+    private var dismissedCategoryNames: [String] = []
     @ObservationIgnored private let disk = IndexDisk()
     @ObservationIgnored private let analyzer = ImageAnalyzer()
     @ObservationIgnored private let tagger = LocalTagger()
@@ -192,6 +214,16 @@ final class LibraryStore {
         restartScan()
     }
 
+    func setFavorite(_ favorite: Bool, ids: Set<String>) {
+        guard isReady else { return }
+        for id in ids {
+            guard var record = records[id], (record.favoritedAt != nil) != favorite else { continue }
+            record.favoritedAt = favorite ? Date() : nil
+            updateRecord(record)
+        }
+        scheduleSave()
+    }
+
     func start() async {
         guard !isReady, !isStarting else { return }
         isStarting = true
@@ -202,6 +234,9 @@ final class LibraryStore {
             let snapshot = try await disk.load() ?? IndexSnapshot()
             tags = snapshot.tags
             tagRevision = snapshot.tagRevision
+            categoryDiscoveryCount = snapshot.categoryDiscoveryCount
+            categoryDiscoveryCompleted = snapshot.categoryDiscoveryCompleted ?? false
+            dismissedCategoryNames = snapshot.dismissedCategoryNames ?? []
             // Tolerate duplicate IDs without trapping; the newest saved entry wins.
             records = Dictionary(snapshot.screenshots.map { ($0.id, $0) }, uniquingKeysWith: { _, latest in latest })
             libraryRevision += 1
@@ -299,6 +334,8 @@ final class LibraryStore {
                         resetTimingOnNextScan = true
                         record.modifiedAt = asset.modifiedAt
                         record.scannedAt = nil
+                        record.describedAt = nil
+                        categoryDiscoveryCount = nil
                         record.taggedRevision = nil
                     }
                     record.createdAt = asset.createdAt
@@ -455,6 +492,7 @@ final class LibraryStore {
             let effective = TagRules.effectiveTags(for: record, allowed: allowedTagIDs)
             switch filter {
             case .all: return true
+            case .favorites: return record.favoritedAt != nil
             case .untagged: return effective.isEmpty
             case .tag(let id): return effective.contains(id)
             }
@@ -468,6 +506,7 @@ final class LibraryStore {
         }
         switch filter {
         case .all: break
+        case .favorites: guard document.isFavorite else { return false }
         case .untagged: guard document.effectiveTagIDs.isEmpty else { return false }
         case .tag(let id): guard document.effectiveTagIDs.contains(id) else { return false }
         }
@@ -482,7 +521,8 @@ final class LibraryStore {
         let oldRevision = libraryRevision
         records[record.id] = record
         libraryRevision += 1
-        if previous?.title != record.title || previous?.text != record.text ||
+        if previous?.title != record.title || previous?.text != record.text || previous?.contentDescription != record.contentDescription ||
+            previous?.favoritedAt != record.favoritedAt ||
             previous?.visualLabels != record.visualLabels || previous?.aiTagIDs != record.aiTagIDs ||
             previous?.addedTagIDs != record.addedTagIDs || previous?.removedTagIDs != record.removedTagIDs {
             searchCache.removeValue(forKey: record.id)
@@ -517,13 +557,16 @@ final class LibraryStore {
     func renameTag(id: UUID, name: String, iconName: String? = nil) throws {
         guard isReady else { throw IndexUnavailableError() }
         guard let position = tags.firstIndex(where: { $0.id == id }) else { return }
-        tags[position].name = try TagRules.validatedName(name, tags: tags, excluding: id)
+        let valid = try TagRules.validatedName(name, tags: tags, excluding: id)
+        if tags[position].name != valid { dismissedCategoryNames.append(tags[position].name) }
+        tags[position].name = valid
         if let iconName { tags[position].iconName = TagIcon.resolve(iconName, for: name).id }
         taxonomyChanged()
     }
 
     func deleteTag(id: UUID) {
         guard isReady else { return }
+        if let tag = tags.first(where: { $0.id == id }) { dismissedCategoryNames.append(tag.name) }
         tags.removeAll { $0.id == id }
         for key in Array(records.keys) {
             guard var record = records[key] else { continue }
@@ -557,9 +600,11 @@ final class LibraryStore {
     func rescan(ids: Set<String>? = nil) {
         guard isReady else { return }
         let targets = ids ?? Set(items.map(\.id))
+        categoryDiscoveryCount = nil
         for id in targets {
             guard var record = records[id] else { continue }
             record.scannedAt = nil
+            record.describedAt = nil
             record.taggedRevision = nil
             record.lastError = nil
             updateRecord(record)
@@ -653,7 +698,10 @@ final class LibraryStore {
               permission == .authorized || permission == .limited else { return }
         aiMessage = tagger.unavailableReason
         let canTag = isActive && aiMessage == nil
-        var candidates = items.filter { $0.scannedAt == nil || (canTag && $0.taggedRevision != tagRevision) }.map(\.id)
+        var candidates = items.filter { $0.scannedAt == nil || (canTag && (needsDescription($0) || $0.taggedRevision != tagRevision)) }.map(\.id)
+        if candidates.isEmpty, canTag, categoryDiscoveryIsDue {
+            candidates = items.filter { $0.describedAt != nil }.map(\.id)
+        }
         guard !candidates.isEmpty else {
             scanCompleted = 0
             scanTotal = 0
@@ -680,6 +728,9 @@ final class LibraryStore {
             indexTotal = candidates.reduce(0) { $0 + (records[$1]?.scannedAt == nil ? 1 : 0) }
             tagCompleted = 0
             tagTotal = canTag ? candidates.count : 0
+            descriptionCompleted = 0
+            descriptionTotal = canTag ? candidates.reduce(0) { $0 + (records[$1].map(needsDescription) == true ? 1 : 0) } : 0
+            descriptionElapsed = 0
             indexElapsed = 0
             tagElapsed = 0
         }
@@ -773,14 +824,117 @@ final class LibraryStore {
         }
 
         if !Task.isCancelled, isActive, !userPaused, !storagePaused, scanMeasurement.aiAvailable {
-            let taggingIDs = ids.filter { id in
-                guard let record = records[id], record.hiddenAt == nil, record.scannedAt != nil else { return false }
-                return !scanAttemptedIDs.contains(id)
+            let descriptionIDs = ids.filter { records[$0].map { $0.hiddenAt == nil && $0.scannedAt != nil && needsDescription($0) } == true }
+            if descriptionIDs.contains(where: { records[$0]?.descriptionUsesImage == false && tagger.canDescribeImages }) {
+                categoryDiscoveryCount = nil
+                libraryRevision += 1
             }
+            descriptionTotal = descriptionCompleted + descriptionIDs.count
+            if !descriptionIDs.isEmpty { beginPhase(.describing) }
+            var describedBatch: [String] = []
+            for id in descriptionIDs {
+                if Task.isCancelled || !isActive || userPaused || storagePaused { break }
+                guard let current = records[id], current.hiddenAt == nil else { continue }
+                do {
+                    let imageData: Data?
+                    if tagger.canDescribeImages {
+                        let start = ProcessInfo.processInfo.systemUptime
+                        imageData = try await photos.analysisData(id: id, networkAllowed: downloadFromICloud)
+                        scanMeasurement.imageSeconds += ProcessInfo.processInfo.systemUptime - start
+                    } else { imageData = nil }
+                    try Task.checkCancellation()
+                    let start = ProcessInfo.processInfo.systemUptime
+                    let description: ScreenshotDescription
+                    do {
+                        defer { scanMeasurement.taggingSeconds += ProcessInfo.processInfo.systemUptime - start }
+                        description = try await tagger.describe(imageData: imageData, text: current.text, visualLabels: current.visualLabels)
+                    }
+                    try Task.checkCancellation()
+                    if var record = records[id] {
+                        record.title = description.title
+                        record.contentDescription = description.contentDescription
+                        record.descriptionUsesImage = description.usedImage
+                        record.describedAt = Date()
+                        record.taggedRevision = nil
+                        record.lastError = nil
+                        updateRecord(record)
+                        describedBatch.append(id)
+                    }
+                } catch is CancellationError { break }
+                catch {
+                    if Task.isCancelled { break }
+                    failed += 1
+                    recordFailure(error, id: id)
+                    finishScreenshot(id)
+                }
+                descriptionCompleted += 1
+                reportPhaseProgress()
+                if !(await checkpointScanIfNeeded()) { break }
+                if describedBatch.count >= 32, !Task.isCancelled, isActive, !userPaused, !storagePaused {
+                    let revision = tagRevision
+                    // Discover early, then revisit at geometrically spaced milestones;
+                    // bounded library sampling never runs for every image.
+                    if !categoryDiscoveryCompleted || [32, 128, 512, 2048, 8192].contains(descriptionCompleted) {
+                        do { try await discoverCategoriesIfNeeded() }
+                        catch is CancellationError { break }
+                        catch { if !Task.isCancelled { notice = "Category discovery couldn’t finish. Saved descriptions are kept; reopen Shots to retry." } }
+                    }
+                    let batch = revision == tagRevision ? describedBatch : visibleIDs.filter {
+                        records[$0].map { $0.hiddenAt == nil && $0.describedAt != nil && !needsDescription($0) && $0.taggedRevision != tagRevision } == true
+                    }
+                    scanTotal = scanCompleted + Set(ids + batch).subtracting(scanAttemptedIDs).count
+                    failed += await tagDescribedScreenshots(batch)
+                    describedBatch.removeAll(keepingCapacity: true)
+                    beginPhase(.describing)
+                }
+            }
+            // Save descriptions independently; taxonomy/model failures must not lose them.
+            if !Task.isCancelled, isActive, !userPaused, !storagePaused {
+                do { try await persist() } catch { pauseForSaveError(error) }
+            }
+            if !Task.isCancelled, isActive, !userPaused, !storagePaused {
+                do { try await discoverCategoriesIfNeeded() }
+                catch is CancellationError { }
+                catch {
+                    if !Task.isCancelled { notice = "Category discovery couldn’t finish. Saved descriptions and text are kept. Resume to retry. \(error.localizedDescription)" }
+                }
+            }
+            let taggingIDs = visibleIDs.filter { id in
+                guard let record = records[id], record.hiddenAt == nil, record.scannedAt != nil else { return false }
+                return record.describedAt != nil && !needsDescription(record) && record.taggedRevision != tagRevision
+            }
+            scanTotal = scanCompleted + Set(ids + taggingIDs).subtracting(scanAttemptedIDs).count
             tagTotal = tagCompleted + taggingIDs.count
             if !taggingIDs.isEmpty { beginPhase(.tagging) }
-            for id in taggingIDs {
-                if Task.isCancelled || !scanAllowed || !isActive { break }
+            failed += await tagDescribedScreenshots(taggingIDs)
+        }
+        if !Task.isCancelled, !userPaused, !storagePaused {
+            for id in ids where !scanAttemptedIDs.contains(id) {
+                if let record = records[id], record.scannedAt != nil,
+                   !scanMeasurement.aiAvailable || record.taggedRevision == tagRevision { finishScreenshot(id) }
+            }
+        }
+        await persistReportingError()
+        // Cancellation means a refresh/restart/lifecycle handover owns what
+        // happens next. Never end its allowance from the outgoing task.
+        if storagePaused {
+            // A storage failure owns the stop even when it cancelled this task;
+            // unlike a refresh, it must end the background allowance.
+            backgroundScan.finish(success: false)
+        } else if !Task.isCancelled, scanCompleted == scanTotal || userPaused || persistenceFailed {
+            backgroundScan.finish(success: scanCompleted == scanTotal && scanMeasurement.failed == 0 && !userPaused && !persistenceFailed && !storagePaused)
+        }
+        if failed > 0 && !Task.isCancelled && !persistenceFailed && notice == nil {
+            notice = "\(failed) couldn’t be fully scanned. Search still includes any text already read. Use Rescan to retry."
+        }
+    }
+
+    private func tagDescribedScreenshots(_ taggingIDs: [String]) async -> Int {
+        tagTotal = tagCompleted + taggingIDs.count
+        if !taggingIDs.isEmpty { beginPhase(.tagging) }
+        var failed = 0
+        for id in taggingIDs {
+                if Task.isCancelled || !scanAllowed || !isActive || userPaused || storagePaused { break }
                 guard let current = records[id], current.hiddenAt == nil else { continue }
                 let revision = tagRevision
                 do {
@@ -789,12 +943,13 @@ final class LibraryStore {
                         do {
                             let start = ProcessInfo.processInfo.systemUptime
                             defer { scanMeasurement.taggingSeconds += ProcessInfo.processInfo.systemUptime - start }
-                            suggestion = try await tagger.tag(text: current.text, visualLabels: current.visualLabels, tags: tags)
+                            suggestion = tags.isEmpty ? TagSuggestion(title: current.title, tagIDs: [])
+                                : try await tagger.tag(text: current.text, visualLabels: current.visualLabels, tags: tags,
+                                                       description: current.contentDescription ?? "")
                         }
                         try Task.checkCancellation()
                         guard revision == tagRevision else { continue }
                         if var record = records[id] {
-                            record.title = suggestion.title
                             record.aiTagIDs = suggestion.tagIDs.intersection(allowedTagIDs)
                             record.taggedRevision = revision
                             record.lastError = nil
@@ -815,20 +970,52 @@ final class LibraryStore {
                 if !(await checkpointScanIfNeeded()) { break }
                 await Task.yield()
             }
+        return failed
+    }
+
+    private func needsDescription(_ record: Screenshot) -> Bool {
+        record.describedAt == nil || record.contentDescription?.isEmpty != false ||
+            (tagger.canDescribeImages && record.descriptionUsesImage != true)
+    }
+
+    private var categoryDiscoveryIsDue: Bool {
+        guard tags.count < 32 else { return false }
+        let count = visibleIDs.reduce(0) { count, id in
+            count + (records[id].map { $0.hiddenAt == nil && $0.describedAt != nil && $0.contentDescription?.isEmpty == false } == true ? 1 : 0)
         }
-        await persistReportingError()
-        // Cancellation means a refresh/restart/lifecycle handover owns what
-        // happens next. Never end its allowance from the outgoing task.
-        if storagePaused {
-            // A storage failure owns the stop even when it cancelled this task;
-            // unlike a refresh, it must end the background allowance.
-            backgroundScan.finish(success: false)
-        } else if !Task.isCancelled, scanCompleted == scanTotal || userPaused || persistenceFailed {
-            backgroundScan.finish(success: scanCompleted == scanTotal && scanMeasurement.failed == 0 && !userPaused && !persistenceFailed && !storagePaused)
+        return TagRules.discoveryIsDue(count: count, lastCount: categoryDiscoveryCount, completed: categoryDiscoveryCompleted)
+    }
+
+    private func discoverCategoriesIfNeeded() async throws {
+        guard categoryDiscoveryIsDue, tags.count < 32 else { return }
+        beginPhase(.discovering)
+        let described = visibleIDs.compactMap { records[$0] }.filter { $0.hiddenAt == nil && $0.describedAt != nil }
+        let retiring = !categoryDiscoveryCompleted
+            ? TagRules.retireableDefaultIDs(tags: tags, records: Array(records.values)) : []
+        let retained = tags.filter { !retiring.contains($0.id) }
+        let revision = tagRevision
+        let names = try await tagger.discoverCategories(descriptions: TagRules.discoverySample(records: described), existingTags: retained)
+        try Task.checkCancellation()
+        guard revision == tagRevision, isActive, !userPaused, !storagePaused else { return }
+        let additions = TagRules.categoriesToAdd(names: names, existing: retained, dismissed: dismissedCategoryNames)
+        if !names.isEmpty, !additions.isEmpty || retained != tags {
+            tags = retained + additions
+            tagRevision += 1
+            // Old starter AI IDs are ignored by effectiveTags; remove them from
+            // stored records too, preserving every manual addition/removal.
+            if !retiring.isEmpty {
+                for id in Array(records.keys) {
+                    guard var record = records[id] else { continue }
+                    TagRules.prune(&record, allowed: allowedTagIDs)
+                    updateRecord(record)
+                }
+            }
         }
-        if failed > 0 && !Task.isCancelled && !persistenceFailed && notice == nil {
-            notice = "\(failed) couldn’t be fully scanned. Search still includes any text already read. Use Rescan to retry."
-        }
+        if !names.isEmpty { categoryDiscoveryCompleted = true }
+        categoryDiscoveryCount = described.count
+        libraryRevision += 1
+        do { try await persist() }
+        catch { pauseForSaveError(error); throw error }
     }
 
     private func beginPhase(_ phase: ScanPhase) {
@@ -845,7 +1032,9 @@ final class LibraryStore {
     private func finishPhaseTiming() {
         guard let started = phaseStartedUptime else { return }
         let elapsed = ProcessInfo.processInfo.systemUptime - started
-        if scanPhase == .indexing { indexElapsed += elapsed } else { tagElapsed += elapsed }
+        if scanPhase == .indexing { indexElapsed += elapsed }
+        else if scanPhase == .describing { descriptionElapsed += elapsed }
+        else { tagElapsed += elapsed }
         phaseStartedUptime = nil
     }
 
@@ -873,7 +1062,7 @@ final class LibraryStore {
 
     private func checkpointScanIfNeeded() async -> Bool {
         // Bound crash recovery without rewriting the full JSON every ten images.
-        if (indexCompleted + tagCompleted) % 100 == 0 || ProcessInfo.processInfo.systemUptime - lastCheckpointUptime >= 30 {
+        if (indexCompleted + descriptionCompleted + tagCompleted) % 100 == 0 || ProcessInfo.processInfo.systemUptime - lastCheckpointUptime >= 30 {
             do { try await persist() }
             catch { pauseForSaveError(error); return false }
         }
@@ -926,7 +1115,9 @@ final class LibraryStore {
         let revision = libraryRevision
         guard revision > persistedRevision || persistenceFailed else { return }
         let sequence = saveSequence
-        let snapshot = IndexSnapshot(version: 1, tagRevision: tagRevision, tags: tags, screenshots: Array(records.values))
+        let snapshot = IndexSnapshot(version: 1, tagRevision: tagRevision, tags: tags, screenshots: Array(records.values),
+                                     categoryDiscoveryCount: categoryDiscoveryCount, categoryDiscoveryCompleted: categoryDiscoveryCompleted,
+                                     dismissedCategoryNames: dismissedCategoryNames)
         try await disk.save(snapshot, sequence: sequence)
         persistedRevision = max(persistedRevision, revision)
         lastCheckpointUptime = ProcessInfo.processInfo.systemUptime

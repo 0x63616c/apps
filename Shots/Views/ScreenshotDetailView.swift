@@ -13,6 +13,7 @@ struct ScreenshotDetailView: View {
     @State private var loadingError: String?
     @State private var loadingErrorID: String?
     @State private var showingTags = false
+    @State private var showingAnalysis = false
     @State private var confirmingDelete = false
     @State private var deletionError: String?
     @State private var reload = 0
@@ -56,6 +57,7 @@ struct ScreenshotDetailView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
+                        Button("Analysis details", systemImage: "text.magnifyingglass") { showingAnalysis = true }
                         Button(showingHidden ? "Unhide" : "Hide", systemImage: showingHidden ? "eye" : "eye.slash") {
                             store.setHidden(!showingHidden, ids: [selectedID])
                         }
@@ -77,6 +79,14 @@ struct ScreenshotDetailView: View {
                 }
                 ToolbarSpacer(.flexible, placement: .bottomBar)
                 ToolbarItem(placement: .bottomBar) {
+                    Button {
+                        store.setFavorite(item?.favoritedAt == nil, ids: [selectedID])
+                    } label: { Image(systemName: item?.favoritedAt == nil ? "heart" : "heart.fill") }
+                        .accessibilityLabel(item?.favoritedAt == nil ? "Favorite screenshot" : "Unfavorite screenshot")
+                        .accessibilityIdentifier("galleryFavorite")
+                }
+                ToolbarSpacer(.flexible, placement: .bottomBar)
+                ToolbarItem(placement: .bottomBar) {
                     Button { showingTags = true } label: { Image(systemName: "tag") }
                         .accessibilityLabel("Edit tags")
                         .accessibilityIdentifier("galleryTags")
@@ -85,6 +95,7 @@ struct ScreenshotDetailView: View {
             .task(id: requestID) { await loadVisibleImages() }
             .onChange(of: store.membershipRevision) { _, _ in updateMembership() }
             .sheet(isPresented: $showingTags) { TagAssignmentView(store: store, ids: [selectedID]) }
+            .sheet(isPresented: $showingAnalysis) { analysisDetails }
             .confirmationDialog("Delete screenshot from Photos?", isPresented: $confirmingDelete, titleVisibility: .visible) {
                 Button("Delete from Photos", role: .destructive) {
                     let target = selectedID
@@ -100,6 +111,66 @@ struct ScreenshotDetailView: View {
         }
         .preferredColorScheme(.dark)
         .tint(.white)
+    }
+
+    private var analysisDetails: some View {
+        NavigationStack {
+            Form {
+                if let item {
+                    Section {
+                        if let description = item.contentDescription, !description.isEmpty {
+                            Text(description)
+                                .textSelection(.enabled)
+                                .accessibilityIdentifier("screenshotDescription")
+                        } else {
+                            Text("No description yet. A description will appear after analysis.")
+                                .foregroundStyle(.secondary)
+                                .accessibilityIdentifier("screenshotDescriptionEmpty")
+                        }
+                    } header: {
+                        Text("Description")
+                    } footer: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            if let usesImage = item.descriptionUsesImage {
+                                Text(usesImage ? "Based on the screenshot image." : "Based on extracted text and visual labels.")
+                            }
+                            if let date = item.describedAt {
+                                Text("Analysed \(date.formatted(date: .abbreviated, time: .shortened))")
+                                    .accessibilityIdentifier("screenshotDescribedAt")
+                            }
+                        }
+                    }
+                    Section("Extracted text") {
+                        if item.text.isEmpty {
+                            Text("No text detected.").foregroundStyle(.secondary)
+                        } else {
+                            Text(item.text)
+                                .textSelection(.enabled)
+                                .accessibilityIdentifier("screenshotExtractedText")
+                        }
+                    }
+                    if !item.visualLabels.isEmpty {
+                        Section("Visual labels") {
+                            Text(item.visualLabels.joined(separator: ", "))
+                                .textSelection(.enabled)
+                                .accessibilityIdentifier("screenshotVisualLabels")
+                        }
+                    }
+                    if let error = item.lastError {
+                        Section("Analysis status") {
+                            Text(error).textSelection(.enabled)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Analysis details")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { showingAnalysis = false }
+                }
+            }
+        }
     }
 
     private var filmstrip: some View {

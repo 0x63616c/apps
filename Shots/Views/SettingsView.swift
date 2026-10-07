@@ -50,7 +50,7 @@ struct SettingsView: View {
                         LabeledContent("Active time", value: ScanMeasurement.duration(scan.elapsed))
                         LabeledContent("Load images", value: ScanMeasurement.duration(scan.imageSeconds))
                         LabeledContent("Read text & images", value: ScanMeasurement.duration(scan.analysisSeconds))
-                        LabeledContent("Automatic tags", value: scan.aiAvailable ? ScanMeasurement.duration(scan.taggingSeconds) : "Not run")
+                        LabeledContent("Descriptions & tags", value: scan.aiAvailable ? ScanMeasurement.duration(scan.taggingSeconds) : "Not run")
                         if scan.failed > 0 { Text("\(scan.failed) could not be fully scanned.").foregroundStyle(.secondary) }
                     }
                 }

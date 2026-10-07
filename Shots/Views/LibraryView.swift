@@ -189,6 +189,7 @@ struct LibraryView: View {
         ScrollView(.horizontal) {
             HStack(spacing: 8) {
                 filterButton("All", icon: "square.grid.2x2", value: .all)
+                filterButton("Favorites", icon: "heart", value: .favorites)
                 filterButton("Untagged", icon: "tag.slash", value: .untagged)
                 ForEach(store.tags) { tag in filterButton(tag.name, icon: tag.icon.id, value: .tag(tag.id)) }
             }
@@ -260,6 +261,9 @@ struct LibraryView: View {
         .accessibilityValue(item.createdAt.formatted(date: .abbreviated, time: .shortened))
         .accessibilityAddTraits(selection.contains(item.id) ? [.isSelected] : [])
             .contextMenu {
+                Button(item.favoritedAt == nil ? "Favorite" : "Unfavorite", systemImage: item.favoritedAt == nil ? "heart" : "heart.fill") {
+                    store.setFavorite(item.favoritedAt == nil, ids: [item.id])
+                }
                 if !showingHidden {
                     Button("Rescan", systemImage: "arrow.clockwise") { store.rescan(ids: [item.id]) }
                 }

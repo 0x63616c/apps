@@ -121,3 +121,8 @@ The preceding validation/upload-pending notes describe the earlier stage only. U
 **Shots 1.0 (3)** uploaded successfully, delivery/build ID `959ccc48-97c9-46cf-8f60-23f7e434cf28`. Release and independent `just release-status 3` read-back both confirm `VALID`, `IN_BETA_TESTING`, Calum internal group membership, existing tester present, auto-notify enabled, and `ready: true`. Both reported regressions are now in TestFlight. No external/public submission or phone installation was performed.
 
 Preserved IPA: `release/testflight-20261004-build3/export/Shots.ipa`, 941044 bytes; SHA256 `7c1d8341729e2235dfb852fc9c052df9ec178d1ff1a4934f25ff80d9fe11d69a`. Receipt: the release directory's `release.json` (`uploadResolved: true`); fresh native tests: `ui/UITests.xcresult`. Local archives/IPA/results remain ignored, not pushed. **Do not upload build 3 again.** `just release` selects 4 or higher next time; project build number remains 2 intentionally, because releases use an archive-only override. The full local release command is now verified with a real production upload, not only mocked orchestration tests.
+
+
+## October 6 — description-first categories and favorites
+
+User requested library-discovered categories based on a saved description pass, a tucked-away details view, favorites, and shipping to TestFlight. Source changes implement those behaviors with iOS 27 image input and iOS 26 OCR fallback. Preserve manual categories/tags, category dismissal, favorites, and version-1 indexes. Source currently on describe-and-discover; final integrated validation, review gate, and release read-back remain pending. Do not call the new release shipped until App Store Connect confirms processing and Calum-group availability.

@@ -100,6 +100,71 @@ final class RedesignUITests: XCTestCase {
         XCTAssertEqual(field.value as? String, "weekend")
     }
 
+    @MainActor func testAnalysisDetailsShowsDescriptionAndExtractedText() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--capture-gallery"]
+        app.launch()
+        XCTAssertTrue(app.buttons["galleryMore"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.staticTexts["screenshotDescription"].exists)
+        app.buttons["galleryMore"].tap()
+        tapMenuItem(app, "Analysis details")
+        XCTAssertTrue(app.navigationBars["Analysis details"].waitForExistence(timeout: 5))
+        let description = app.staticTexts["screenshotDescription"]
+        XCTAssertTrue(description.exists)
+        XCTAssertTrue(description.label.contains("A quieter weekend"))
+        XCTAssertTrue(app.staticTexts["screenshotDescribedAt"].exists)
+        XCTAssertTrue(app.staticTexts["screenshotExtractedText"].exists)
+        XCTAssertTrue(app.staticTexts["screenshotVisualLabels"].exists)
+        capture(app, "analysis-details")
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["galleryMore"].waitForExistence(timeout: 5))
+        app.buttons["filmstrip-sample-1"].tap()
+        app.buttons["galleryMore"].tap()
+        tapMenuItem(app, "Analysis details")
+        XCTAssertTrue(app.staticTexts["screenshotDescriptionEmpty"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["screenshotExtractedText"].exists)
+        capture(app, "analysis-details-pending")
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["Close screenshot"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor func testFavoritesFollowScreenshotsAndFilterTheLibrary() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--capture-gallery"]
+        app.launch()
+        let favorite = app.buttons["galleryFavorite"]
+        XCTAssertTrue(favorite.waitForExistence(timeout: 10))
+        XCTAssertEqual(favorite.label, "Favorite screenshot")
+        favorite.tap()
+        XCTAssertEqual(favorite.label, "Unfavorite screenshot")
+        capture(app, "gallery-favorite")
+        app.buttons["filmstrip-sample-1"].tap()
+        XCTAssertEqual(favorite.label, "Favorite screenshot")
+        favorite.tap()
+        app.buttons["filmstrip-sample-0"].tap()
+        XCTAssertEqual(favorite.label, "Unfavorite screenshot")
+        favorite.tap()
+        XCTAssertEqual(favorite.label, "Favorite screenshot")
+        app.buttons["Close screenshot"].tap()
+        let favorites = app.buttons["Favorites"]
+        XCTAssertTrue(favorites.waitForExistence(timeout: 5))
+        favorites.tap()
+        XCTAssertTrue(favorites.isSelected)
+        XCTAssertTrue(app.buttons["Objects for every day"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["A quieter weekend"].exists)
+        XCTAssertTrue(app.staticTexts["1"].exists)
+        capture(app, "favorites-library")
+        app.buttons["Objects for every day"].tap()
+        XCTAssertTrue(favorite.waitForExistence(timeout: 5))
+        XCTAssertEqual(favorite.label, "Unfavorite screenshot")
+        favorite.tap()
+        app.buttons["Close screenshot"].tap()
+        XCTAssertTrue(app.staticTexts["No results"].waitForExistence(timeout: 5))
+        app.buttons["All"].tap()
+        XCTAssertTrue(app.buttons["A quieter weekend"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["15"].exists)
+    }
+
     @MainActor func testTagIconEditingAndCancel() throws {
         let app = XCUIApplication()
         app.launch()

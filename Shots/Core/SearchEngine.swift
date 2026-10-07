@@ -4,18 +4,21 @@ import Foundation
 public struct PreparedSearchDocument: Sendable {
     public let normalizedText: String
     public let effectiveTagIDs: Set<UUID>
+    public let isFavorite: Bool
 
     public init(record: Screenshot, tags: [Tag]) {
         let effective = TagRules.effectiveTags(for: record, allowed: Set(tags.map(\.id)))
         effectiveTagIDs = effective
+        isFavorite = record.favoritedAt != nil
         let tagNames = tags.filter { effective.contains($0.id) }.map(\.name)
-        let fields = [record.title, record.text] + record.visualLabels + tagNames
+        let fields = [record.title, record.text, record.contentDescription ?? "", isFavorite ? "Favorites" : ""] + record.visualLabels + tagNames
         normalizedText = SearchNormalization.fold(fields.joined(separator: "\n"))
     }
 
     public func matches(query: String, filter: TagFilter) -> Bool {
         switch filter {
         case .all: break
+        case .favorites: guard isFavorite else { return false }
         case .untagged:
             guard effectiveTagIDs.isEmpty else { return false }
         case .tag(let id):

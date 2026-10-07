@@ -1,3 +1,10 @@
+# October 6 description-first categorization and favorites
+
+- Description storage, local image input on supported iOS 27 devices, text-based fallback on iOS 26, bounded library discovery, batched tagging, and tucked-away Analysis details implemented. Categories and favorites retain manual user intent; optional index fields keep version-1 decoding compatible.
+- 41 portable tests pass, including migration, sample coverage/counts, category retry/caps/dismissal, description search, and favorite persistence/filtering. Focused native Analysis details test passed and its rendered populated/pending states were inspected. Final integrated UI/release validation is pending.
+- Live local-model tests use synthetic order/chat/event text only; these are not personal-library or direct-image quality evidence. Physical-device Photos, iCloud, and large-library AI quality remain unverified.
+- Publication requested by the user; previous TestFlight build 3 remains the current release until the new build is processed and verified.
+
 # Acceptance and simplification review
 
 ## October 4 follow-up — shipped as TestFlight 1.0 (3)

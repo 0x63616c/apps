@@ -1,0 +1,5 @@
+# Shots validates and releases locally; no GitHub CI or push-triggered upload.
+commands:
+  test: just verify
+  lint: git diff --check
+no_ci: true

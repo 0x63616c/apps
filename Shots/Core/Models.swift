@@ -112,6 +112,9 @@ public struct Screenshot: Codable, Identifiable, Equatable, Sendable {
     public var title: String
     public var text: String
     public var visualLabels: [String]
+    public var contentDescription: String?
+    public var describedAt: Date?
+    public var descriptionUsesImage: Bool?
     public var aiTagIDs: Set<UUID>
     public var addedTagIDs: Set<UUID>
     public var removedTagIDs: Set<UUID>
@@ -119,6 +122,7 @@ public struct Screenshot: Codable, Identifiable, Equatable, Sendable {
     public var taggedRevision: Int?
     public var lastError: String?
     public var hiddenAt: Date?
+    public var favoritedAt: Date?
 
     public init(
         id: String,
@@ -127,13 +131,17 @@ public struct Screenshot: Codable, Identifiable, Equatable, Sendable {
         title: String = "",
         text: String = "",
         visualLabels: [String] = [],
+        contentDescription: String? = nil,
+        describedAt: Date? = nil,
+        descriptionUsesImage: Bool? = nil,
         aiTagIDs: Set<UUID> = [],
         addedTagIDs: Set<UUID> = [],
         removedTagIDs: Set<UUID> = [],
         scannedAt: Date? = nil,
         taggedRevision: Int? = nil,
         lastError: String? = nil,
-        hiddenAt: Date? = nil
+        hiddenAt: Date? = nil,
+        favoritedAt: Date? = nil
     ) {
         self.id = id
         self.createdAt = createdAt
@@ -141,6 +149,9 @@ public struct Screenshot: Codable, Identifiable, Equatable, Sendable {
         self.title = title
         self.text = text
         self.visualLabels = visualLabels
+        self.contentDescription = contentDescription
+        self.describedAt = describedAt
+        self.descriptionUsesImage = descriptionUsesImage
         self.aiTagIDs = aiTagIDs
         self.addedTagIDs = addedTagIDs
         self.removedTagIDs = removedTagIDs
@@ -148,6 +159,7 @@ public struct Screenshot: Codable, Identifiable, Equatable, Sendable {
         self.taggedRevision = taggedRevision
         self.lastError = lastError
         self.hiddenAt = hiddenAt
+        self.favoritedAt = favoritedAt
     }
 }
 
@@ -156,17 +168,26 @@ public struct IndexSnapshot: Codable, Sendable {
     public var tagRevision: Int
     public var tags: [Tag]
     public var screenshots: [Screenshot]
+    public var categoryDiscoveryCount: Int?
+    public var categoryDiscoveryCompleted: Bool?
+    public var dismissedCategoryNames: [String]?
 
     public init(
         version: Int = 1,
         tagRevision: Int = 1,
-        tags: [Tag] = IndexSnapshot.defaultTags,
-        screenshots: [Screenshot] = []
+        tags: [Tag] = [],
+        screenshots: [Screenshot] = [],
+        categoryDiscoveryCount: Int? = nil,
+        categoryDiscoveryCompleted: Bool? = nil,
+        dismissedCategoryNames: [String]? = nil
     ) {
         self.version = version
         self.tagRevision = tagRevision
         self.tags = tags
         self.screenshots = screenshots
+        self.categoryDiscoveryCount = categoryDiscoveryCount
+        self.categoryDiscoveryCompleted = categoryDiscoveryCompleted
+        self.dismissedCategoryNames = dismissedCategoryNames
     }
 
     public static let defaultTags: [Tag] = [
@@ -185,6 +206,7 @@ public struct IndexSnapshot: Codable, Sendable {
 
 public enum TagFilter: Hashable, Sendable {
     case all
+    case favorites
     case untagged
     case tag(UUID)
 }

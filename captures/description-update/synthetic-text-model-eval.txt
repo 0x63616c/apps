@@ -1,0 +1,18 @@
+Synthetic local-model evaluation: macOS 27 Foundation Models, text fallback.
+Six invented inputs; no personal Photos or messages used. This is not physical-device or screenshot-image inference evidence.
+
+DESCRIPTION: Amazon order confirmation October 4 | App screen showing an order from Amazon. Order placed on October 4 for wireless headphones. Delivery expected Friday, October 9.
+DESCRIPTION: USB-C cable order summary | Screenshot from Amazon showing an order for a USB-C cable delivered on October 3.
+DESCRIPTION: Weekend rave admission ticket | Screenshot from Ticketmaster showing weekend rave admission for Saturday, October 10. Event location is Warehouse, Los Angeles, with doors opening at 8 PM.
+DESCRIPTION: RA Event timetable - Saturday October | Screenshot of an app displaying an event schedule. The event is held at Warehouse on Saturday, October 10, with performances Echo at 21:00 and Nova at 22:30, last entry at 23:00.
+DESCRIPTION: Text message exchange | Screenshot from Messages showing a conversation with messages: 'Dinner at seven?' and 'Yes, meet at the pizza place'. No other app or details visible.
+DESCRIPTION: Messaging app notification | Screenshot from a messaging app showing a conversation with messages: 'Casey: The parcel arrived.' and 'Drew: Thanks! Will collect after work.' No other app or details visible.
+CATEGORIES: Orders, Events, Conversations
+TAGGED: Orders
+TAGGED: Orders
+TAGGED: Events
+TAGGED: Events
+TAGGED: Conversations
+TAGGED: Conversations
+ABSENT-CATEGORY: PASS (no tag forced on conversation)
+DUPLICATE-RECURRENCE CATEGORIES: Orders
