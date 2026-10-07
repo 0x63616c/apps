@@ -1,8 +1,38 @@
 import XCTest
 import UIKit
+import ImageIO
 
 final class RedesignUITests: XCTestCase {
-    override func setUp() { continueAfterFailure = false }
+    @MainActor override func setUp() {
+        super.setUp()
+        continueAfterFailure = false
+        resetPortraitOrientation()
+    }
+
+    @MainActor override func tearDown() {
+        resetPortraitOrientation()
+        super.tearDown()
+    }
+
+    private func screenImage() -> CGImage? {
+        // Decode the framebuffer's recorded orientation rather than stretching
+        // XCTest's UIImage into a potentially stale application frame.
+        guard let source = CGImageSourceCreateWithData(XCUIScreen.main.screenshot().pngRepresentation as CFData, nil) else { return nil }
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: 4096
+        ] as CFDictionary)
+    }
+
+    @MainActor private func resetPortraitOrientation() {
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication()
+        waitUntil("Portrait orientation should settle between tests", timeout: 10) {
+            guard let image = self.screenImage(), image.height > image.width else { return false }
+            return app.state != .runningForeground || app.frame.height > app.frame.width
+        }
+    }
 
     @MainActor private func waitUntil(_ message: String, timeout: TimeInterval = 5,
                                      file: StaticString = #filePath, line: UInt = #line,
@@ -350,17 +380,12 @@ final class RedesignUITests: XCTestCase {
                 guard let height = values["headerHeight"], let offset = values["offset"] else {
                     XCTFail("Missing actual layout evidence"); return
                 }
-                // App-scoped screenshots on this iOS simulator crop in portrait
-                // coordinates after rotation. Capture the device framebuffer and
-                // apply UIImage orientation before comparing logical screen pixels.
-                let screenshot = XCUIScreen.main.screenshot().image
-                let format = UIGraphicsImageRendererFormat()
-                format.scale = screenshot.scale
-                let normalized = UIGraphicsImageRenderer(size: app.frame.size, format: format).image { _ in
-                    screenshot.draw(in: CGRect(origin: .zero, size: app.frame.size))
-                }
-                guard let image = normalized.cgImage else { XCTFail("Missing screenshot"); return }
+                let frame = app.frame
+                let gridFrame = grid.frame
+                guard let image = screenImage() else { XCTFail("Missing screenshot"); return }
                 let width = image.width, pixelHeight = image.height
+                XCTAssertEqual(Double(width) / Double(pixelHeight), frame.width / frame.height, accuracy: 0.01,
+                               "Framebuffer and accessibility coordinates must have the same orientation")
                 var bytes = [UInt8](repeating: 0, count: width * pixelHeight * 4)
                 let rendered = bytes.withUnsafeMutableBytes { buffer -> Bool in
                     guard let context = CGContext(data: buffer.baseAddress, width: width, height: pixelHeight,
@@ -371,10 +396,10 @@ final class RedesignUITests: XCTestCase {
                     return true
                 }
                 XCTAssertTrue(rendered)
-                let scale = Double(width) / app.frame.width
+                let scale = Double(width) / frame.width
                 let expected = dark ? 0 : 255
-                for x in [grid.frame.minX + 8, grid.frame.maxX - 8] {
-                    for y in stride(from: grid.frame.minY + 1, to: grid.frame.minY + height - 1, by: 1.0 / scale) {
+                for x in [gridFrame.minX + 8, gridFrame.maxX - 8] {
+                    for y in stride(from: gridFrame.minY + 1, to: gridFrame.minY + height - 1, by: 1.0 / scale) {
                         let column = Int(x * scale), row = Int(y * scale)
                         guard (0..<width).contains(column), (0..<pixelHeight).contains(row) else {
                             XCTFail("Header band outside screenshot"); return
@@ -393,8 +418,16 @@ final class RedesignUITests: XCTestCase {
             }
             for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
                 XCUIDevice.shared.orientation = orientation
-                waitUntil("Collection layout should settle after rotation") {
-                    orientation == .portrait ? grid.frame.height > grid.frame.width : grid.frame.width > grid.frame.height
+                var previousFrame: CGRect?
+                var previousMetrics: [String: Double]?
+                waitUntil("Framebuffer and collection layout should settle after rotation", timeout: 10) {
+                    let frame = grid.frame
+                    let values = metrics()
+                    defer { previousFrame = frame; previousMetrics = values }
+                    let application = app.frame
+                    guard let image = self.screenImage(), frame == previousFrame, values == previousMetrics,
+                          abs(Double(image.width) / Double(image.height) - application.width / application.height) < 0.01 else { return false }
+                    return orientation == .portrait ? frame.height > frame.width : frame.width > frame.height
                 }
                 assertOpaqueBand()
                 // Four handoffs, including one-image and partial-row sections.

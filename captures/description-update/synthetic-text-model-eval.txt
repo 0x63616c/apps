@@ -16,3 +16,9 @@ TAGGED: Conversations
 TAGGED: Conversations
 ABSENT-CATEGORY: PASS (no tag forced on conversation)
 DUPLICATE-RECURRENCE CATEGORIES: Orders
+
+Retry control-flow evaluation used injected generator failures, not real model refusals:
+INJECTED-FAILURE PARTIAL RECOVERY: PASS, recovered Orders after 5 requests
+INJECTED-FAILURE ALL REFUSED: PASS, original error after exactly 7 requests
+INJECTED-FAILURE UNAVAILABLE: PASS, no reduced retry
+INJECTED-FAILURE CANCELLATION: PASS, no reduced retry

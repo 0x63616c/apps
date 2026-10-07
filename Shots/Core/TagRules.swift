@@ -15,6 +15,11 @@ public enum TagNameError: Error, LocalizedError, Equatable {
 }
 
 public enum TagRules {
+    public static func needsDescription(_ record: Screenshot, supportsImages: Bool) -> Bool {
+        record.describedAt == nil || record.contentDescription?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false ||
+            (supportsImages && record.descriptionUsesImage != true && record.descriptionImageAttempted != true)
+    }
+
     /// Sample across the library's date range rather than only its newest images.
     public static func discoverySample(records: [Screenshot], limit: Int = 32) -> [String] {
         guard limit > 0 else { return [] }
@@ -77,7 +82,7 @@ public enum TagRules {
     /// Apply discovered names to the current taxonomy and manual intent; nil when unchanged.
     public static func discoveredTaxonomy(names: [String], tags: [Tag], records: [Screenshot],
                                           dismissed: [String], retireDefaults: Bool) -> [Tag]? {
-        guard !names.isEmpty else { return nil }
+        guard !categoriesToAdd(names: names, existing: [], dismissed: dismissed).isEmpty else { return nil }
         let retiring = retireDefaults ? retireableDefaultIDs(tags: tags, records: records) : []
         let retained = tags.filter { !retiring.contains($0.id) }
         let additions = categoriesToAdd(names: names, existing: retained, dismissed: dismissed)

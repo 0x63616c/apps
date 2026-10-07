@@ -232,7 +232,9 @@ final class LibraryStore {
         indexError = nil
         do {
             let snapshot = try await disk.load() ?? IndexSnapshot()
-            tags = snapshot.tags
+            let dismissed = Set((snapshot.dismissedCategoryNames ?? []).map(SearchNormalization.fold))
+            tags = snapshot.tags.isEmpty && tagger.unavailableReason != nil
+                ? IndexSnapshot.defaultTags.filter { !dismissed.contains(SearchNormalization.fold($0.name)) } : snapshot.tags
             tagRevision = snapshot.tagRevision
             categoryDiscoveryCount = snapshot.categoryDiscoveryCount
             categoryDiscoveryCompleted = snapshot.categoryDiscoveryCompleted ?? false
@@ -240,7 +242,7 @@ final class LibraryStore {
             // Tolerate duplicate IDs without trapping; the newest saved entry wins.
             records = Dictionary(snapshot.screenshots.map { ($0.id, $0) }, uniquingKeysWith: { _, latest in latest })
             libraryRevision += 1
-            persistedRevision = libraryRevision
+            persistedRevision = tags == snapshot.tags ? libraryRevision : -1
             isReady = true
             photos.onChange = { [weak self] in
                 guard let self else { return }
@@ -335,7 +337,6 @@ final class LibraryStore {
                         record.modifiedAt = asset.modifiedAt
                         record.scannedAt = nil
                         record.describedAt = nil
-                        categoryDiscoveryCount = nil
                         record.taggedRevision = nil
                     }
                     record.createdAt = asset.createdAt
@@ -600,7 +601,7 @@ final class LibraryStore {
     func rescan(ids: Set<String>? = nil) {
         guard isReady else { return }
         let targets = ids ?? Set(items.map(\.id))
-        categoryDiscoveryCount = nil
+        if ids == nil { categoryDiscoveryCount = nil }
         for id in targets {
             guard var record = records[id] else { continue }
             record.scannedAt = nil
@@ -697,6 +698,10 @@ final class LibraryStore {
               !isScanning, scanTask == nil, !isRefreshing, !isScanHandover,
               permission == .authorized || permission == .limited else { return }
         aiMessage = tagger.unavailableReason
+        if let last = categoryDiscoveryCount, last > describedCount {
+            categoryDiscoveryCount = describedCount
+            libraryRevision += 1
+        }
         let canTag = isActive && aiMessage == nil
         var candidates = items.filter { $0.scannedAt == nil || (canTag && (needsDescription($0) || $0.taggedRevision != tagRevision)) }.map(\.id)
         if candidates.isEmpty, canTag, categoryDiscoveryIsDue {
@@ -825,7 +830,8 @@ final class LibraryStore {
 
         if !Task.isCancelled, isActive, !userPaused, !storagePaused, scanMeasurement.aiAvailable {
             let descriptionIDs = ids.filter { records[$0].map { $0.hiddenAt == nil && $0.scannedAt != nil && needsDescription($0) } == true }
-            if descriptionIDs.contains(where: { records[$0]?.descriptionUsesImage == false && tagger.canDescribeImages }) {
+            if descriptionIDs.count > 1,
+               descriptionIDs.contains(where: { records[$0]?.descriptionUsesImage == false && tagger.canDescribeImages }) {
                 categoryDiscoveryCount = nil
                 libraryRevision += 1
             }
@@ -854,6 +860,7 @@ final class LibraryStore {
                         record.title = description.title
                         record.contentDescription = description.contentDescription
                         record.descriptionUsesImage = description.usedImage
+                        record.descriptionImageAttempted = tagger.canDescribeImages
                         record.describedAt = Date()
                         record.taggedRevision = nil
                         record.lastError = nil
@@ -975,13 +982,12 @@ final class LibraryStore {
     }
 
     private func needsDescription(_ record: Screenshot) -> Bool {
-        record.describedAt == nil || record.contentDescription?.isEmpty != false ||
-            (tagger.canDescribeImages && record.descriptionUsesImage != true)
+        TagRules.needsDescription(record, supportsImages: tagger.canDescribeImages)
     }
 
     private var describedCount: Int {
         visibleIDs.reduce(0) { count, id in
-            count + (records[id].map { $0.hiddenAt == nil && $0.describedAt != nil && $0.contentDescription?.isEmpty == false } == true ? 1 : 0)
+            count + (records[id].map { $0.hiddenAt == nil && !needsDescription($0) } == true ? 1 : 0)
         }
     }
 
@@ -993,7 +999,7 @@ final class LibraryStore {
     private func discoverCategoriesIfNeeded() async throws {
         guard categoryDiscoveryIsDue, tags.count < 32 else { return }
         beginPhase(.discovering)
-        let described = visibleIDs.compactMap { records[$0] }.filter { $0.hiddenAt == nil && $0.describedAt != nil }
+        let described = visibleIDs.compactMap { records[$0] }.filter { $0.hiddenAt == nil && !needsDescription($0) }
         let retiring = !categoryDiscoveryCompleted
             ? TagRules.retireableDefaultIDs(tags: tags, records: Array(records.values)) : []
         let revision = tagRevision

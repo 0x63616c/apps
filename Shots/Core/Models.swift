@@ -115,6 +115,7 @@ public struct Screenshot: Codable, Identifiable, Equatable, Sendable {
     public var contentDescription: String?
     public var describedAt: Date?
     public var descriptionUsesImage: Bool?
+    public var descriptionImageAttempted: Bool?
     public var aiTagIDs: Set<UUID>
     public var addedTagIDs: Set<UUID>
     public var removedTagIDs: Set<UUID>
@@ -134,6 +135,7 @@ public struct Screenshot: Codable, Identifiable, Equatable, Sendable {
         contentDescription: String? = nil,
         describedAt: Date? = nil,
         descriptionUsesImage: Bool? = nil,
+        descriptionImageAttempted: Bool? = nil,
         aiTagIDs: Set<UUID> = [],
         addedTagIDs: Set<UUID> = [],
         removedTagIDs: Set<UUID> = [],
@@ -152,6 +154,7 @@ public struct Screenshot: Codable, Identifiable, Equatable, Sendable {
         self.contentDescription = contentDescription
         self.describedAt = describedAt
         self.descriptionUsesImage = descriptionUsesImage
+        self.descriptionImageAttempted = descriptionImageAttempted
         self.aiTagIDs = aiTagIDs
         self.addedTagIDs = addedTagIDs
         self.removedTagIDs = removedTagIDs

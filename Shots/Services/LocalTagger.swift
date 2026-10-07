@@ -115,13 +115,22 @@ final class LocalTagger {
         let result: GeneratedDescription
         let usedImage: Bool
         if #available(iOS 27, *), canDescribeImages, let imageData, let image = UIImage(data: imageData) {
-            let response = try await session.respond(generating: GeneratedDescription.self, options: options) {
-                "Describe this screenshot using its visible contents and the following supplementary evidence."
-                Attachment(image)
-                evidence
+            do {
+                let response = try await session.respond(generating: GeneratedDescription.self, options: options) {
+                    "Describe this screenshot using its visible contents and the following supplementary evidence."
+                    Attachment(image)
+                    evidence
+                }
+                result = response.content
+                usedImage = true
+            } catch {
+                try Task.checkCancellation()
+                if let unavailableReason { throw LocalTaggerError.unavailable(unavailableReason) }
+                guard isContentRefusal(error), !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !visualLabels.isEmpty else { throw error }
+                // A refused image never becomes a made-up successful description.
+                // A separate text-only request can use independently saved OCR.
+                return try await describe(imageData: nil, text: text, visualLabels: visualLabels)
             }
-            result = response.content
-            usedImage = true
         } else {
             let response = try await session.respond(to: """
                 No screenshot image is available to you. Describe only what the extracted text and
@@ -146,6 +155,41 @@ final class LocalTagger {
         if let unavailableReason { throw LocalTaggerError.unavailable(unavailableReason) }
         let candidates = descriptions.prefix(32).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
         guard !candidates.isEmpty else { return [] }
+        var pending = [candidates]
+        var originalError: Error?
+        var acceptedNames: [String] = []
+        var seen = Set<String>()
+        var successfulRequests = 0
+        // Retry smaller contiguous samples on failure, at most seven requests.
+        // Failed excerpts cannot block every other recurring group in the library.
+        for _ in 0..<7 {
+            guard !pending.isEmpty, acceptedNames.count < 8 else { break }
+            let candidate = pending.removeFirst()
+            try Task.checkCancellation()
+            if let unavailableReason { throw LocalTaggerError.unavailable(unavailableReason) }
+            do {
+                let names = try await discoverCategorySample(descriptions: candidate, existingTags: existingTags)
+                successfulRequests += 1
+                for name in names where acceptedNames.count < 8 {
+                    if seen.insert(name.lowercased()).inserted { acceptedNames.append(name) }
+                }
+            } catch {
+                try Task.checkCancellation()
+                if let unavailableReason { throw LocalTaggerError.unavailable(unavailableReason) }
+                guard canReduceSample(after: error) else { throw error }
+                if originalError == nil { originalError = error }
+                if candidate.count > 1 {
+                    let middle = candidate.count / 2
+                    pending.append(Array(candidate[..<middle]))
+                    pending.append(Array(candidate[middle...]))
+                }
+            }
+        }
+        if successfulRequests == 0, let originalError { throw originalError }
+        return acceptedNames
+    }
+
+    private func discoverCategorySample(descriptions candidates: [String], existingTags: [Tag]) async throws -> [String] {
         // Share the input budget across all dates instead of dropping the oldest
         // sampled screenshots when their descriptions are long.
         let bytesPerDescription = min(240, 5000 / candidates.count)
@@ -243,6 +287,39 @@ final class LocalTagger {
         try Task.checkCancellation()
         let title = cleanTitle(response.content.title)
         return TagSuggestion(title: title, tagIDs: TagRules.suggestedIDs(indices: response.content.tagIndices, tags: tags))
+    }
+
+    private func isContentRefusal(_ error: Error) -> Bool {
+        if #available(iOS 27, *), let error = error as? LanguageModelError {
+            switch error {
+            case .guardrailViolation, .refusal: return true
+            default: return false
+            }
+        }
+        if let error = error as? LanguageModelSession.GenerationError {
+            switch error {
+            case .guardrailViolation, .refusal: return true
+            default: return false
+            }
+        }
+        return false
+    }
+
+    private func canReduceSample(after error: Error) -> Bool {
+        if #available(iOS 27, *), error is GeneratedContent.ParsingError { return true }
+        if #available(iOS 27, *), let error = error as? LanguageModelError {
+            switch error {
+            case .contextSizeExceeded, .guardrailViolation, .refusal, .unsupportedLanguageOrLocale: return true
+            default: return false
+            }
+        }
+        if let error = error as? LanguageModelSession.GenerationError {
+            switch error {
+            case .exceededContextWindowSize, .guardrailViolation, .refusal, .decodingFailure, .unsupportedLanguageOrLocale: return true
+            default: return false
+            }
+        }
+        return false
     }
 
     private func cleanTitle(_ title: String) -> String {

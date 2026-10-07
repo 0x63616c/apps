@@ -15,7 +15,7 @@ final class DescriptionPipelineTests: XCTestCase {
         legacy.removeValue(forKey: "categoryDiscoveryCompleted")
         legacy.removeValue(forKey: "dismissedCategoryNames")
         var records = legacy["screenshots"] as! [[String: Any]]
-        for key in ["contentDescription", "describedAt", "descriptionUsesImage", "favoritedAt"] {
+        for key in ["contentDescription", "describedAt", "descriptionUsesImage", "descriptionImageAttempted", "favoritedAt"] {
             records[0].removeValue(forKey: key)
         }
         legacy["screenshots"] = records
@@ -29,6 +29,7 @@ final class DescriptionPipelineTests: XCTestCase {
         XCTAssertNil(decoded.screenshots[0].contentDescription)
         XCTAssertNil(decoded.screenshots[0].describedAt)
         XCTAssertNil(decoded.screenshots[0].descriptionUsesImage)
+        XCTAssertNil(decoded.screenshots[0].descriptionImageAttempted)
         XCTAssertNil(decoded.screenshots[0].favoritedAt)
     }
 
@@ -36,7 +37,7 @@ final class DescriptionPipelineTests: XCTestCase {
         let added = Tag(name: "Tickets"), removed = Tag(name: "Shopping")
         let record = Screenshot(id: "ticket", createdAt: date, text: "Saturday",
                                 contentDescription: "A festival ticket for Saturday, with a QR code.",
-                                describedAt: date, descriptionUsesImage: true,
+                                describedAt: date, descriptionUsesImage: true, descriptionImageAttempted: true,
                                 aiTagIDs: [removed.id], addedTagIDs: [added.id], removedTagIDs: [removed.id],
                                 scannedAt: date, taggedRevision: 4, favoritedAt: date)
         let snapshot = IndexSnapshot(tagRevision: 4, tags: [added, removed], screenshots: [record],
@@ -47,6 +48,7 @@ final class DescriptionPipelineTests: XCTestCase {
         XCTAssertEqual(decoded.categoryDiscoveryCount, 32)
         XCTAssertEqual(decoded.categoryDiscoveryCompleted, true)
         XCTAssertEqual(decoded.screenshots[0].favoritedAt, date)
+        XCTAssertEqual(decoded.screenshots[0].descriptionImageAttempted, true)
         XCTAssertEqual(decoded.dismissedCategoryNames, ["Promotions"])
         XCTAssertEqual(TagRules.effectiveTags(for: decoded.screenshots[0], allowed: [added.id, removed.id]), [added.id])
     }
@@ -64,6 +66,40 @@ final class DescriptionPipelineTests: XCTestCase {
         oldRecord.contentDescription = nil
         XCTAssertFalse(SearchEngine.matches(oldRecord, tags: [tag], query: "headphones", filter: .all))
         XCTAssertTrue(SearchEngine.matches(oldRecord, tags: [tag], query: "Friday", filter: .all))
+    }
+
+    func testDescriptionRequirementsRejectMissingAndBlankEvidence() {
+        var record = Screenshot(id: "pending", createdAt: date, contentDescription: "A ticket", describedAt: date)
+        record.describedAt = nil
+        XCTAssertTrue(TagRules.needsDescription(record, supportsImages: false))
+        XCTAssertTrue(TagRules.needsDescription(record, supportsImages: true))
+        record.describedAt = date
+        record.descriptionUsesImage = true
+        for empty in [nil, "", " \n\t "] as [String?] {
+            record.contentDescription = empty
+            XCTAssertTrue(TagRules.needsDescription(record, supportsImages: false))
+            XCTAssertTrue(TagRules.needsDescription(record, supportsImages: true))
+        }
+    }
+
+    func testTextDescriptionUpgradesOnceButSuccessfulImageFallbackRemainsStable() throws {
+        var record = Screenshot(id: "fallback", createdAt: date, contentDescription: "An order confirmation",
+                                describedAt: date, descriptionUsesImage: false)
+        XCTAssertFalse(TagRules.needsDescription(record, supportsImages: false))
+        XCTAssertTrue(TagRules.needsDescription(record, supportsImages: true))
+        record.descriptionImageAttempted = true
+        XCTAssertFalse(TagRules.needsDescription(record, supportsImages: true))
+        XCTAssertFalse(TagRules.needsDescription(record, supportsImages: false))
+        let restored = try JSONDecoder().decode(Screenshot.self, from: JSONEncoder().encode(record))
+        XCTAssertEqual(restored.descriptionImageAttempted, true)
+        XCTAssertFalse(TagRules.needsDescription(restored, supportsImages: true))
+        // Explicit rescan makes even a previously completed fallback retry.
+        record.describedAt = nil
+        XCTAssertTrue(TagRules.needsDescription(record, supportsImages: true))
+        record.describedAt = date
+        record.descriptionUsesImage = true
+        record.descriptionImageAttempted = nil
+        XCTAssertFalse(TagRules.needsDescription(record, supportsImages: true))
     }
 
     func testDiscoveryUsesSuccessfulVisibleDescriptionsAndDeduplicatesBeforeSampling() {
@@ -184,6 +220,17 @@ final class DescriptionPipelineTests: XCTestCase {
         XCTAssertNil(TagRules.discoveredTaxonomy(names: [], tags: starters, records: [], dismissed: [], retireDefaults: true))
         XCTAssertNil(TagRules.discoveredTaxonomy(names: [starters[0].name], tags: starters, records: [],
                                                  dismissed: [], retireDefaults: false))
+    }
+
+    func testRejectedDiscoveryCannotRetireStarterCategories() {
+        let starters = IndexSnapshot.defaultTags
+        for names in [["Promotions"], [""], [String(repeating: "x", count: 33)]] {
+            XCTAssertNil(TagRules.discoveredTaxonomy(names: names, tags: starters, records: [],
+                                                     dismissed: ["Promotions"], retireDefaults: true))
+        }
+        let manual = Tag(name: "Personal")
+        XCTAssertNil(TagRules.discoveredTaxonomy(names: ["Promotions"], tags: starters + [manual], records: [],
+                                                 dismissed: ["Promotions"], retireDefaults: true))
     }
 
     func testFavoriteFilterAndSearchApplyAlongsideScreenshotText() {
