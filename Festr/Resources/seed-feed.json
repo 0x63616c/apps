@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-10T19:00:00Z",
+  "festivals": [
+    {
+      "id": "head-trip-2026",
+      "name": "Head Trip",
+      "venue": "Empire Polo Club",
+      "city": "Indio",
+      "region": "CA",
+      "country": "US",
+      "timeZone": "America/Los_Angeles",
+      "startDate": "2026-10-10",
+      "endDate": "2026-10-11",
+      "sourceURL": "https://lineupscout.com/head-trip",
+      "updatedAt": "2026-10-10T19:00:00Z",
+      "lineup": [
+        "Floating Points Sunflower Sound System",
+        "Seth Troxler b2b Ben Sterling",
+        "Peggy Gou b2b Four Tet",
+        "Under Construction (FISHER + Chris Lake)",
+        "Calvin Harris",
+        "DJ Harvey",
+        "The Blessed Madonna",
+        "Dom Dolla b2b KETTAMA",
+        "Skrillex",
+        "Swedish House Mafia"
+      ],
+      "stages": [
+        {
+          "id": "main",
+          "name": "Main Stage",
+          "sortOrder": 0
+        },
+        {
+          "id": "sunflower",
+          "name": "Sunflower Sound System",
+          "sortOrder": 1
+        }
+      ],
+      "sets": [
+        {
+          "id": "head-trip-2026-2026-10-10-floating-points-sunflower-sound-system",
+          "artist": "Floating Points Sunflower Sound System",
+          "stageId": "sunflower",
+          "day": "2026-10-10",
+          "start": "2026-10-10T22:00:00Z",
+          "end": "2026-10-11T07:30:00Z",
+          "sourceURL": "https://lineupscout.com/head-trip",
+          "updatedAt": "2026-10-10T19:00:00Z"
+        },
+        {
+          "id": "head-trip-2026-2026-10-10-seth-troxler-b2b-ben-sterling",
+          "artist": "Seth Troxler b2b Ben Sterling",
+          "stageId": "main",
+          "day": "2026-10-10",
+          "start": "2026-10-10T23:30:00Z",
+          "end": "2026-10-11T02:00:00Z",
+          "sourceURL": "https://lineupscout.com/head-trip",
+          "updatedAt": "2026-10-10T19:00:00Z"
+        },
+        {
+          "id": "head-trip-2026-2026-10-10-peggy-gou-b2b-four-tet",
+          "artist": "Peggy Gou b2b Four Tet",
+          "stageId": "main",
+          "day": "2026-10-10",
+          "start": "2026-10-11T02:20:00Z",
+          "end": "2026-10-11T03:50:00Z",
+          "sourceURL": "https://lineupscout.com/head-trip",
+          "updatedAt": "2026-10-10T19:00:00Z"
+        },
+        {
+          "id": "head-trip-2026-2026-10-10-under-construction-fisher-chris-lake",
+          "artist": "Under Construction (FISHER + Chris Lake)",
+          "stageId": "main",
+          "day": "2026-10-10",
+          "start": "2026-10-11T04:10:00Z",
+          "end": "2026-10-11T05:40:00Z",
+          "sourceURL": "https://lineupscout.com/head-trip",
+          "updatedAt": "2026-10-10T19:00:00Z"
+        },
+        {
+          "id": "head-trip-2026-2026-10-10-calvin-harris",
+          "artist": "Calvin Harris",
+          "stageId": "main",
+          "day": "2026-10-10",
+          "start": "2026-10-11T06:00:00Z",
+          "end": null,
+          "sourceURL": "https://lineupscout.com/head-trip",
+          "updatedAt": "2026-10-10T19:00:00Z"
+        },
+        {
+          "id": "head-trip-2026-2026-10-11-floating-points-sunflower-sound-system",
+          "artist": "Floating Points Sunflower Sound System",
+          "stageId": "sunflower",
+          "day": "2026-10-11",
+          "start": "2026-10-11T22:00:00Z",
+          "end": "2026-10-12T06:30:00Z",
+          "sourceURL": "https://lineupscout.com/head-trip",
+          "updatedAt": "2026-10-10T19:00:00Z"
+        },
+        {
+          "id": "head-trip-2026-2026-10-11-dj-harvey",
+          "artist": "DJ Harvey",
+          "stageId": "main",
+          "day": "2026-10-11",
+          "start": "2026-10-11T22:30:00Z",
+          "end": "2026-10-12T00:00:00Z",
+          "sourceURL": "https://lineupscout.com/head-trip",
+          "updatedAt": "2026-10-10T19:00:00Z"
+        },
+        {
+          "id": "head-trip-2026-2026-10-11-the-blessed-madonna",
+          "artist": "The Blessed Madonna",
+          "stageId": "main",
+          "day": "2026-10-11",
+          "start": "2026-10-12T00:00:00Z",
+          "end": "2026-10-12T01:30:00Z",
+          "sourceURL": "https://lineupscout.com/head-trip",
+          "updatedAt": "2026-10-10T19:00:00Z"
+        },
+        {
+          "id": "head-trip-2026-2026-10-11-dom-dolla-b2b-kettama",
+          "artist": "Dom Dolla b2b KETTAMA",
+          "stageId": "main",
+          "day": "2026-10-11",
+          "start": "2026-10-12T01:50:00Z",
+          "end": "2026-10-12T03:20:00Z",
+          "sourceURL": "https://lineupscout.com/head-trip",
+          "updatedAt": "2026-10-10T19:00:00Z"
+        },
+        {
+          "id": "head-trip-2026-2026-10-11-skrillex",
+          "artist": "Skrillex",
+          "stageId": "main",
+          "day": "2026-10-11",
+          "start": "2026-10-12T03:40:00Z",
+          "end": "2026-10-12T05:10:00Z",
+          "sourceURL": "https://lineupscout.com/head-trip",
+          "updatedAt": "2026-10-10T19:00:00Z"
+        },
+        {
+          "id": "head-trip-2026-2026-10-11-swedish-house-mafia",
+          "artist": "Swedish House Mafia",
+          "stageId": "main",
+          "day": "2026-10-11",
+          "start": "2026-10-12T05:30:00Z",
+          "end": null,
+          "sourceURL": "https://lineupscout.com/head-trip",
+          "updatedAt": "2026-10-10T19:00:00Z"
+        }
+      ]
+    }
+  ]
+}

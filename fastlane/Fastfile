@@ -1,0 +1,303 @@
+require "shellwords"
+
+default_platform(:ios)
+
+APP_IDENTIFIER = "com.calumwebb.festr"
+WIDGET_IDENTIFIER = "com.calumwebb.festr.widgets"
+APP_NAMES = ["Festr", "Festr: Festival Set Times"].freeze
+APP_SKU = "festr"
+APP_VERSION = "1.0.0"
+PROJECT = "Festr.xcodeproj"
+SCHEME = "Festr"
+INTERNAL_GROUP = "Owner Preview"
+BETA_DESCRIPTION = "Festr shows upcoming festival set times, builds your schedule, makes lock-screen wallpapers and follows the day with a Live Activity."
+BETA_FEEDBACK_EMAIL = ENV.fetch("ASC_BETA_FEEDBACK_EMAIL")
+METADATA_PATH = "./fastlane/metadata"
+SCREENSHOTS_PATH = "./fastlane/screenshots"
+# Each signed target gets its own CI App Store profile, created or reused by sigh.
+SIGNED_TARGETS = {
+  "Festr" => { identifier: APP_IDENTIFIER, profile: "Festr CI App Store" },
+  "FestrWidgets" => { identifier: WIDGET_IDENTIFIER, profile: "Festr Widgets CI App Store" }
+}.freeze
+
+private_lane :connect_api_key do
+  key_path = ENV["ASC_KEY_PATH"]
+  key_content = ENV["ASC_KEY_CONTENT"]
+  UI.user_error!("Set ASC_KEY_PATH or ASC_KEY_CONTENT") if key_path.to_s.empty? && key_content.to_s.empty?
+
+  app_store_connect_api_key(
+    key_id: ENV.fetch("ASC_KEY_ID"),
+    issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+    key_filepath: key_path,
+    key_content: key_content
+  )
+end
+
+platform :ios do
+  desc "Run the fast core test suite"
+  lane :verify do
+    sh("swift", "test")
+  end
+
+  desc "Run the full end-to-end simulator suite when UI behavior changes"
+  lane :ui do
+    run_tests(
+      project: PROJECT,
+      scheme: SCHEME,
+      devices: [ENV.fetch("FESTR_SIMULATOR", "iPhone 17 Pro Max")],
+      result_bundle: true,
+      number_of_retries: 1,
+      output_directory: "build/fastlane/tests"
+    )
+  end
+
+  desc "Register the app and widget bundle IDs, check the App Store Connect record and the internal group (API key only)"
+  lane :ensure_app_record do
+    connect_api_key
+    SIGNED_TARGETS.each_value do |target|
+      next if Spaceship::ConnectAPI::BundleId.find(target[:identifier])
+      Spaceship::ConnectAPI::BundleId.create(name: target[:profile].sub(" CI App Store", ""), platform: "IOS", identifier: target[:identifier])
+      UI.success("Registered bundle ID #{target[:identifier]}")
+    end
+    app = Spaceship::ConnectAPI::App.find(APP_IDENTIFIER)
+    unless app
+      UI.user_error!("#{APP_IDENTIFIER} has no App Store Connect app record. The App Store Connect API cannot create apps: " \
+                     "create it at appstoreconnect.apple.com (New App, name '#{APP_NAMES.first}' or '#{APP_NAMES.last}', SKU #{APP_SKU}), " \
+                     "or run `bundle exec fastlane ios create_app` with an Apple ID.")
+    end
+    unless app.get_beta_groups.any? { |group| group.name == INTERNAL_GROUP }
+      app.create_beta_group(group_name: INTERNAL_GROUP, is_internal_group: true, has_access_to_all_builds: true,
+                            public_link_enabled: false, public_link_limit: 10_000, public_link_limit_enabled: false)
+      UI.important("Created the internal TestFlight group '#{INTERNAL_GROUP}'. Add yourself as a tester in App Store Connect.")
+    end
+    UI.success("App record: #{app.name} (#{app.id})")
+  end
+
+  desc "Create the App Store Connect app record with an Apple ID session (the API key cannot create apps)"
+  lane :create_app do
+    APP_NAMES.each do |name|
+      begin
+        produce(app_identifier: APP_IDENTIFIER, app_name: name, sku: APP_SKU, language: "en-US", app_version: APP_VERSION,
+                team_id: "X9E4HG27NK", skip_itc: false, skip_devcenter: false)
+        UI.success("Created #{name}")
+        break
+      rescue StandardError => error
+        raise if name == APP_NAMES.last
+        UI.important("Could not create '#{name}' (#{error.message}); trying '#{APP_NAMES.last}'")
+      end
+    end
+    produce(app_identifier: WIDGET_IDENTIFIER, app_name: "Festr Widgets", skip_itc: true, team_id: "X9E4HG27NK")
+  end
+
+  desc "Assign an already processed build to Owner Preview"
+  lane :distribute_existing do |options|
+    build_number = options[:build]
+    UI.user_error!("Pass a build number, for example: fastlane ios distribute_existing build:12") if build_number.to_s.empty?
+
+    upload_to_testflight(
+      api_key: connect_api_key,
+      app_identifier: APP_IDENTIFIER,
+      app_platform: "ios",
+      app_version: options[:version] || APP_VERSION,
+      build_number: build_number.to_s,
+      distribute_only: true,
+      distribute_external: false,
+      submit_beta_review: false,
+      groups: [INTERNAL_GROUP],
+      skip_waiting_for_build_processing: false,
+      beta_app_description: BETA_DESCRIPTION,
+      beta_app_feedback_email: BETA_FEEDBACK_EMAIL
+    )
+  end
+
+  desc "Test, build, upload, wait, and distribute the next internal beta"
+  lane :beta do |options|
+    verify unless options[:skip_tests]
+    api_key = connect_api_key
+    ensure_app_record
+    version = options[:version] || APP_VERSION
+    build_number = latest_testflight_build_number(
+      api_key: api_key,
+      app_identifier: APP_IDENTIFIER,
+      version: version,
+      initial_build_number: 0
+    ) + 1
+
+    xcargs = "MARKETING_VERSION=#{version} CURRENT_PROJECT_VERSION=#{build_number}"
+    export_options = {}
+    if ENV["GITHUB_ACTIONS"] == "true"
+      # Xcode-managed profiles cannot be used with manual archive signing.
+      # sigh selects the installed distribution certificate and owns one profile per target.
+      profiles = {}
+      SIGNED_TARGETS.each do |target, info|
+        uuid = get_provisioning_profile(
+          api_key: api_key,
+          app_identifier: info[:identifier],
+          provisioning_name: info[:profile],
+          ignore_profiles_with_different_name: true,
+          output_path: ENV.fetch("RUNNER_TEMP"),
+          filename: "#{target}.mobileprovision"
+        )
+        UI.user_error!("CI provisioning did not return a profile UUID for #{target}") if uuid.to_s.empty?
+        update_code_signing_settings(
+          path: PROJECT,
+          targets: [target],
+          build_configurations: ["Release"],
+          use_automatic_signing: false,
+          team_id: "X9E4HG27NK",
+          code_sign_identity: "Apple Distribution",
+          profile_uuid: uuid,
+          profile_name: info[:profile],
+          bundle_identifier: info[:identifier]
+        )
+        profiles[info[:identifier]] = uuid
+      end
+      export_options = {
+        signingStyle: "manual",
+        signingCertificate: "Apple Distribution",
+        provisioningProfiles: profiles
+      }
+    end
+
+    build_app(
+      project: PROJECT,
+      scheme: SCHEME,
+      configuration: "Release",
+      clean: true,
+      export_method: "app-store",
+      output_directory: "build/fastlane",
+      output_name: "Festr-#{version}-#{build_number}.ipa",
+      xcargs: xcargs,
+      export_options: export_options,
+      export_xcargs: export_options.empty? ? "-allowProvisioningUpdates" : ""
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      app_identifier: APP_IDENTIFIER,
+      app_version: version,
+      build_number: build_number.to_s,
+      groups: [INTERNAL_GROUP],
+      distribute_external: false,
+      submit_beta_review: false,
+      skip_waiting_for_build_processing: false,
+      beta_app_description: BETA_DESCRIPTION,
+      beta_app_feedback_email: BETA_FEEDBACK_EMAIL,
+      changelog: options[:changelog] || "Small interface refinements and reliability improvements."
+    )
+  end
+
+  desc "Upload the App Store listing and screenshots. Never uploads a binary or submits for review"
+  lane :metadata do |options|
+    review_contact = {
+      phone_number: ENV["ASC_REVIEW_PHONE"],
+      email_address: ENV["ASC_REVIEW_EMAIL"]
+    }.reject { |_, value| value.to_s.empty? }
+
+    guard_first_review_detail
+    deliver(
+      api_key: options[:api_key] || connect_api_key,
+      app_identifier: APP_IDENTIFIER,
+      app_version: options[:version] || APP_VERSION,
+      platform: "ios",
+      metadata_path: METADATA_PATH,
+      screenshots_path: SCREENSHOTS_PATH,
+      skip_screenshots: options[:skip_screenshots].to_s == "true",
+      overwrite_screenshots: true,
+      app_review_information: review_contact,
+      skip_binary_upload: true,
+      submit_for_review: false,
+      run_precheck_before_submit: false,
+      precheck_include_in_app_purchases: false,
+      force: true
+    )
+  end
+
+  desc "Attach the newest processed, unexpired TestFlight build of the version to the App Store version"
+  lane :select_build do |options|
+    connect_api_key
+    version = options[:version] || APP_VERSION
+    app = app_store_app
+    build = Spaceship::ConnectAPI::Build.all(app_id: app.id, version: version, processing_states: "VALID", sort: "-uploadedDate")
+                                        .reject(&:expired)
+                                        .max_by { |candidate| candidate.version.to_i }
+    UI.user_error!("No processed, unexpired #{version} build in App Store Connect. Wait for TestFlight processing, then rerun.") unless build
+
+    app_store_version = editable_app_store_version(app)
+    if app_store_version.build&.id == build.id
+      UI.success("#{version} (#{build.version}) is already selected for review")
+    else
+      app_store_version.select_build(build_id: build.id)
+      UI.success("Selected #{version} (#{build.version}), uploaded #{build.uploaded_date}, for review")
+    end
+  end
+
+  desc "Answer the age rating questionnaire: nothing applies"
+  lane :age_rating do
+    connect_api_key
+    app = app_store_app
+    info = app.fetch_edit_app_info || app.fetch_latest_app_info
+    asc = Spaceship::ConnectAPI.client.tunes_request_client
+    declaration = asc.get("v1/appInfos/#{info.id}/ageRatingDeclaration").body["data"]
+    current = declaration["attributes"] || {}
+    none = %w[alcoholTobaccoOrDrugUseOrReferences contests gamblingSimulated gunsOrOtherWeapons medicalOrTreatmentInformation
+              profanityOrCrudeHumor sexualContentGraphicAndNudity sexualContentOrNudity horrorOrFearThemes matureOrSuggestiveThemes
+              violenceCartoonOrFantasy violenceRealisticProlongedGraphicOrSadistic violenceRealistic]
+    no = %w[advertising ageAssurance gambling healthOrWellnessTopics lootBox messagingAndChat parentalControls
+            socialMedia socialMediaAgeRestricted unrestrictedWebAccess userGeneratedContent]
+    wanted = {}
+    none.each { |key| wanted[key] = "NONE" if current.key?(key) }
+    no.each { |key| wanted[key] = false if current.key?(key) }
+    asc.patch("v1/ageRatingDeclarations/#{declaration['id']}", {
+      data: { type: "ageRatingDeclarations", id: declaration["id"], attributes: wanted }
+    })
+    UI.success("Age rating answers set: #{wanted.to_json}")
+  end
+
+  desc "Upload the listing and screenshots, and attach the latest build. Stops before Submit for Review"
+  lane :prepare_review do |options|
+    api_key = connect_api_key
+    metadata(api_key: api_key, version: options[:version], skip_screenshots: options[:skip_screenshots])
+    select_build(version: options[:version])
+    age_rating
+  end
+end
+
+# Apple only creates App Review details with a contact phone, and deliver 2.239 then assumes they
+# exist. Until a phone is known (ASC_REVIEW_PHONE or entered in App Store Connect), skip them.
+module FestrFirstReviewDetail
+  def review_information(version)
+    existing = begin
+      version.fetch_app_store_review_detail
+    rescue StandardError
+      nil
+    end
+    if existing.nil? && options[:app_review_information].to_h.transform_keys(&:to_sym)[:phone_number].to_s.strip.empty?
+      FastlaneCore::UI.important("Skipping App Review details: Apple needs a contact phone first. Set the ASC_REVIEW_PHONE secret or add it in App Store Connect, then rerun.")
+      return
+    end
+    super
+  end
+
+  def review_attachment_file(version)
+    super
+  rescue RuntimeError => error
+    raise unless error.message == "No data"
+  end
+end
+
+def guard_first_review_detail
+  require "deliver"
+  Deliver::UploadMetadata.prepend(FestrFirstReviewDetail) unless Deliver::UploadMetadata < FestrFirstReviewDetail
+rescue LoadError
+  nil
+end
+
+def app_store_app
+  Spaceship::ConnectAPI::App.find(APP_IDENTIFIER) || UI.user_error!("#{APP_IDENTIFIER} is not in App Store Connect")
+end
+
+def editable_app_store_version(app)
+  app.get_edit_app_store_version(platform: Spaceship::ConnectAPI::Platform::IOS) ||
+    UI.user_error!("No editable App Store version. Create one in App Store Connect or run the metadata lane first")
+end

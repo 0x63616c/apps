@@ -1,0 +1,34 @@
+{
+  "generatedAt": "2026-10-10T19:00:00Z",
+  "festivals": [
+    {
+      "id": "head-trip-2026",
+      "name": "Head Trip",
+      "venue": "Empire Polo Club",
+      "city": "Indio",
+      "region": "CA",
+      "timeZone": "America/Los_Angeles",
+      "startDate": "2026-10-10",
+      "endDate": "2026-10-11",
+      "sourceURL": "https://lineupscout.com/head-trip",
+      "updatedAt": "2026-10-10T19:00:00Z",
+      "stages": [
+        { "id": "main", "name": "Main Stage" },
+        { "id": "sunflower", "name": "Sunflower Sound System" }
+      ],
+      "sets": [
+        { "artist": "Floating Points Sunflower Sound System", "stage": "sunflower", "localDate": "2026-10-10", "localStart": "15:00", "localEnd": "00:30" },
+        { "artist": "Seth Troxler b2b Ben Sterling", "stage": "main", "localDate": "2026-10-10", "localStart": "16:30", "localEnd": "19:00" },
+        { "artist": "Peggy Gou b2b Four Tet", "stage": "main", "localDate": "2026-10-10", "localStart": "19:20", "localEnd": "20:50" },
+        { "artist": "Under Construction (FISHER + Chris Lake)", "stage": "main", "localDate": "2026-10-10", "localStart": "21:10", "localEnd": "22:40" },
+        { "artist": "Calvin Harris", "stage": "main", "localDate": "2026-10-10", "localStart": "23:00", "localEnd": null },
+        { "artist": "Floating Points Sunflower Sound System", "stage": "sunflower", "localDate": "2026-10-11", "localStart": "15:00", "localEnd": "23:30" },
+        { "artist": "DJ Harvey", "stage": "main", "localDate": "2026-10-11", "localStart": "15:30", "localEnd": "17:00" },
+        { "artist": "The Blessed Madonna", "stage": "main", "localDate": "2026-10-11", "localStart": "17:00", "localEnd": "18:30" },
+        { "artist": "Dom Dolla b2b KETTAMA", "stage": "main", "localDate": "2026-10-11", "localStart": "18:50", "localEnd": "20:20" },
+        { "artist": "Skrillex", "stage": "main", "localDate": "2026-10-11", "localStart": "20:40", "localEnd": "22:10" },
+        { "artist": "Swedish House Mafia", "stage": "main", "localDate": "2026-10-11", "localStart": "22:30", "localEnd": null }
+      ]
+    }
+  ]
+}
