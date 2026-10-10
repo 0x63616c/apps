@@ -1,0 +1,11 @@
+# Seed data sources
+
+Verified on October 10, 2026. Only Head Trip has published set times; the others are lineup-only until times are announced.
+
+| Festival | Dates | Venue | Sources |
+| --- | --- | --- | --- |
+| Head Trip | Oct 10–11, 2026 | Empire Polo Club, Indio, CA | Set times from [lineupscout.com/head-trip](https://lineupscout.com/head-trip) |
+| EDC Orlando | 2026-11-06 to 2026-11-08 | Tinker Field, Orlando, FL | Dates (Nov 6-8, 2026) and venue confirmed on the official site orlando.edc.com (homepage title 'EDC Orlando | November 6-8, 2026 | Tinker Field'; Hours & Info: Tinker Field, 287 S Tampa Ave, Orlando, FL 32805, 1PM-12AM). Lineup names/spelling from lineupscout.com/edc-orlando (108 acts by day: David Guetta Fri, Kaskade Sat, Martin Garrix Sun), cross-checked with musicfestguide.com/festivals/edc-orlando-2026. Lineupscout states set times are not yet published, so sets is empty. |
+| Dreamstate SoCal | 2026-11-20 to 2026-11-21 | Queen Mary Waterfront, Long Beach, CA | Dates (Fri Nov 20 + Sat Nov 21, 2026), venue (Queen Mary Waterfront, 1126 Queens Hwy, Long Beach, CA 90802) and hours (4 PM - 1 AM) confirmed on official socal.dreamstateusa.com/hours-and-info/. Lineup spelling from official socal.dreamstateusa.com/lineup/, corroborated by Insomniac press release (press.insomniac.com, July 9, 2026) and EDM.com. No set times published. |
+| Lights All Night | 2026-12-30 to 2026-12-31 | Fair Park, Dallas, TX | Dates (Wed Dec 30 & Thu Dec 31, 2026) and venue (Fair Park, 3809 Grand Ave, Dallas, TX 75210) confirmed on official lightsallnight.com (homepage and /tickets). Day-by-day lineup from lineupscout.com/lights-all-night (39 acts, sourced from the official lineup-by-day graphic published 2026-08-04) and somethingdopeforthepeople.com. Lineupscout states set times have not been published. |
+| Countdown NYE | 2026-12-31 to 2027-01-01 | NOS Event Center, San Bernardino, CA | Dates (Dec 31, 2026 - Jan 1, 2027) and venue (NOS Event Center, San Bernardino, CA) confirmed by Insomniac press releases on press.insomniac.com (April 20 announcement and Sept 21 lineup release), EDMTunes (Sept 22, 2026) and Songkick. Lineup spelling from official countdownnye.com/lineup/. No set times published. |
