@@ -1,0 +1,45 @@
+:root {
+  --fg: #1a1a1a;
+  --muted: #666;
+  --border: #ddd;
+  --bg-soft: #f6f6f6;
+  --accent: #5b3cc4;
+  --danger: #b42318;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--fg);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 960px; margin: 0 auto; padding: 1rem 1.25rem 4rem; }
+a { color: var(--accent); }
+h1 { font-size: 1.5rem; }
+h2 { font-size: 1.15rem; margin-top: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+
+.topbar { display: flex; justify-content: space-between; padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); background: var(--bg-soft); }
+.topbar a:first-child { font-weight: 600; text-decoration: none; color: var(--fg); }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+th { color: var(--muted); font-weight: 500; }
+
+form.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.6rem 1rem; align-items: end; }
+form.grid .wide { grid-column: 1 / -1; }
+form.row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: end; margin: 0.4rem 0; }
+label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.8rem; color: var(--muted); }
+label.check { flex-direction: row; align-items: center; gap: 0.4rem; }
+input, select, textarea { font: inherit; color: var(--fg); padding: 0.35rem 0.45rem; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+textarea { min-height: 7rem; }
+button { font: inherit; padding: 0.35rem 0.8rem; border-radius: 4px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+button.secondary { background: #fff; color: var(--accent); }
+button.danger { background: #fff; color: var(--danger); border-color: var(--danger); }
+
+.muted { color: var(--muted); font-size: 0.85rem; }
+.error { background: #fef3f2; border: 1px solid #fecdca; color: var(--danger); padding: 0.6rem 0.8rem; border-radius: 4px; }
+.badge { font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 999px; background: var(--bg-soft); border: 1px solid var(--border); }
+.actions { display: flex; gap: 0.5rem; align-items: center; }
+
+details.set { border-bottom: 1px solid var(--border); padding: 0.35rem 0; }
+details.set summary { cursor: pointer; display: grid; grid-template-columns: 11rem 9rem 1fr; gap: 0.5rem; }
+details.set[open] { background: var(--bg-soft); padding: 0.5rem; }
+.day-heading { margin: 1.25rem 0 0.25rem; font-weight: 600; }
