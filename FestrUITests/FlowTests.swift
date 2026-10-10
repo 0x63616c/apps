@@ -18,7 +18,10 @@ final class FlowTests: XCTestCase {
         app.segmentedControls.buttons["Favourites"].tap()
         XCTAssertFalse(app.element("festival-head-trip-2026").waitForExistence(timeout: 1))
         app.segmentedControls.buttons["All"].tap()
-        app.element("favourite-head-trip-2026").tap()
+        let heart = app.buttons["favourite-head-trip-2026"]
+        XCTAssertTrue(heart.waitForExistence(timeout: 3))
+        heart.tap()
+        XCTAssertEqual(heart.label, "Remove from favourites")
         app.segmentedControls.buttons["Favourites"].tap()
         XCTAssertTrue(app.element("festival-head-trip-2026").waitForExistence(timeout: 3))
     }

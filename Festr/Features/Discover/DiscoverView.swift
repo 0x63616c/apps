@@ -3,10 +3,11 @@ import SwiftUI
 struct DiscoverView: View {
     @Environment(AppModel.self) private var model
     @State private var showingAbout = false
+    @State private var path: [String] = []
 
     var body: some View {
         @Bindable var model = model
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 LazyVStack(spacing: 14) {
                     Picker("Show", selection: $model.showFavouritesOnly) {
@@ -27,12 +28,13 @@ struct DiscoverView: View {
                     }
 
                     ForEach(model.visibleFestivals) { festival in
-                        NavigationLink(value: festival.id) {
+                        ZStack(alignment: .topTrailing) {
                             FestivalCard(festival: festival)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("festival-\(festival.id)")
-                        .overlay(alignment: .topTrailing) {
+                                .onTapGesture { path.append(festival.id) }
+                                .accessibilityElement(children: .combine)
+                                .accessibilityAddTraits(.isButton)
+                                .accessibilityAction { path.append(festival.id) }
+                                .accessibilityIdentifier("festival-\(festival.id)")
                             FavouriteButton(festival: festival)
                                 .padding(18)
                         }
