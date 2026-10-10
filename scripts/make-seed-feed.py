@@ -39,6 +39,7 @@ def build(source: dict) -> dict:
         stages = [{"id": stage["id"], "name": stage["name"], "sortOrder": index} for index, stage in enumerate(item.get("stages", []))]
         stage_ids = {stage["id"] for stage in stages}
         sets = []
+        used_ids: set[str] = set()
         for entry in item.get("sets", []):
             assert entry["stage"] in stage_ids, f"{item['id']}: unknown stage {entry['stage']}"
             day = date.fromisoformat(entry["localDate"])
@@ -48,8 +49,13 @@ def build(source: dict) -> dict:
                 start_local += timedelta(days=1)
             start = start_local.astimezone(timezone.utc)
             end = instant(start_local.date(), entry["localEnd"], tz, after=start_local) if entry.get("localEnd") else None
+            base_id = f"{item['id']}-{entry['localDate']}-{slug(entry['artist'])}"
+            set_id, n = base_id, 2
+            while set_id in used_ids:
+                set_id, n = f"{base_id}-{n}", n + 1
+            used_ids.add(set_id)
             sets.append({
-                "id": f"{item['id']}-{entry['localDate']}-{slug(entry['artist'])}",
+                "id": set_id,
                 "artist": entry["artist"],
                 "stageId": entry["stage"],
                 "day": entry["localDate"],

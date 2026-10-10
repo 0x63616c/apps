@@ -147,3 +147,25 @@ final class ScheduleTests: XCTestCase {
         XCTAssertEqual(plan.changePoints(after: utc("2026-10-11T20:00:00Z")), [utc("2026-10-11T22:30:00Z"), utc("2026-10-12T00:00:00Z"), utc("2026-10-12T01:30:00Z")])
     }
 }
+
+final class SeedFeedIntegrityTests: XCTestCase {
+    func testSetIDsAreUniqueAndEveryFestivalIsValid() throws {
+        let feed = try SeedFeed.load()
+        let ids = feed.festivals.flatMap { $0.sets.map(\.id) }
+        XCTAssertEqual(ids.count, Set(ids).count, "set IDs must be unique")
+        XCTAssertEqual(Set(feed.festivals.map(\.id)).count, feed.festivals.count)
+        for festival in feed.festivals {
+            for set in festival.sets {
+                XCTAssertTrue(festival.days.contains(festival.day(of: set)), "\(set.id) falls on a festival day")
+            }
+        }
+    }
+
+    func testLateNightSetsLandOnTheirFestivalNight() throws {
+        let iii = try XCTUnwrap(try SeedFeed.load().festival(id: "iii-points-2026"))
+        let floatingPoints = try XCTUnwrap(iii.sets.first { $0.artist == "Floating Points" })
+        // Friday 12:00–4:00 AM in Miami is early Saturday morning in UTC terms.
+        XCTAssertEqual(floatingPoints.start, FeedCoding.parseInstant("2026-10-17T04:00:00Z"))
+        XCTAssertEqual(iii.day(of: floatingPoints), LocalDate("2026-10-16"))
+    }
+}
