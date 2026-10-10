@@ -21,4 +21,12 @@ Verified October 10, 2026. Set times are included only where the festival publis
 | Coachella (Weekend 1) | 2027-04-09 to 2027-04-11 | Empire Polo Club, Indio, CA | Lineup not announced | 2027 dates announced by Goldenvoice on Apr 20, 2026 (Pitchfork, Pollstar, Press-Enterprise, NME, Consequence): Weekend 1 Apr 9-11, Weekend 2 Apr 16-18, 2027, Empire Polo Club, Indio CA. Lineup not yet announced (typically revealed Sept-Jan). |
 | Coachella (Weekend 2) | 2027-04-16 to 2027-04-18 | Empire Polo Club, Indio, CA | Lineup not announced | Same sources as Weekend 1 (Goldenvoice announcement Apr 20, 2026 via Pitchfork/Pollstar/Press-Enterprise): Weekend 2 Apr 16-18, 2027, Empire Polo Club, Indio CA. Lineup not yet announced. |
 
-Ruled out: When We Were Young (no 2026 edition; returns October 2027) and Voodoo Fest (inactive since 2019; 2026 listings are unofficial aggregators).
+Ruled out (October 10, 2026):
+
+- When We Were Young: no 2026 edition (returns October 2027).
+- Voodoo Fest: inactive since 2019; 2026 listings are unofficial aggregators.
+- Okeechobee: organizers confirmed on September 24, 2026 there will be no 2027 edition.
+- BUKU: on indefinite hiatus.
+- CRSSD Spring 2027, Something Wicked 2026, SnowGlobe 2026: no official dates yet.
+- Freaky Deaky set times: sources disagree on day splits (lineupscout vs Resident Advisor), so sets are left empty.
+- Hulaween surprise sets with no announced day are omitted.
