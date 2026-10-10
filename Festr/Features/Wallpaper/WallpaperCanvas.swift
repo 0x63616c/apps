@@ -91,8 +91,8 @@ struct WallpaperCanvas: View {
                                 Text(set.artist)
                                     .font(.system(size: 19 * scale.row, weight: .semibold))
                                     .foregroundStyle(theme.primary)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.7)
+                                    .lineLimit(2)
+                                    .fixedSize(horizontal: false, vertical: true)
                                 if showsStages {
                                     Text(festival.stageName(for: set))
                                         .font(.system(size: 13 * scale.row, weight: .regular))

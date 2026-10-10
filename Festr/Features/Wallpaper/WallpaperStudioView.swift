@@ -19,11 +19,6 @@ struct WallpaperStudioView: View {
                     if let festival = selectedFestival {
                         controls(festival)
                         preview(festival: festival, day: currentDay(festival))
-                        Text(status ?? "Saved at your iPhone's full resolution. Set it from Photos › Share › Use as Wallpaper.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .accessibilityIdentifier("wallpaperStatus")
                     } else {
                         ContentUnavailableView("No set times yet", systemImage: "iphone.gen3", description: Text("Wallpapers appear once a festival publishes set times."))
                             .padding(.top, 40)
@@ -35,9 +30,20 @@ struct WallpaperStudioView: View {
             .screenBackground()
             .safeAreaInset(edge: .bottom) {
                 if let festival = selectedFestival {
-                    actions(festival: festival, day: currentDay(festival))
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 8)
+                    VStack(spacing: 8) {
+                        if let status {
+                            Text(status)
+                                .font(.footnote.weight(.medium))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .glassEffect(.regular, in: .capsule)
+                                .accessibilityIdentifier("wallpaperStatus")
+                        }
+                        actions(festival: festival, day: currentDay(festival))
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 8)
                 }
             }
             .navigationTitle("Wallpaper")
@@ -155,7 +161,7 @@ struct WallpaperStudioView: View {
             defer { isSaving = false }
             do {
                 try await PhotoSaver.save(images)
-                status = images.count == 1 ? "Saved to Photos." : "Saved \(images.count) wallpapers to Photos."
+                status = (images.count == 1 ? "Saved to Photos." : "Saved \(images.count) wallpapers to Photos.") + " Set it from Photos › Share › Use as Wallpaper."
             } catch PhotoSaver.Failure.denied {
                 status = "Festr can't add to Photos. Allow it in Settings › Privacy › Photos."
             } catch {
