@@ -33,6 +33,7 @@ pnpm typecheck     # next typegen + tsc
 pnpm test          # Vitest: time zones, feed, import parsing, vision extraction (mock model), sessions, rate limit
 pnpm ui:check      # shadcn CLI: installed components match the registry
 pnpm build
+E2E_PASSWORD=… E2E_BASE_URL=http://localhost:3000 pnpm e2e   # Playwright, against a running server with FESTR_VISION_MOCK=1
 ```
 
 `src/components/ui` holds unmodified shadcn/ui registry components (Prettier and the shadcn lint rules skip them; `ui:check` keeps them in sync). Add more with `pnpm dlx shadcn@latest add <name>`.
