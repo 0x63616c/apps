@@ -50,7 +50,7 @@ if [[ "${RUN_FLOW_TESTS:-0}" == "1" ]]; then
   xcodebuild test-without-building \
     -project Festr.xcodeproj -scheme Festr -destination "id=$udid" -derivedDataPath "$derived" \
     -only-testing:FestrUITests/FlowTests \
-    -resultBundlePath "build/screenshots/FlowTests.xcresult" -quiet
+    -resultBundlePath "build/screenshots/FlowTests.xcresult" 2>&1 | grep -E "Test Case|error:|XCTAssert|failed|passed|\*\* TEST" ; test "${PIPESTATUS[0]}" -eq 0
 fi
 
 python3 - "$out" <<'PY'

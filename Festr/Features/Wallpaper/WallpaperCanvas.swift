@@ -62,22 +62,17 @@ struct WallpaperCanvas: View {
         let clock = FestivalClock(festival)
         let scale = rowScale
         ZStack(alignment: .topLeading) {
-            theme.background
-            Circle()
-                .fill(theme.glow)
-                .frame(width: size.width * 1.1)
-                .blur(radius: size.width * 0.25)
-                .offset(x: size.width * 0.35, y: size.height * 0.55)
+            WallpaperBackground(theme: theme, size: size)
 
             VStack(alignment: .leading, spacing: 0) {
                 Color.clear.frame(height: size.height * 0.36)
 
                 Text(festival.name.uppercased())
-                    .font(.system(size: 13 * scale.header, weight: .semibold))
+                    .font(.system(size: 15 * scale.header, weight: .semibold))
                     .tracking(2.5)
                     .foregroundStyle(theme.accent)
                 Text(clock.weekday(day))
-                    .font(.system(size: 34 * scale.header, weight: .bold, design: .rounded))
+                    .font(.system(size: 40 * scale.header, weight: .bold, design: .rounded))
                     .foregroundStyle(theme.primary)
                     .padding(.top, 2)
                 Text("\(clock.monthDay(day)) · \(festival.city)")
@@ -89,18 +84,18 @@ struct WallpaperCanvas: View {
                     ForEach(sets) { set in
                         HStack(alignment: .firstTextBaseline, spacing: 14) {
                             Text(clock.time(set.start))
-                                .font(.system(size: 15 * scale.row, weight: .semibold).monospacedDigit())
+                                .font(.system(size: 16 * scale.row, weight: .semibold).monospacedDigit())
                                 .foregroundStyle(theme.accent)
                                 .frame(width: 78 * scale.row, alignment: .leading)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(set.artist)
-                                    .font(.system(size: 17 * scale.row, weight: .semibold))
+                                    .font(.system(size: 19 * scale.row, weight: .semibold))
                                     .foregroundStyle(theme.primary)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.7)
                                 if showsStages {
                                     Text(festival.stageName(for: set))
-                                        .font(.system(size: 12 * scale.row, weight: .regular))
+                                        .font(.system(size: 13 * scale.row, weight: .regular))
                                         .foregroundStyle(theme.secondary)
                                         .lineLimit(1)
                                 }
@@ -128,10 +123,28 @@ struct WallpaperCanvas: View {
     private var rowScale: (header: CGFloat, row: CGFloat) {
         let widthScale = size.width / 402
         let available = size.height * 0.50 - 90 * widthScale
-        let perRow: CGFloat = (showsStages ? 46 : 31) * widthScale
+        let perRow: CGFloat = (showsStages ? 50 : 34) * widthScale
         let needed = perRow * CGFloat(max(sets.count, 1))
         let fit = min(1, available / needed)
         return (widthScale, widthScale * max(0.55, fit))
+    }
+}
+
+struct WallpaperBackground: View {
+    var theme: WallpaperTheme
+    var size: CGSize
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            theme.background
+            Circle()
+                .fill(theme.glow)
+                .frame(width: size.width * 1.1)
+                .blur(radius: size.width * 0.25)
+                .offset(x: size.width * 0.35, y: size.height * 0.55)
+        }
+        .frame(width: size.width, height: size.height)
+        .clipped()
     }
 }
 

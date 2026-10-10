@@ -19,7 +19,7 @@ struct LockScreenPreview: View {
         GeometryReader { proxy in
             let size = proxy.size
             ZStack(alignment: .bottom) {
-                WallpaperCanvas(festival: festival, day: plan.day, sets: [], theme: .midnight, size: size)
+                WallpaperBackground(theme: .midnight, size: size)
                     .overlay(alignment: .top) {
                         LockClockOverlay(theme: .midnight, size: size, now: previewNow, timeZone: festival.timeZone)
                     }

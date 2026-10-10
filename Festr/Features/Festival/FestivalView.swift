@@ -157,7 +157,7 @@ struct TimelineRow: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                         if !clashesWith.isEmpty {
-                            Label("Clashes with \(clashesWith.joined(separator: ", "))", systemImage: "exclamationmark.triangle.fill")
+                            Label(clashesWith.count == 1 ? "Clashes with \(clashesWith[0])" : "Clashes with \(clashesWith[0]) and \(clashesWith.count - 1) more", systemImage: "exclamationmark.triangle.fill")
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(Palette.clash)
                                 .multilineTextAlignment(.leading)

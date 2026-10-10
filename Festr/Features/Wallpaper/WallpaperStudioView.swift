@@ -18,9 +18,12 @@ struct WallpaperStudioView: View {
                 VStack(spacing: 18) {
                     if let festival = selectedFestival {
                         controls(festival)
-                        let selectedDay = currentDay(festival)
-                        preview(festival: festival, day: selectedDay)
-                        actions(festival: festival, day: selectedDay)
+                        preview(festival: festival, day: currentDay(festival))
+                        Text(status ?? "Saved at your iPhone's full resolution. Set it from Photos › Share › Use as Wallpaper.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .accessibilityIdentifier("wallpaperStatus")
                     } else {
                         ContentUnavailableView("No set times yet", systemImage: "iphone.gen3", description: Text("Wallpapers appear once a festival publishes set times."))
                             .padding(.top, 40)
@@ -30,6 +33,13 @@ struct WallpaperStudioView: View {
                 .padding(.bottom, 32)
             }
             .screenBackground()
+            .safeAreaInset(edge: .bottom) {
+                if let festival = selectedFestival {
+                    actions(festival: festival, day: currentDay(festival))
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 8)
+                }
+            }
             .navigationTitle("Wallpaper")
         }
     }
@@ -98,7 +108,7 @@ struct WallpaperStudioView: View {
 
     private func preview(festival: Festival, day: LocalDate) -> some View {
         let size = screenSize
-        let width: CGFloat = 230
+        let width: CGFloat = 210
         let scale = width / size.width
         return WallpaperCanvas(festival: festival, day: day, sets: sets(festival, day), theme: theme, size: size)
             .overlay(alignment: .top) { LockClockOverlay(theme: theme, size: size, now: model.now(), timeZone: festival.timeZone) }
@@ -113,8 +123,7 @@ struct WallpaperStudioView: View {
     }
 
     private func actions(festival: Festival, day: LocalDate) -> some View {
-        VStack(spacing: 10) {
-            GlassEffectContainer(spacing: 10) {
+        GlassEffectContainer(spacing: 10) {
                 HStack(spacing: 10) {
                     Button {
                         save(festival: festival, days: [day])
@@ -133,12 +142,6 @@ struct WallpaperStudioView: View {
                 }
                 .controlSize(.large)
                 .disabled(isSaving)
-            }
-            Text(status ?? "Saved at your iPhone's full resolution. Set it from Photos › Share › Use as Wallpaper.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .accessibilityIdentifier("wallpaperStatus")
         }
     }
 
@@ -172,12 +175,14 @@ struct LockClockOverlay: View {
     var body: some View {
         var dateStyle = Date.FormatStyle().weekday(.wide).month(.wide).day()
         dateStyle.timeZone = timeZone
-        var timeStyle = Date.FormatStyle().hour(.defaultDigits(amPM: .omitted)).minute()
-        timeStyle.timeZone = timeZone
+        let timeFormatter = DateFormatter()
+        timeFormatter.locale = Locale(identifier: "en_US_POSIX")
+        timeFormatter.dateFormat = "h:mm"
+        timeFormatter.timeZone = timeZone
         return VStack(spacing: 0) {
             Text(now.formatted(dateStyle))
                 .font(.system(size: size.width * 0.05, weight: .semibold))
-            Text(now.formatted(timeStyle))
+            Text(timeFormatter.string(from: now))
                 .font(.system(size: size.width * 0.25, weight: .bold, design: .rounded))
         }
         .foregroundStyle(theme.primary.opacity(0.92))
