@@ -21,6 +21,11 @@ export interface FeedSet {
   updatedAt: string;
 }
 
+export interface FeedLinks {
+  website: string | null;
+  tickets: string | null;
+}
+
 export interface FeedFestival {
   id: string;
   name: string;
@@ -32,6 +37,7 @@ export interface FeedFestival {
   startDate: string;
   endDate: string;
   sourceURL: string | null;
+  links: FeedLinks;
   updatedAt: string;
   lineup: string[];
   stages: FeedStage[];
@@ -91,6 +97,7 @@ export function buildFeed(rows: FeedRows, opts: { generatedAt?: Date } = {}): Fe
       startDate: f.startDate,
       endDate: f.endDate,
       sourceURL: f.sourceUrl ?? null,
+      links: { website: f.websiteUrl ?? null, tickets: f.ticketsUrl ?? null },
       updatedAt: toIsoUtc(new Date(updatedMs)),
       lineup: [...f.lineup],
       stages,
@@ -112,6 +119,32 @@ export function buildFeed(rows: FeedRows, opts: { generatedAt?: Date } = {}): Fe
     generatedAt: toIsoUtc(opts.generatedAt ?? new Date(newest)),
     festivals,
   };
+}
+
+export interface FestivalFile {
+  schemaVersion: typeof FEED_SCHEMA_VERSION;
+  generatedAt: string;
+  festival: FeedFestival;
+}
+
+export interface FeedFile {
+  path: string;
+  body: string;
+  etag: string;
+}
+
+/** The files Publish writes: `index.json` (the whole feed the app reads) and `festivals/{id}.json`. */
+export function feedFiles(feed: Feed): FeedFile[] {
+  const files = [{ path: "index.json", body: serializeFeed(feed) }];
+  for (const festival of feed.festivals) {
+    const file: FestivalFile = {
+      schemaVersion: feed.schemaVersion,
+      generatedAt: festival.updatedAt,
+      festival,
+    };
+    files.push({ path: `festivals/${festival.id}.json`, body: JSON.stringify(file) });
+  }
+  return files.map((f) => ({ ...f, etag: etagFor(f.body) }));
 }
 
 export function serializeFeed(feed: Feed, pretty = false): string {
@@ -150,6 +183,8 @@ export function feedToRows(feed: Feed): FeedRows {
       startDate: f.startDate,
       endDate: f.endDate,
       sourceUrl: f.sourceURL ?? null,
+      websiteUrl: f.links?.website ?? null,
+      ticketsUrl: f.links?.tickets ?? null,
       lineup: f.lineup ?? [],
       published: true,
       updatedAt: new Date(f.updatedAt),

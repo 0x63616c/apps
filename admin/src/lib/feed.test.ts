@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FestivalRow, SetRow, StageRow } from "../db/schema";
-import { buildFeed, etagFor, feedToRows, ifNoneMatchHits, serializeFeed } from "./feed";
+import { buildFeed, etagFor, feedFiles, feedToRows, ifNoneMatchHits, serializeFeed } from "./feed";
 
 const festival = (over: Partial<FestivalRow> = {}): FestivalRow => ({
   id: "head-trip-2026",
@@ -13,6 +13,8 @@ const festival = (over: Partial<FestivalRow> = {}): FestivalRow => ({
   startDate: "2026-10-10",
   endDate: "2026-10-11",
   sourceUrl: "https://lineupscout.com/head-trip",
+  websiteUrl: null,
+  ticketsUrl: null,
   lineup: ["Calvin Harris", "Skrillex"],
   published: true,
   updatedAt: new Date("2026-09-01T12:00:00.500Z"),
@@ -56,11 +58,31 @@ describe("buildFeed", () => {
     expect(feed.schemaVersion).toBe(1);
     const f = feed.festivals[0];
     expect(Object.keys(f)).toEqual([
-      "id", "name", "venue", "city", "region", "country", "timeZone", "startDate", "endDate",
-      "sourceURL", "updatedAt", "lineup", "stages", "sets",
+      "id",
+      "name",
+      "venue",
+      "city",
+      "region",
+      "country",
+      "timeZone",
+      "startDate",
+      "endDate",
+      "sourceURL",
+      "links",
+      "updatedAt",
+      "lineup",
+      "stages",
+      "sets",
     ]);
     expect(Object.keys(f.sets[0])).toEqual([
-      "id", "artist", "stageId", "day", "start", "end", "sourceURL", "updatedAt",
+      "id",
+      "artist",
+      "stageId",
+      "day",
+      "start",
+      "end",
+      "sourceURL",
+      "updatedAt",
     ]);
     expect(f.stages).toEqual([
       { id: "main", name: "Main Stage", sortOrder: 0 },
@@ -88,7 +110,11 @@ describe("buildFeed", () => {
   it("uses max(festival, sets) updatedAt for the festival and generatedAt", () => {
     expect(feed.festivals[0].updatedAt).toBe("2026-09-05T08:00:00Z");
     expect(feed.generatedAt).toBe("2026-09-05T08:00:00Z");
-    const newer = buildFeed({ festivals: [festival({ updatedAt: new Date("2026-09-10T00:00:00Z") })], stages, sets });
+    const newer = buildFeed({
+      festivals: [festival({ updatedAt: new Date("2026-09-10T00:00:00Z") })],
+      stages,
+      sets,
+    });
     expect(newer.festivals[0].updatedAt).toBe("2026-09-10T00:00:00Z");
   });
 
@@ -103,7 +129,10 @@ describe("buildFeed", () => {
   });
 
   it("honors an explicit generatedAt and handles an empty feed", () => {
-    const empty = buildFeed({ festivals: [], stages: [], sets: [] }, { generatedAt: new Date("2026-10-10T00:00:00.123Z") });
+    const empty = buildFeed(
+      { festivals: [], stages: [], sets: [] },
+      { generatedAt: new Date("2026-10-10T00:00:00.123Z") },
+    );
     expect(empty).toEqual({ schemaVersion: 1, generatedAt: "2026-10-10T00:00:00Z", festivals: [] });
   });
 
@@ -130,5 +159,19 @@ describe("etag helpers", () => {
     expect(ifNoneMatchHits('"x", W/"abc"', tag)).toBe(true);
     expect(ifNoneMatchHits("*", tag)).toBe(true);
     expect(ifNoneMatchHits('"abd"', tag)).toBe(false);
+  });
+});
+
+describe("feedFiles", () => {
+  it("writes index.json plus one file per festival, each with its own ETag", () => {
+    const feed = buildFeed({ festivals: [festival()], stages, sets });
+    const files = feedFiles(feed);
+    expect(files.map((f) => f.path)).toEqual(["index.json", "festivals/head-trip-2026.json"]);
+    expect(JSON.parse(files[0].body)).toEqual(feed);
+    const single = JSON.parse(files[1].body);
+    expect(single.schemaVersion).toBe(1);
+    expect(single.festival).toEqual(feed.festivals[0]);
+    expect(files[1].etag).toBe(etagFor(files[1].body));
+    expect(feed.festivals[0].links).toEqual({ website: null, tickets: null });
   });
 });

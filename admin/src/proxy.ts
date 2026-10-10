@@ -1,40 +1,19 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { SESSION_COOKIE, verifySession } from "@/lib/auth/session";
 
-function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
-
-function unauthorized(message = "Authentication required"): NextResponse {
-  return new NextResponse(message, {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="Festr Admin", charset="UTF-8"' },
-  });
-}
-
-/** Basic auth for the admin UI. Any username is accepted; the password must equal ADMIN_PASSWORD. */
-export function proxy(request: NextRequest) {
-  const password = process.env.ADMIN_PASSWORD;
-  if (!password) {
-    if (process.env.NODE_ENV !== "production") return NextResponse.next();
-    return new NextResponse("ADMIN_PASSWORD is not configured", { status: 503 });
-  }
-
-  const header = request.headers.get("authorization") ?? "";
-  if (!header.startsWith("Basic ")) return unauthorized();
-  let decoded: string;
-  try {
-    decoded = atob(header.slice(6));
-  } catch {
-    return unauthorized();
-  }
-  const supplied = decoded.slice(decoded.indexOf(":") + 1);
-  return safeEqual(supplied, password) ? NextResponse.next() : unauthorized("Invalid credentials");
+/** Sends signed-out visitors to /login. Pages and actions still check the session themselves. */
+export async function proxy(request: NextRequest) {
+  const secret = process.env.SESSION_SECRET ?? "";
+  const session =
+    secret.length >= 32 ? await verifySession(request.cookies.get(SESSION_COOKIE)?.value, secret) : null;
+  if (session) return NextResponse.next();
+  const login = new URL("/login", request.url);
+  const next = request.nextUrl.pathname + request.nextUrl.search;
+  if (next !== "/") login.searchParams.set("next", next);
+  return NextResponse.redirect(login);
 }
 
 export const config = {
-  // The public feed must stay reachable by the iOS app without credentials.
-  matcher: ["/((?!api/feed|_next/static|_next/image|favicon.ico).*)"],
+  // The published feed must stay public for the iOS app.
+  matcher: ["/((?!login|feed/|api/feed|_next/static|_next/image|favicon.ico|icon.svg).*)"],
 };
