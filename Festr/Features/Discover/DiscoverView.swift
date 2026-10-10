@@ -110,10 +110,10 @@ struct FavouriteButton: View {
                 .font(.title3)
                 .foregroundStyle(isFavourite ? Palette.accent : .secondary)
                 .contentTransition(.symbolEffect(.replace))
-                .frame(width: 44, height: 44)
+                .frame(width: 30, height: 30)
         }
-        .buttonStyle(.plain)
-        .glassEffect(.regular.interactive(), in: .circle)
+        .buttonStyle(.glass)
+        .buttonBorderShape(.circle)
         .accessibilityLabel(isFavourite ? "Remove from favourites" : "Add to favourites")
         .accessibilityIdentifier("favourite-\(festival.id)")
     }
