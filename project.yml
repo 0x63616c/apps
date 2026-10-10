@@ -34,7 +34,8 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         TARGETED_DEVICE_FAMILY: '1'
-        FESTR_FEED_URL: ''
+        # Admin deployment, e.g. https://festr-admin.vercel.app. Empty uses the bundled feed only.
+        FEED_BASE_URL: ''
   FestrWidgets:
     type: app-extension
     platform: iOS

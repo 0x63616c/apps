@@ -108,6 +108,30 @@ struct FestivalSet: Codable, Hashable, Sendable, Identifiable {
     }
 }
 
+struct FestivalLinks: Codable, Hashable, Sendable {
+    var website: URL?
+    var tickets: URL?
+
+    init(website: URL? = nil, tickets: URL? = nil) {
+        self.website = website
+        self.tickets = tickets
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        website = try? container.decodeIfPresent(URL.self, forKey: .website)
+        tickets = try? container.decodeIfPresent(URL.self, forKey: .tickets)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(website, forKey: .website)
+        try container.encode(tickets, forKey: .tickets)
+    }
+
+    enum CodingKeys: String, CodingKey { case website, tickets }
+}
+
 struct Festival: Codable, Hashable, Sendable, Identifiable {
     /// A set starting before this local hour belongs to the previous festival day (after-midnight sets).
     static let dayRolloverHour = 6
@@ -122,6 +146,7 @@ struct Festival: Codable, Hashable, Sendable, Identifiable {
     var startDate: LocalDate
     var endDate: LocalDate
     var sourceURL: URL?
+    var links: FestivalLinks
     var updatedAt: Date
     /// Announced artists, including those without published set times.
     var lineup: [String]
@@ -131,12 +156,12 @@ struct Festival: Codable, Hashable, Sendable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id, name, venue, city, region, country
         case timeZoneIdentifier = "timeZone"
-        case startDate, endDate, sourceURL, updatedAt, lineup, stages, sets
+        case startDate, endDate, sourceURL, links, updatedAt, lineup, stages, sets
     }
 
     init(id: String, name: String, venue: String, city: String, region: String, country: String = "US",
          timeZoneIdentifier: String, startDate: LocalDate, endDate: LocalDate, sourceURL: URL? = nil,
-         updatedAt: Date, lineup: [String] = [], stages: [Stage] = [], sets: [FestivalSet] = []) {
+         links: FestivalLinks = FestivalLinks(), updatedAt: Date, lineup: [String] = [], stages: [Stage] = [], sets: [FestivalSet] = []) {
         self.id = id
         self.name = name
         self.venue = venue
@@ -147,6 +172,7 @@ struct Festival: Codable, Hashable, Sendable, Identifiable {
         self.startDate = startDate
         self.endDate = endDate
         self.sourceURL = sourceURL
+        self.links = links
         self.updatedAt = updatedAt
         self.lineup = lineup
         self.stages = stages
@@ -168,6 +194,7 @@ struct Festival: Codable, Hashable, Sendable, Identifiable {
         startDate = try container.decode(LocalDate.self, forKey: .startDate)
         endDate = try container.decode(LocalDate.self, forKey: .endDate)
         sourceURL = try container.decodeIfPresent(URL.self, forKey: .sourceURL)
+        links = try container.decodeIfPresent(FestivalLinks.self, forKey: .links) ?? FestivalLinks()
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
         lineup = try container.decodeIfPresent([String].self, forKey: .lineup) ?? []
         stages = try container.decodeIfPresent([Stage].self, forKey: .stages) ?? []

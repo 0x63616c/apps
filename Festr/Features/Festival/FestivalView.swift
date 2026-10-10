@@ -65,8 +65,16 @@ struct FestivalView: View {
             Text("All times \(clock.zoneName()). Tap a set to add it to My Schedule.")
             Text("Times updated \(festival.updatedAt.formatted(date: .abbreviated, time: .shortened))")
                 .accessibilityIdentifier("timesUpdated")
-            if let source = festival.sourceURL {
-                Link("Source: \(source.host() ?? source.absoluteString)", destination: source)
+            HStack(spacing: 16) {
+                if let website = festival.links.website {
+                    Link("Website", destination: website)
+                }
+                if let tickets = festival.links.tickets {
+                    Link("Tickets", destination: tickets)
+                }
+                if let source = festival.sourceURL {
+                    Link("Source: \(source.host() ?? source.absoluteString)", destination: source)
+                }
             }
         }
         .font(.footnote)

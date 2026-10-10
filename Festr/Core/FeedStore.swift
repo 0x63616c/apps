@@ -78,6 +78,21 @@ struct FeedClient: Sendable {
     }
 }
 
+enum FeedEndpoint {
+    static let indexPath = "feed/index.json"
+
+    /// `https://host` or `https://host/base/` → `…/feed/index.json`. A full `.json` URL is used as-is.
+    /// Blank or non-HTTP values mean "bundled feed only".
+    static func indexURL(base raw: String) -> URL? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: trimmed), let scheme = url.scheme?.lowercased(),
+              scheme == "https" || scheme == "http", url.host != nil else { return nil }
+        if url.pathExtension.lowercased() == "json" { return url }
+        let base = trimmed.hasSuffix("/") ? trimmed : trimmed + "/"
+        return URL(string: base + indexPath)
+    }
+}
+
 enum FeedSelection {
     /// Prefer the cached remote feed unless the bundled seed is newer (for example after an app update).
     static func best(seed: Feed, cached: Feed?) -> Feed {

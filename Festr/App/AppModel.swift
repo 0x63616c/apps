@@ -24,14 +24,14 @@ struct AppEnvironment {
 }
 
 enum FeedConfiguration {
-    /// Remote feed: the `feedURL` user default (settable in About, or `-feedURL <url>` at launch),
-    /// otherwise the `FestrFeedURL` Info.plist value from the `FESTR_FEED_URL` build setting.
+    static let overrideKey = "feedBaseURL"
+
+    /// `<base>/feed/index.json`, where base is the `feedBaseURL` user default (About, or `-feedBaseURL <url>`
+    /// at launch), otherwise the `FEED_BASE_URL` Info.plist value. Unset means the bundled feed only.
     static var remoteURL: URL? {
-        let override = UserDefaults.standard.string(forKey: "feedURL")?.trimmingCharacters(in: .whitespaces) ?? ""
-        let bundled = (Bundle.main.object(forInfoDictionaryKey: "FestrFeedURL") as? String ?? "").trimmingCharacters(in: .whitespaces)
-        let raw = override.isEmpty ? bundled : override
-        guard let url = URL(string: raw), url.scheme == "https" || url.scheme == "http" else { return nil }
-        return url
+        let override = UserDefaults.standard.string(forKey: overrideKey)?.trimmingCharacters(in: .whitespaces) ?? ""
+        let bundled = Bundle.main.object(forInfoDictionaryKey: "FEED_BASE_URL") as? String ?? ""
+        return FeedEndpoint.indexURL(base: override.isEmpty ? bundled : override)
     }
 
     static func seedFeed() -> Feed {
@@ -184,7 +184,11 @@ final class AppModel {
 
     func setFeedURL(_ raw: String) {
         let trimmed = raw.trimmingCharacters(in: .whitespaces)
-        if trimmed.isEmpty { defaults.removeObject(forKey: "feedURL") } else { defaults.set(trimmed, forKey: "feedURL") }
+        if trimmed.isEmpty {
+            defaults.removeObject(forKey: FeedConfiguration.overrideKey)
+        } else {
+            defaults.set(trimmed, forKey: FeedConfiguration.overrideKey)
+        }
         cache.clear()
         feed = seed
         lastChecked = nil

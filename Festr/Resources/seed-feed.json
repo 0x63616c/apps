@@ -13,6 +13,10 @@
       "startDate": "2026-10-10",
       "endDate": "2026-10-11",
       "sourceURL": "https://lineupscout.com/head-trip",
+      "links": {
+        "website": null,
+        "tickets": null
+      },
       "updatedAt": "2026-10-10T19:00:00Z",
       "lineup": [
         "Floating Points Sunflower Sound System",
@@ -162,6 +166,10 @@
       "startDate": "2026-11-06",
       "endDate": "2026-11-08",
       "sourceURL": "https://lineupscout.com/edc-orlando",
+      "links": {
+        "website": null,
+        "tickets": null
+      },
       "updatedAt": "2026-10-10T19:00:00Z",
       "lineup": [
         "David Guetta",
@@ -209,6 +217,10 @@
       "startDate": "2026-11-20",
       "endDate": "2026-11-21",
       "sourceURL": "https://socal.dreamstateusa.com/lineup/",
+      "links": {
+        "website": null,
+        "tickets": null
+      },
       "updatedAt": "2026-10-10T19:00:00Z",
       "lineup": [
         "Above & Beyond (Anjunabeats Classics)",
@@ -256,6 +268,10 @@
       "startDate": "2026-12-30",
       "endDate": "2026-12-31",
       "sourceURL": "https://lineupscout.com/lights-all-night",
+      "links": {
+        "website": null,
+        "tickets": null
+      },
       "updatedAt": "2026-10-10T19:00:00Z",
       "lineup": [
         "Tiësto",
@@ -303,6 +319,10 @@
       "startDate": "2026-12-31",
       "endDate": "2027-01-01",
       "sourceURL": "https://countdownnye.com/lineup/",
+      "links": {
+        "website": null,
+        "tickets": null
+      },
       "updatedAt": "2026-10-10T19:00:00Z",
       "lineup": [
         "Marshmello",

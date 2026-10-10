@@ -70,6 +70,7 @@ def build(source: dict) -> dict:
             "startDate": item["startDate"],
             "endDate": item["endDate"],
             "sourceURL": item.get("sourceURL"),
+            "links": {"website": item.get("links", {}).get("website"), "tickets": item.get("links", {}).get("tickets")},
             "updatedAt": item["updatedAt"],
             "lineup": lineup,
             "stages": stages,

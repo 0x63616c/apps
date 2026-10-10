@@ -65,3 +65,25 @@ final class FeedStoreTests: XCTestCase {
         XCTAssertEqual(FeedSelection.best(seed: seed, cached: nil), seed)
     }
 }
+
+final class FeedEndpointTests: XCTestCase {
+    func testResolvesTheIndexFromABaseURL() {
+        XCTAssertEqual(FeedEndpoint.indexURL(base: "https://festr-admin.vercel.app")?.absoluteString, "https://festr-admin.vercel.app/feed/index.json")
+        XCTAssertEqual(FeedEndpoint.indexURL(base: " https://example.com/admin/ ")?.absoluteString, "https://example.com/admin/feed/index.json")
+        XCTAssertEqual(FeedEndpoint.indexURL(base: "https://example.com/custom.json")?.absoluteString, "https://example.com/custom.json")
+    }
+
+    func testBlankOrInvalidMeansBundledOnly() {
+        XCTAssertNil(FeedEndpoint.indexURL(base: ""))
+        XCTAssertNil(FeedEndpoint.indexURL(base: "$(FEED_BASE_URL)"))
+        XCTAssertNil(FeedEndpoint.indexURL(base: "ftp://example.com"))
+        XCTAssertNil(FeedEndpoint.indexURL(base: "festr-admin.vercel.app"))
+    }
+
+    func testDecodesFestivalLinks() throws {
+        let raw = #"{"schemaVersion":1,"generatedAt":"2026-10-10T00:00:00Z","festivals":[{"id":"x","name":"X","city":"Y","timeZone":"America/Chicago","startDate":"2026-11-01","endDate":"2026-11-02","updatedAt":"2026-10-10T00:00:00Z","links":{"website":"https://x.example","tickets":null}}]}"#
+        let festival = try XCTUnwrap(try Feed.decode(Data(raw.utf8)).festivals.first)
+        XCTAssertEqual(festival.links.website?.absoluteString, "https://x.example")
+        XCTAssertNil(festival.links.tickets)
+    }
+}

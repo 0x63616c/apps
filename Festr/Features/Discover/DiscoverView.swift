@@ -141,7 +141,7 @@ struct FeedFooter: View {
 struct AboutView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
-    @State private var feedURL = UserDefaults.standard.string(forKey: "feedURL") ?? ""
+    @State private var feedURL = UserDefaults.standard.string(forKey: FeedConfiguration.overrideKey) ?? ""
 
     var body: some View {
         NavigationStack {
@@ -155,7 +155,7 @@ struct AboutView: View {
                     if let checked = model.lastChecked {
                         LabeledContent("Last checked", value: checked.formatted(date: .abbreviated, time: .shortened))
                     }
-                    TextField("Feed URL", text: $feedURL)
+                    TextField("Feed base URL", text: $feedURL)
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()

@@ -48,6 +48,6 @@ Schema version 1 (see `Festr/Core/Feed.swift` and `admin/src/lib/feed.ts`):
 
 - `start`/`end` are UTC instants; `end: null` is an open-ended closer (assumed 90 minutes for progress and clashes).
 - Times are displayed in the festival's `timeZone`. A set's festival `day` is explicit, or derived from its start with anything before 06:00 local counted as the previous night.
-- The app bundles the seed feed and refreshes from the remote feed URL (`FESTR_FEED_URL` build setting, or the URL field in About) with `If-None-Match`, caching the last good response on disk for offline use. A cached feed is used only if it is newer than the bundled one.
+- The app bundles the seed feed and refreshes from `<FEED_BASE_URL>/feed/index.json` (`FEED_BASE_URL` build setting in `project.yml`, or the base URL field in About; unset means bundled only) with `If-None-Match`, caching the last good response on disk for offline use. A cached feed is used only if it is newer than the bundled one.
 
 To change the bundled data, edit `data/festivals.source.json` (local wall-clock times) and run `python3 scripts/make-seed-feed.py`.
