@@ -1,38 +1,21 @@
-// Renders App Store marketing frames from raw simulator captures.
-// Palette and type come from the app: the icon's ink and paper (scripts/render-icon.swift), the
-// Graphite accent (AccentPreferences in Still/StillApp.swift), SF Pro headlines and the tracked
-// uppercase eyebrow used on the medication card. Black, white and graphite only: no colour accents.
+// rframe: renders App Store marketing frames from raw simulator captures for any -r app.
+// The palette and type match RDesign: the icon's ink and paper, the graphite accent, SF Pro
+// headlines and the tracked uppercase eyebrow. Black, white and graphite only.
 //
-//   swiftc -parse-as-library scripts/frame-screenshots.swift -o build/frame-screenshots
-//   build/frame-screenshots build/screenshots/raw fastlane/screenshots/en-US build/screenshots/overview.png
+//   swift run --package-path packages/RDesign -c release rframe \
+//     apps/tendr/screenshots.json build/screenshots/raw apps/tendr/fastlane/screenshots/en-US build/screenshots/overview.png
+#if os(macOS)
 import AppKit
+import RDesign
 import SwiftUI
 import UniformTypeIdentifiers
-
-struct Shot {
-    let screen: String
-    var appearance = "light"
-    let eyebrow: String
-    let headline: String
-}
-
-/// Order is the App Store order, alternating dark and light. The first three carry the listing.
-/// Headlines only: short and big, breaking by hand so lines balance.
-let shots = [
-    Shot(screen: "home", appearance: "dark", eyebrow: "Dose & weight journal", headline: "A calm journal\nfor your treatment."),
-    Shot(screen: "progress", eyebrow: "Progress", headline: "See how far\nyou've come."),
-    Shot(screen: "log-dose", appearance: "dark", eyebrow: "Logging", headline: "Log a dose\nin seconds."),
-    Shot(screen: "journal", eyebrow: "Journal", headline: "Your history,\nday by day."),
-    Shot(screen: "settings", appearance: "dark", eyebrow: "Privacy", headline: "Private\nby design."),
-    Shot(screen: "home", eyebrow: "Light & dark", headline: "Easy on the eyes,\nday or night."),
-]
 
 let canvas = CGSize(width: 1320, height: 2868)
 
 enum Palette {
     static let ink = Color(white: 0.055)
     static let paper = Color(white: 0.95)
-    static let mist = Color(red: 0.96, green: 0.96, blue: 0.98) // Theme.background (light)
+    static let mist = Color(red: 0.96, green: 0.96, blue: 0.96) // Theme.background (light)
     static let graphiteDark = Color(white: 0.72)                 // Graphite accent, dark
     static let graphiteLight = Color(white: 0.28)                // Graphite accent, light
 }
@@ -90,7 +73,7 @@ struct Device: View {
 }
 
 struct Frame: View {
-    let shot: Shot
+    let shot: RFrameShot
     let screen: NSImage
     var dark: Bool { shot.appearance == "dark" }
     var body: some View {
@@ -152,12 +135,17 @@ struct Overview: View {
     guard CGImageDestinationFinalize(destination) else { throw CocoaError(.fileWriteUnknown) }
 }
 
-@main struct FrameScreenshots {
+@main struct RFrame {
     @MainActor static func main() throws {
-        let arguments = CommandLine.arguments.dropFirst()
-        let raw = URL(fileURLWithPath: arguments.first ?? "build/screenshots/raw")
-        let output = URL(fileURLWithPath: arguments.dropFirst().first ?? "fastlane/screenshots/en-US")
-        let overview = arguments.dropFirst(2).first.map { URL(fileURLWithPath: $0) }
+        let arguments = Array(CommandLine.arguments.dropFirst())
+        guard arguments.count >= 3 else {
+            FileHandle.standardError.write(Data("usage: rframe <screenshots.json> <raw-dir> <output-dir> [overview.png]\n".utf8))
+            exit(64)
+        }
+        let shots = try JSONDecoder().decode(RFrameConfig.self, from: Data(contentsOf: URL(fileURLWithPath: arguments[0]))).shots
+        let raw = URL(fileURLWithPath: arguments[1])
+        let output = URL(fileURLWithPath: arguments[2])
+        let overview = arguments.count > 3 ? URL(fileURLWithPath: arguments[3]) : nil
         let files = FileManager.default
         try files.createDirectory(at: output, withIntermediateDirectories: true)
         for stale in try files.contentsOfDirectory(at: output, includingPropertiesForKeys: nil) where stale.pathExtension == "png" {
@@ -181,3 +169,13 @@ struct Overview: View {
         }
     }
 }
+#else
+import Foundation
+
+@main struct RFrame {
+    static func main() {
+        FileHandle.standardError.write(Data("rframe renders with AppKit and only runs on macOS.\n".utf8))
+        exit(1)
+    }
+}
+#endif

@@ -1,3 +1,4 @@
+import RDesign
 import SwiftUI
 import Charts
 
@@ -44,7 +45,7 @@ struct TodayView: View {
                     PageHeader("Tendr").padding(.horizontal, 8)
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 12) {
-                            Label(overdue == nil ? "Next dose" : "Overdue", systemImage: overdue == nil ? "calendar" : "clock.badge.exclamationmark").font(.caption.weight(.semibold)).foregroundStyle(overdue == nil ? Theme.pine : .orange)
+                            Label(overdue == nil ? "Next dose" : "Overdue", systemImage: overdue == nil ? "calendar" : "clock.badge.exclamationmark").font(.caption.weight(.semibold)).foregroundStyle(overdue == nil ? Theme.pine : Theme.pine)
                             if let nextDate {
                                 HStack(alignment: .center, spacing: 8) {
                                     Text(nextDate, format: .dateTime.weekday(.wide)).font(.title3.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)

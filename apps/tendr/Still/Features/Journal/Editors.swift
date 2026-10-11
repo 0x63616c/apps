@@ -1,3 +1,4 @@
+import RDesign
 import SwiftUI
 
 struct WeightEditor: View {
@@ -21,14 +22,14 @@ struct WeightEditor: View {
                         Image(systemName: "scalemass.fill").font(.title).foregroundStyle(Theme.weight)
                         TextField("0.0", text: $amount).keyboardType(.decimalPad).font(.system(size: 62, weight: .medium, design: .rounded)).multilineTextAlignment(.center).accessibilityLabel("Weight").accessibilityIdentifier("weightAmount")
                         Text(unit.symbol).font(.subheadline).foregroundStyle(.secondary)
-                        if !amount.isEmpty && !valid { Text("Enter a valid weight.").font(.caption).foregroundStyle(.orange) }
+                        if !amount.isEmpty && !valid { Text("Enter a valid weight.").font(.caption).foregroundStyle(Theme.pine) }
                     }.card()
                     VStack(alignment: .leading, spacing: 16) {
                         DatePicker("Date", selection: $date)
                         if date > Date() { Label("Future entry · excluded from current trends", systemImage: "calendar").font(.caption).foregroundStyle(.secondary) }
                         DisclosureGroup("Note", isExpanded: $noteExpanded) { TextField("Tap to add a note…", text: $note, axis: .vertical).lineLimit(2...5).accessibilityIdentifier("noteField") }
                     }.card()
-                    if let localError { Text(localError).font(.footnote).foregroundStyle(.red) }
+                    if let localError { Text(localError).font(.footnote).foregroundStyle(Theme.pine) }
                     Button {
                         guard let kilograms, valid else { return }
                         var updated = WeightEntry(date: date, kilograms: kilograms, note: note)
@@ -96,7 +97,7 @@ struct DoseEditor: View {
                             if mode == "units" && store.journal.syringeUnitsPerML != 100 {
                                 Button("Set up your syringe") { preferences = true }.font(.subheadline)
                             }
-                            if mode != "mg" && concentration == nil { Text("Add a vial with its concentration to log in \(mode).").font(.subheadline).foregroundStyle(.orange) }
+                            if mode != "mg" && concentration == nil { Text("Add a vial with its concentration to log in \(mode).").font(.subheadline).foregroundStyle(Theme.pine) }
                         }.card()
                         if entry == nil && !store.journal.vials.isEmpty {
                             VStack(alignment: .leading, spacing: 12) {
@@ -122,7 +123,7 @@ struct DoseEditor: View {
                         }
                         DisclosureGroup("Note", isExpanded: $noteExpanded) { TextField("Tap to add a note…", text: $note, axis: .vertical).lineLimit(2...5).accessibilityIdentifier("noteField") }
                     }.card()
-                    if let localError { Text(localError).font(.footnote).foregroundStyle(.red) }
+                    if let localError { Text(localError).font(.footnote).foregroundStyle(Theme.pine) }
 
                 }.padding(20)
             }.safeAreaInset(edge: .bottom) {

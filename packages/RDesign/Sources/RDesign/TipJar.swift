@@ -1,50 +1,50 @@
+#if canImport(SwiftUI)
 import StoreKit
 import SwiftUI
 
-/// Optional tips: consumables that unlock nothing. The Settings row only appears once every
-/// product has loaded, so a missing or misconfigured store simply hides it.
-@MainActor @Observable final class TipJar {
-    enum Tip: String, CaseIterable, Identifiable {
-        case small, medium, large
-        var id: String { rawValue }
-        var productID: String { "com.calumwebb.still.tip.\(rawValue)" }
-        var fallbackName: String {
-            switch self { case .small: "Coffee"; case .medium: "Croissant"; case .large: "Gift" }
-        }
-        var symbol: String {
-            switch self { case .small: "cup.and.saucer.fill"; case .medium: "fork.knife"; case .large: "gift.fill" }
-        }
-        init?(productID: String) {
-            guard let tip = Self.allCases.first(where: { $0.productID == productID }) else { return nil }
-            self = tip
+/// Optional tips: consumables that unlock nothing. Each app supplies its own product IDs. Show the
+/// Settings row only when `phase == .ready`, so a missing or misconfigured store simply hides it.
+@MainActor @Observable public final class RTipJar {
+    public struct Tip: Identifiable, Hashable, Sendable {
+        /// A short stable key; UI tests find each button as "tip-<id>".
+        public let id: String
+        public let productID: String
+        public let fallbackName: String
+        public let symbol: String
+        public init(id: String, productID: String, fallbackName: String, symbol: String) {
+            self.id = id; self.productID = productID; self.fallbackName = fallbackName; self.symbol = symbol
         }
     }
-    enum Phase { case loading, ready, unavailable }
+    public enum Phase: Sendable { case loading, ready, unavailable }
 
-    static let shared = TipJar()
-    private(set) var phase = Phase.loading
-    private(set) var products: [Tip: Product] = [:]
-    private(set) var purchasing: Tip?
+    public let tips: [Tip]
+    public private(set) var phase = Phase.loading
+    public private(set) var products: [Tip: Product] = [:]
+    public private(set) var purchasing: Tip?
     /// A calm, one-line status for pending or failed purchases. Cancelling says nothing.
-    var notice: String?
-    /// Set when a purchase completes; the sheet closes and Settings shows the thank-you.
-    var completed: Tip?
+    public var notice: String?
+    /// Set when a purchase completes; the sheet closes and the app shows `RTipThanks`.
+    public var completed: Tip?
     private var updates: Task<Void, Never>?
 
-    func load() async {
+    public init(tips: [Tip]) { self.tips = tips }
+
+    public func load() async {
         listenForUpdates()
         guard phase != .ready else { return }
         phase = .loading
         do {
-            let loaded = try await Product.products(for: Tip.allCases.map(\.productID))
-            products = Dictionary(uniqueKeysWithValues: loaded.compactMap { product in Tip(productID: product.id).map { ($0, product) } })
-            phase = products.count == Tip.allCases.count ? .ready : .unavailable
+            let loaded = try await Product.products(for: tips.map(\.productID))
+            products = Dictionary(uniqueKeysWithValues: loaded.compactMap { product in
+                tips.first { $0.productID == product.id }.map { ($0, product) }
+            })
+            phase = products.count == tips.count ? .ready : .unavailable
         } catch {
             phase = .unavailable
         }
     }
 
-    func buy(_ tip: Tip) async {
+    public func buy(_ tip: Tip) async {
         guard let product = products[tip], purchasing == nil else { return }
         purchasing = tip
         notice = nil
@@ -80,41 +80,46 @@ import SwiftUI
     }
 }
 
-/// The App Store icon's mark on its near-black tile, which reads in light and dark.
-struct TendrMark: View {
-    var size: CGFloat = 72
-    var body: some View {
-        Image("LaunchGlyph").resizable().scaledToFit()
-            .padding(size * 0.16)
-            .frame(width: size, height: size)
-            .background(Color(white: 0.055), in: RoundedRectangle(cornerRadius: size * 0.225, style: .continuous))
-            .accessibilityHidden(true)
+/// The Settings row that opens the tip sheet. Its accessibility identifier is "support<AppName>".
+public struct RSupportRow: View {
+    let appName: String
+    let action: () -> Void
+    public init(appName: String, action: @escaping () -> Void) { self.appName = appName; self.action = action }
+    public var body: some View {
+        Button(action: action) { Label("Support \(appName)", systemImage: "heart") }
+            .accessibilityIdentifier("support\(appName)")
     }
 }
 
-struct TipJarSheet: View {
+public struct RTipJarSheet: View {
     @Environment(\.dismiss) private var dismiss
-    let jar: TipJar
-    var body: some View {
+    let jar: RTipJar
+    let title: String
+    let prompt: String
+    public init(jar: RTipJar, title: String, prompt: String) { self.jar = jar; self.title = title; self.prompt = prompt }
+    public var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 22) {
-                    TendrMark().padding(.top, 8)
-                    VStack(spacing: 8) {
-                        Text("Support Tendr").font(.title.bold())
-                        Text("Enjoying Tendr? Leave a tip.").foregroundStyle(.secondary)
+                    RMark().padding(.top, RSpacing.xs)
+                    VStack(spacing: RSpacing.xs) {
+                        Text(title).font(.title.bold())
+                        Text(prompt).foregroundStyle(.secondary)
                     }
-                    VStack(spacing: 12) {
-                        ForEach(TipJar.Tip.allCases) { tip in row(tip) }
+                    VStack(spacing: RSpacing.s) {
+                        ForEach(jar.tips) { tip in row(tip) }
                     }
                     if let notice = jar.notice {
                         Text(notice).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
                             .accessibilityIdentifier("tipNotice")
                     }
-                }.padding(20)
+                }.padding(RSpacing.l)
             }
-            .background(Theme.background)
-            .navigationTitle("").navigationBarTitleDisplayMode(.inline)
+            .background(RPalette.background)
+            .navigationTitle("")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.disabled(jar.purchasing != nil) } }
         }
         .interactiveDismissDisabled(jar.purchasing != nil)
@@ -122,52 +127,56 @@ struct TipJarSheet: View {
         .onAppear { jar.notice = nil }
     }
 
-    private func row(_ tip: TipJar.Tip) -> some View {
+    private func row(_ tip: RTipJar.Tip) -> some View {
         let product = jar.products[tip]
         return HStack(spacing: 14) {
-            Image(systemName: tip.symbol).font(.title3).foregroundStyle(Theme.pine)
-                .frame(width: 44, height: 44).background(Theme.sage, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            Image(systemName: tip.symbol).font(.title3).foregroundStyle(.tint)
+                .frame(width: 44, height: 44).background(.tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
             Text(product?.displayName ?? tip.fallbackName).font(.headline)
-            Spacer(minLength: 8)
+            Spacer(minLength: RSpacing.xs)
             Button { Task { await jar.buy(tip) } } label: {
                 ZStack {
                     Text(product?.displayPrice ?? "").opacity(jar.purchasing == tip ? 0 : 1)
-                    if jar.purchasing == tip { ProgressView().controlSize(.small).tint(Theme.background) }
-                }.font(.subheadline.weight(.semibold)).foregroundStyle(Theme.background).frame(minWidth: 64)
+                    if jar.purchasing == tip { ProgressView().controlSize(.small).tint(RPalette.background) }
+                }.font(.subheadline.weight(.semibold)).foregroundStyle(RPalette.background).frame(minWidth: 64)
             }
             .buttonStyle(.borderedProminent).buttonBorderShape(.capsule)
             .disabled(product == nil || jar.purchasing != nil)
             .accessibilityLabel("\(product?.displayName ?? tip.fallbackName), \(product?.displayPrice ?? "")")
-            .accessibilityIdentifier("tip-\(tip.rawValue)")
+            .accessibilityIdentifier("tip-\(tip.id)")
         }.card()
     }
 }
 
-struct TipThanks: View {
+/// Full-screen thank-you after a completed tip, with the confetti cannon behind it.
+public struct RTipThanks: View {
     @Environment(\.dismiss) private var dismiss
-    let tip: TipJar.Tip
-    var body: some View {
+    let tip: RTipJar.Tip
+    public init(tip: RTipJar.Tip) { self.tip = tip }
+    public var body: some View {
         ZStack {
-            Theme.background.ignoresSafeArea()
+            RPalette.background.ignoresSafeArea()
             VStack(spacing: 18) {
-                TendrMark(size: 88)
+                RMark(size: 88)
                 Text("Thank you").font(.largeTitle.bold()).accessibilityIdentifier("tipThanks")
-                Button { dismiss() } label: { Text("Close").font(.headline).foregroundStyle(Theme.background).frame(maxWidth: 240).padding(.vertical, 6) }
-                    .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).padding(.top, 8)
-            }.padding(32)
-            ConfettiCannon().ignoresSafeArea().allowsHitTesting(false)
+                Button { dismiss() } label: { Text("Close").font(.headline).foregroundStyle(RPalette.background).frame(maxWidth: 240).padding(.vertical, 6) }
+                    .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).padding(.top, RSpacing.xs)
+            }.padding(RSpacing.xxl)
+            RConfettiCannon().ignoresSafeArea().allowsHitTesting(false)
         }
     }
 }
 
-/// Two cannons in the bottom corners fire a single burst of monochrome paper that drifts down and fades.
-struct ConfettiCannon: View {
+/// Two cannons in the bottom corners fire a single burst of monochrome paper that drifts down and
+/// fades. Reduce Motion turns it off.
+public struct RConfettiCannon: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var scheme
     @State private var start = Date()
     private let pieces = ConfettiPiece.burst(count: 170)
     private let duration = 4.6
-    var body: some View {
+    public init() {}
+    public var body: some View {
         if !reduceMotion {
             TimelineView(.animation(paused: Date().timeIntervalSince(start) > duration)) { timeline in
                 Canvas { context, size in
@@ -240,3 +249,5 @@ struct ConfettiPiece {
         }
     }
 }
+
+#endif

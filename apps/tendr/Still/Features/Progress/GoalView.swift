@@ -1,3 +1,4 @@
+import RDesign
 import SwiftUI
 
 struct GoalCard: View {
@@ -56,7 +57,7 @@ struct GoalEditor: View {
                     Section("The pace") {
                         if let required = goal.requiredWeeklyChange(current: current.kilograms, now: Date()) {
                             LabeledContent("Required change", value: "\(number(store.journal.unit.display(required))) \(store.journal.unit.symbol)/week")
-                            if required < -0.907185 { Text("This requires more than 2 lbs/week. Consider a later date with your care team.").font(.footnote).foregroundStyle(.orange) }
+                            if required < -0.907185 { Text("This requires more than 2 lbs/week. Consider a later date with your care team.").font(.footnote).foregroundStyle(Theme.pine) }
                         }
                         let recent = actual.filter { $0.date > Date().addingTimeInterval(-28 * 86400) }
                         let summary = WeightSummary(entries: recent, now: Date())

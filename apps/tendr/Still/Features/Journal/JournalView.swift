@@ -1,3 +1,4 @@
+import RDesign
 import SwiftUI
 
 private enum HistoryEntry: Identifiable {
@@ -102,19 +103,15 @@ struct SettingsView: View {
     @State private var treatment = false
     @State private var addingVial = false
     @State private var editingVial: Vial?
-    @State private var tipJar = TipJar.shared
+    @State private var tipJar = RTipJar.tendr
     @State private var tipping = false
-    @State private var thanks: TipJar.Tip?
+    @State private var thanks: RTipJar.Tip?
     var body: some View {
-        @Bindable var accents = Theme.preferences
         NavigationStack {
             VStack(spacing: 8) {
                 PageHeader("Settings").padding(.horizontal, 24)
                 Form {
                     Section("Preferences") {
-                        Picker("Accent", selection: $accents.selection) {
-                            ForEach(accents.options, id: \.self) { Text($0).tag($0) }
-                        }
                         Picker("Weight unit", selection: Binding(get: { store.journal.unit }, set: { var next = store.journal; next.unit = $0; _ = store.commit(next) })) { ForEach(WeightUnit.allCases, id: \.self) { Text($0.symbol).tag($0) } }
                         Picker("Weight trend", selection: Binding(get: { store.journal.weightTrend }, set: { var next = store.journal; next.weightTrend = $0; _ = store.commit(next) })) {
                             ForEach(WeightTrendMode.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -169,25 +166,24 @@ struct SettingsView: View {
                     } header: { Text("Weight history") }
                     if tipJar.phase == .ready {
                         Section {
-                            Button { tipping = true } label: { Label("Support Tendr", systemImage: "heart") }
-                                .accessibilityIdentifier("supportTendr")
+                            RSupportRow(appName: "Tendr") { tipping = true }
                         }
                     }
                     Section {
                         NavigationLink { PrivacyView() } label: { Label("Privacy & About", systemImage: "lock.shield") }
-                    } footer: { Text("Tendr · \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")").frame(maxWidth: .infinity).padding(.top, 12) }
+                    } footer: { RVersionFooter("Tendr") }
                 }.scrollContentBackground(.hidden)
             }.background(Theme.background).toolbar(.hidden, for: .navigationBar)
                 .task {
                     await tipJar.load()
                     let arguments = ProcessInfo.processInfo.arguments
-                    if arguments.contains("--uitest"), arguments.contains("--tip-thanks") { thanks = .medium }
+                    if arguments.contains("--uitest"), arguments.contains("--tip-thanks") { thanks = tipJar.tips[1] }
                 }
                 .sheet(isPresented: $tipping, onDismiss: {
                     thanks = tipJar.completed
                     tipJar.completed = nil
-                }) { TipJarSheet(jar: tipJar) }
-                .fullScreenCover(item: $thanks) { TipThanks(tip: $0) }
+                }) { RTipJarSheet(jar: tipJar, title: "Support Tendr", prompt: "Enjoying Tendr? Leave a tip.") }
+                .fullScreenCover(item: $thanks) { RTipThanks(tip: $0) }
                 .sheet(isPresented: $schedule) { ScheduleEditor() }
                 .sheet(isPresented: $treatment) { DosePreferencesEditor() }
                 .sheet(isPresented: $addingVial) { VialEditor() }
@@ -224,32 +220,9 @@ struct PrivacyView: View {
             Section("On this iPhone") { Text("No account, ads, analytics SDKs, or server. Your journal is stored locally. Device backups follow your iPhone settings.") }
             Section("Your health") { Text("Tendr is a journal, not a dosing guide. Medication graphs are simplified estimates, not measured levels. Follow your prescriber's instructions.") }
             Section("Help") {
-                Link(destination: URL(string: "https://0x63616c.github.io/tendr/privacy/")!) { Label("Privacy policy", systemImage: "hand.raised") }
-                Link(destination: URL(string: "https://0x63616c.github.io/tendr/support/")!) { Label("Support", systemImage: "questionmark.circle") }
+                RHelpLinks(privacy: AppLinks.privacy, support: AppLinks.support)
             }
             if FeatureFlags.assistantPreview { Section("Assistant") { Text("The assistant is a coming-soon preview. No chat service is connected and no journal data is sent to AI.") } }
         }.navigationTitle("Privacy & About").navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-/// A small (i) that shows a row's explanation in a popover, instead of footer text under it.
-struct InfoButton: View {
-    let message: String
-    @State private var showing = false
-    init(_ message: String) { self.message = message }
-    var body: some View {
-        Button { showing = true } label: {
-            Image(systemName: "info.circle").font(.body).foregroundStyle(.secondary).frame(width: 32, height: 32).contentShape(Rectangle())
-        }
-        .buttonStyle(.borderless)
-        .accessibilityLabel("More information")
-        .popover(isPresented: $showing, arrowEdge: .top) {
-            Text(message).font(.footnote).multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(width: 280, alignment: .leading)
-                .padding(16)
-                .presentationCompactAdaptation(.popover)
-                .accessibilityIdentifier("infoPopover")
-        }
     }
 }
