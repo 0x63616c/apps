@@ -4,7 +4,7 @@ A native, local-first iPhone journal for GLP-1 treatment. Built with SwiftUI and
 
 Available as a private TestFlight beta.
 
-Track doses in mg, mL or explicitly confirmed U-100 syringe units; keep vial records; log weight and notes; import body weight read-only from Apple Health; review progress and estimated medication decay, including what your schedule implies; and schedule weekly, every-few-days or hand-picked dose dates, with reminders. A schedule can be cleared at any time. You can edit past records and optionally keep Tendr's weight history anchored to your first dose.
+Track doses in mg; keep vial records; log weight and notes; import body weight read-only from Apple Health; review progress and estimated medication decay, including what your schedule implies; and schedule weekly, every-few-days or hand-picked dose dates, with reminders. A schedule can be cleared at any time. You can edit past records and optionally keep Tendr's weight history anchored to your first dose.
 
 Medication curves are simplified half-life estimates, not measured body or blood levels or dosing advice. Historical records retain their medication and concentration. Follow the instructions from your prescriber.
 
@@ -38,30 +38,9 @@ xcodebuild -project Still.xcodeproj -scheme Still \
 
 The Swift package tests cover calculations, validation, local calendar scheduling and file compatibility. UI tests exercise real simulator screens. See [architecture](docs/ARCHITECTURE.md), [user journeys](docs/USER-JOURNEYS.md) and [verification notes](docs/TESTING.md). Passing tests do not imply clinical validation or TestFlight publication.
 
-## CI on a self-hosted Mac
+## Monorepo
 
-Every macOS job runs on GitHub-hosted `macos-15` unless the repository variable `MACOS_RUNNER` says otherwise. To use a Mac of your own (for example a Mac mini), sign in to the GitHub CLI on that Mac and run:
-
-```sh
-scripts/setup-mac-runner.sh --use 0x63616c/tendr 0x63616c/shots 0x63616c/festr
-```
-
-Repositories on a personal account can't share a runner, so the script registers one runner per repository. Each lives in `~/actions-runners/OWNER-REPO`, runs as its own launchd service and has the labels `self-hosted, macOS, ARM64, xcode`. The script also:
-
-- checks for Xcode, accepts the licence and runs `xcodebuild -runFirstLaunch`
-- checks for an iOS simulator runtime; pass `--install-ios-runtime` to download one
-- prepares `/Users/runner/hostedtoolcache`, which `ruby/setup-ruby` needs on self-hosted Macs
-- with `--use`, sets `MACOS_RUNNER` to `["self-hosted","macOS","ARM64","xcode"]` and `DEVELOPER_DIR` to the Mac's Xcode
-
-To go back to GitHub-hosted runners, delete the `MACOS_RUNNER` and `DEVELOPER_DIR` variables. Workflows select the runner with:
-
-```yaml
-runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-15' }}
-env:
-  DEVELOPER_DIR: ${{ vars.DEVELOPER_DIR || '/Applications/Xcode_26.2.app/Contents/Developer' }}
-```
-
-`MACOS_RUNNER` can be one label or a JSON list of labels. Copy the same two lines into shots and festr. The services run while the Mac's user is logged in, so turn on automatic login and keep the Mac awake. Every job has a `timeout-minutes` limit, so a hung build stops on its own.
+Run app-local build/test commands above from `apps/tendr`. Shared release, CI and Pages commands run from the repository root; see [root README](../../README.md) and [release guide](../../docs/RELEASE.md). Shared UI is in `../../packages/RDesign`.
 
 ## Privacy and storage
 

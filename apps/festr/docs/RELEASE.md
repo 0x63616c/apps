@@ -1,3 +1,5 @@
+> Historical release notes from before the monorepo. Current commands and paths: [root release guide](../../../docs/RELEASE.md).
+
 # Releasing Festr
 
 Festr uses the same release setup as Tendr: XcodeGen `project.yml` with the generated `Festr.xcodeproj` checked in, fastlane lanes in `fastlane/Fastfile`, and GitHub Actions on macOS 15 with Xcode 26.2.

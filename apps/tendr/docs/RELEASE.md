@@ -1,3 +1,5 @@
+> Historical release notes from before the monorepo. Current commands and paths: [root release guide](../../../docs/RELEASE.md).
+
 # Automatic TestFlight releases
 
 [TestFlight workflow](../.github/workflows/testflight.yml) runs `bundle exec fastlane ios beta` on every push to `main`, including PR merges. It uses macOS 15 with Xcode 26.2 and Ruby 3.4, installs the locked gems, runs core tests, archives, uploads, waits for Apple processing, and assigns the build to **Owner Preview**. The checked-in Xcode project is used directly; CI does not need XcodeGen. A manual dispatch on `main` is available for recovery. Publishing another selected branch requires explicitly enabling `confirm_branch_release`; this allows a real CI release to validate signing fixes before merging.

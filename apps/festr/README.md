@@ -13,8 +13,10 @@ A simple, iOS-native festival planner: upcoming US festivals, day-by-day set tim
 | `Festr/Resources/seed-feed.json` | Bundled feed, generated from `data/festivals.source.json` by `scripts/make-seed-feed.py`. |
 | `Tests` | Unit tests (`swift test`). |
 | `FestrUITests` | UI flow tests and screenshot capture. |
-| `admin` | Next.js + Drizzle + Postgres admin that edits festivals and publishes the feed. |
-| `fastlane`, `.github/workflows` | TestFlight and App Store automation; see [docs/RELEASE.md](docs/RELEASE.md). |
+| `../../web/festr-admin` | Next.js + Drizzle + Postgres admin that edits festivals and publishes the feed. |
+| `../../fastlane`, `app.yml` | Shared release automation; see [docs/RELEASE.md](../../docs/RELEASE.md). |
+
+The shared design package is `../../packages/RDesign`. Run the following from `apps/festr`.
 
 ## Build and test
 
@@ -28,7 +30,7 @@ ruby scripts/check-release.rb                # fastlane lane mechanics, no Apple
 
 ## Feed
 
-Schema version 1 (see `Festr/Core/Feed.swift` and `admin/src/lib/feed.ts`):
+Schema version 1 (see `Festr/Core/Feed.swift` and `../../web/festr-admin/src/lib/feed.ts`):
 
 ```json
 {
