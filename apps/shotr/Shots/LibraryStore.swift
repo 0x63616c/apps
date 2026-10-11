@@ -885,7 +885,7 @@ final class LibraryStore {
                                                    completed: categoryDiscoveryCompleted) {
                         do { try await discoverCategoriesIfNeeded() }
                         catch is CancellationError { break }
-                        catch { if !Task.isCancelled { notice = "Category discovery couldn’t finish. Saved descriptions are kept; reopen Shots to retry." } }
+                        catch { if !Task.isCancelled { notice = "Category discovery couldn’t finish. Saved descriptions are kept; reopen Shotr to retry." } }
                     }
                     let batch = revision == tagRevision ? describedBatch : visibleIDs.filter {
                         records[$0].map { $0.hiddenAt == nil && $0.describedAt != nil && !needsDescription($0) && $0.taggedRevision != tagRevision } == true

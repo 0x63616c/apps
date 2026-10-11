@@ -1,3 +1,13 @@
+# Monorepo migration — October 10, 2026
+
+Shotr now lives at `apps/shotr`, with display/product name Shotr and shared RDesign UI tokens. Bundle ID `com.calum.shots`, scheme/module `Shots`, signing profile, and stored index path are preserved. Run portable checks here with `just test`; run native checks on macOS with `just verify`. Distribution uses `bundle exec fastlane ios beta app:shotr` at the repository root; automatic TestFlight is disabled pending native/signing validation. See [release instructions](../../docs/RELEASE.md).
+
+Linux validation for this migration: 46 Swift core tests and 15 Python release-tool tests pass; shellcheck and synthetic capture generation pass. Native Xcode builds, simulator tests, signing, and TestFlight remain unverified.
+
+The notes below are historical evidence for the imported app. They do not establish native, signing, or TestFlight validation of this migration.
+
+---
+
 # Shots current handoff
 
 Recovered September 26–27, 2026 from Shots(1).zip attached to the ChatGPT conversation “Screenshot organizer apps.” GitHub returned repository-not-found for 0x63616c/shots; no remote was created or pushed. This directory is recovered source, not a Git clone.

@@ -42,15 +42,15 @@ class ReleaseTests(unittest.TestCase):
                 release.all_data("/v1/builds", lambda _: {"data": [], "links": {"next": next_url}})
 
     def make_ipa(self, folder, build="3", executable=b"production executable"):
-        ipa = Path(folder) / "Shots.ipa"
+        ipa = Path(folder) / "Shotr.ipa"
         info = {"CFBundleIdentifier": release.BUNDLE, "CFBundleShortVersionString": "1.0",
-                "CFBundleVersion": build, "CFBundleExecutable": "Shots",
+                "CFBundleVersion": build, "CFBundleExecutable": "Shotr",
                 "MinimumOSVersion": "26.0", "DTPlatformName": "iphoneos",
                 "ITSAppUsesNonExemptEncryption": False, "UIBackgroundModes": ["processing"],
                 "BGTaskSchedulerPermittedIdentifiers": ["com.calum.shots.scan.current"]}
         with zipfile.ZipFile(ipa, "w") as archive:
-            archive.writestr("Payload/Shots.app/Info.plist", plistlib.dumps(info))
-            archive.writestr("Payload/Shots.app/Shots", executable)
+            archive.writestr("Payload/Shotr.app/Info.plist", plistlib.dumps(info))
+            archive.writestr("Payload/Shotr.app/Shotr", executable)
         return ipa
 
     def test_ipa_audit_accepts_only_expected_production_artifact(self):
@@ -105,9 +105,9 @@ class ReleaseTests(unittest.TestCase):
                 with patch.object(release.subprocess, "run", side_effect=uploader):
                     if fails:
                         with self.assertRaisesRegex(RuntimeError, "Do not retry blindly"):
-                            release.upload(Path(folder) / "Shots.ipa", folder)
+                            release.upload(Path(folder) / "Shotr.ipa", folder)
                     else:
-                        release.upload(Path(folder) / "Shots.ipa", folder)
+                        release.upload(Path(folder) / "Shotr.ipa", folder)
                 self.assertEqual(len(observed), 1)
                 self.assertFalse(observed[0].exists())
 

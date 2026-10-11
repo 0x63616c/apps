@@ -2,6 +2,9 @@ name: Shots
 options:
   deploymentTarget:
     iOS: '26.0'
+packages:
+  RDesign:
+    path: RDesign
 settings:
   base:
     SWIFT_VERSION: '5.0'
@@ -12,9 +15,14 @@ targets:
     type: application
     platform: iOS
     sources: [Shots]
+    dependencies:
+      - package: RDesign
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.calum.shots
+        PRODUCT_NAME: Shotr
+        PRODUCT_MODULE_NAME: Shots
+        INFOPLIST_KEY_CFBundleDisplayName: Shotr
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_FILE: Shots/Info.plist
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: Screenshot library

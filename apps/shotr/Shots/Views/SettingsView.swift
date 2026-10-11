@@ -1,4 +1,5 @@
 import SwiftUI
+import RDesign
 
 struct SettingsView: View {
     @Bindable var store: LibraryStore
@@ -38,7 +39,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Background scanning")
                 } footer: {
-                    Text("Opt in for this scan only. iOS may let text indexing continue after you leave Shots, with progress and a cancel button in its system activity. iOS decides how long it can run; cancellation, device conditions, or force-quitting can stop it. Saved progress is kept. Automatic tags finish when Shots is open. New screenshots are discovered when you reopen Shots—not by an always-on background watcher.")
+                    Text("Opt in for this scan only. iOS may let text indexing continue after you leave Shotr, with progress and a cancel button in its system activity. iOS decides how long it can run; cancellation, device conditions, or force-quitting can stop it. Saved progress is kept. Automatic tags finish when Shotr is open. New screenshots are discovered when you reopen Shotr—not by an always-on background watcher.")
                 }
                 if let scan = store.lastScan {
                     Section("Last scan") {
@@ -64,6 +65,6 @@ struct SettingsView: View {
             .navigationTitle("Settings").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
         }
-        .tint(Color.primary)
+        .tint(RPalette.graphite)
     }
 }

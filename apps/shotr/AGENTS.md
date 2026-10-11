@@ -1,8 +1,8 @@
-# Shots project instructions
+# Shotr project instructions
 
 ## Product and architecture
 
-- Native iPhone app, SwiftUI with reusable UIKit collection views for the grid/viewer. iOS 26 minimum. No server, accounts, analytics, remote AI, or new dependencies in the app.
+- Native iPhone app, SwiftUI with reusable UIKit collection views for the grid/viewer. iOS 26 minimum. No server, accounts, analytics, remote AI, or new external dependencies in the app. Shared UI comes from `../../packages/RDesign`.
 - `Shots/Core/` is portable Swift and tested with `swift test`. `LibraryStore` owns the observable state, OCR-first scan pipeline, manual tag intent, persistence, and lifecycle. `Services/` wraps Photos, Vision, Foundation Models, and OS background continuation.
 - Preserve version-1 index compatibility and manual tag additions/removals. Never replace successful OCR when automatic tagging fails.
 - Treat 15,000 screenshots as a normal library. Reuse cells/pages, keep expensive preparation off the main actor, and avoid whole-library work per image or unrelated Photos notification.
@@ -20,9 +20,10 @@
 
 ## Release and Git
 
-- Remote: private `0x63616c/shots`. No CI or push-triggered TestFlight upload is configured. A Git push does not ship an app.
-- `just release` is the local full validation/signing/upload path. Run only with explicit user authorization to publish to internal TestFlight. It requires a clean committed tree, local Xcode/signing assets, and protected App Store Connect credentials. It does not push Git or submit publicly/external beta.
+- This app lives in `apps/shotr` in Calum's apps monorepo. Preserve `com.calum.shots`, the `Shots` scheme/module, and on-disk index paths; display/product name is Shotr.
+- Shared release entrypoint from the repository root: `bundle exec fastlane ios beta app:shotr`. `app.yml` disables automatic TestFlight delivery until monorepo native/signing checks pass. Follow `../../docs/RELEASE.md`; never infer upload authorization from a Git push.
+- `just verify` is the app-specific full native gate. `just release-status BUILD` retains read-back for historical releases. The legacy `scripts/release.py` uploader remains for recovery only; the shared Fastfile owns normal distribution.
 - Build numbers are selected above local/App Store Connect builds and applied as an archive override; never upload a previously used build number, overwrite preserved artifacts, or retry an uncertain upload blindly. Use `just release-status BUILD` to verify instead.
-- Credentials come from environment variables or `SHOTS_SECRETS_WRAPPER`; on Calum's Mac the default is the sibling `world-wide-webb/scripts/secrets.sh`. Never print keys/tokens, commit private signing assets, or put secret values in command arguments. Temporary upload keys must be mode 0600 and cleaned.
+- Legacy recovery credentials come from environment variables or an explicitly configured `SHOTS_SECRETS_WRAPPER`; the shared Fastfile uses the root release configuration. Never print keys/tokens, commit private signing assets, or put secret values in command arguments. Temporary upload keys must be mode 0600 and cleaned.
 - `.release/`, archives, IPAs, signing keys, provision profiles, and local build outputs are ignored. `release/ExportOptions.plist` is non-secret configuration; keep existing signing identity/profile unless explicitly asked to change them.
 - Ask before destructive actions and externally visible changes not already requested. Never bypass denied tools with another route.

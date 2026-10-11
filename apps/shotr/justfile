@@ -10,9 +10,9 @@ test:
 verify:
     python3 scripts/release.py --verify
 
-# Validate, sign, upload, wait for processing, and verify internal TestFlight availability.
+# Shared monorepo distribution entrypoint.
 release:
-    python3 scripts/release.py
+    cd ../.. && bundle exec fastlane ios beta app:shotr
 
 # Read back a previously uploaded build; never uploads another copy.
 release-status build:

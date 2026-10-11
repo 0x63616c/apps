@@ -1,32 +1,35 @@
-# Shots
+# Shotr
 
-A small native iPhone screenshot organizer. SwiftUI, local AI, search, editable tags. No account, ads, subscription, API key, or third-party app dependency.
+A small native iPhone screenshot organizer. SwiftUI, local AI, search, editable tags. No account, ads, subscription, API key, or external app dependency. UI tokens come from the shared RDesign package.
 
 ## Run on your iPhone
 
 1. Open **Shots.xcodeproj** in **Xcode 26 or later** on your Mac.
-2. Select the **Shots** target → **Signing & Capabilities** → choose your Apple development team. Change `com.calum.shots` if Xcode asks for a unique bundle identifier.
+2. Select the **Shots** target → **Signing & Capabilities** → choose your Apple development team. Keep the existing `com.calum.shots` bundle identifier. The installed app is named **Shotr**; the internal target and scheme remain **Shots**.
 3. Choose your connected iPhone running **iOS 26 or later**, enable Developer Mode if prompted, and press **Run**.
 4. Allow Photos access. Automatic tags require an Apple Intelligence-compatible iPhone, with Apple Intelligence enabled and its model downloaded.
 
-The private source repository is [0x63616c/shots](https://github.com/0x63616c/shots). **Shots 1.0 (4)** is available in the existing internal TestFlight group, including description-first category discovery, Analysis details and Favorites, plus the earlier scan and header fixes. The production target builds locally with Xcode 27; native UI is verified on an iOS 27 simulator with a synthetic library. Physical-device Photos and AI validation remains open; see `REVIEW.md`.
+This app was imported with history from `0x63616c/shots`. Historical TestFlight and device evidence remains in `REVIEW.md` and `HANDOFF.md`; it does not validate the monorepo build.
 
-## Local release
+## Validate and release
 
-There is no CI or upload-on-push automation. On this Mac:
+From this app directory:
 
 ```sh
-just test               # Portable core + release-tool tests
-just verify             # Also native UI tests + unsigned production Release build
-just release            # Full validation → signed archive → audited IPA → TestFlight upload/read-back
-just release-status 2   # Read-back only; safe after an uncertain upload
+just test              # Portable Swift core and Python release-tool tests
+just verify            # Native fixture tests and unsigned Release build on macOS
+just release-status 4  # Read back a historical upload; no upload
 ```
 
-`just release` requires a clean committed Git tree, Xcode 27, XcodeGen, Python 3 with `cryptography`, and the existing Apple Distribution identity / “Shots App Store” profile in the local Keychain. Use a dedicated iOS 26+ simulator named **Shots**, or set `SHOTS_SIMULATOR_UDID`; the isolated fixture does not touch personal Photos. Calum's **Shots iOS 27** simulator is already set up.
+Normal distribution uses the shared Fastfile, from the repository root:
 
-App Store Connect credentials are injected by the sibling `world-wide-webb/scripts/secrets.sh` wrapper. On another machine set `SHOTS_SECRETS_WRAPPER` or supply `APP_STORE_CONNECT_API__KEY_ID`, `APP_STORE_CONNECT_API__ISSUER_ID`, and `APP_STORE_CONNECT_API__P8_CONTENT` securely. Never put their values in Git. Install tooling separately if missing (`brew install just xcodegen`; use a Python environment with `cryptography`).
+```sh
+bundle exec fastlane ios beta app:shotr
+```
 
-The command selects a fresh integer build number above local, preserved, and Apple builds without changing project source. It preserves artifacts/evidence in ignored `release/testflight-YYYYMMDD-buildN/`, uses a private temporary upload key, and verifies Apple processing plus availability to the existing **Calum** internal group/tester. Build/test subprocesses receive a restricted environment, not the decrypted secrets vault. It neither pushes Git nor submits an external beta/public App Store version. If an upload fails or times out, inspect `just release-status N`: a failed command can still have delivered the build. Unresolved upload receipts block subsequent publishing; a successful read-back (or definitive Apple processing rejection) resolves the receipt.
+See [shared release instructions](../../docs/RELEASE.md). Automatic TestFlight delivery is disabled in `app.yml` until native compilation, UI tests, and signing are verified for the monorepo. The existing bundle ID, Apple app record, profile **Shots App Store**, and internal group **Calum** are retained. The display and product name are **Shotr**.
+
+`just verify` requires Xcode, XcodeGen, Python 3, and a dedicated iOS 26+ simulator named **Shots** (or `SHOTS_SIMULATOR_UDID`). The generated fixture copies RDesign and uses synthetic data, never personal Photos. The legacy `scripts/release.py` uploader is retained for recovery and is not the normal release entrypoint. Its credential wrapper must be configured explicitly outside the monorepo; never commit credentials.
 
 ## Use
 
@@ -48,15 +51,15 @@ The progress bar identifies indexing, describing, discovering categories, or tag
 
 Unrelated Photos updates and unchanged screenshot metadata do not interrupt indexing. “Paused” means an actual user/system/storage pause, not a transient refresh or scan handover. Grouped headers use adjacent opaque coverage throughout the date-to-date push-off transition, including partial rows.
 
-Normally scanning pauses when you leave Shots. While work remains, tap **Settings → Continue scan in background** to request continuation for this scan only. iOS controls admission and duration and provides system progress/cancellation. Background work reads text using CPU-only Vision; automatic tags finish when Shots is open. There is no always-on Photos watcher. Force-quitting, cancellation, expiration, or device conditions can stop the scan. Completed work is checkpointed and resumes on return.
+Normally scanning pauses when you leave Shotr. While work remains, tap **Settings → Continue scan in background** to request continuation for this scan only. iOS controls admission and duration and provides system progress/cancellation. Background work reads text using CPU-only Vision; automatic tags finish when Shotr is open. There is no always-on Photos watcher. Force-quitting, cancellation, expiration, or device conditions can stop the scan. Completed work is checkpointed and resumes on return.
 
 ## Local by design
 
-- PhotoKit accesses original screenshots in Apple Photos. Shots does not maintain another full-resolution photo library.
+- PhotoKit accesses original screenshots in Apple Photos. Shotr does not maintain another full-resolution photo library.
 - Apple Vision reads text and general image labels locally. Apple Foundation Models describes screenshots locally, discovers categories from your library, and assigns tags from that editable list.
 - OCR, titles, tags, and asset references are stored in an atomic, protected file under Application Support, excluded from backup. Appearance and download preferences use this app's UserDefaults.
 - There is no AI server, analytics SDK, account, network API, or cloud fallback. iCloud Photos may download images that are not already on your phone; this can be disabled in Settings. Analysis still stays local.
-- Uninstalling removes Shots' tags/index. It leaves originals in Photos. Deleting a screenshot explicitly through Shots deletes its Photos original and can sync that deletion through iCloud Photos.
+- Uninstalling removes Shotr's tags/index. It leaves originals in Photos. Deleting a screenshot explicitly through Shotr deletes its Photos original and can sync that deletion through iCloud Photos.
 
 ## Scope and limits
 

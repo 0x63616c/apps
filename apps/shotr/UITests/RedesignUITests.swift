@@ -80,7 +80,7 @@ final class RedesignUITests: XCTestCase {
     @MainActor func testNativeSearchAndGallery() throws {
         let app = XCUIApplication()
         app.launch()
-        XCTAssertTrue(app.navigationBars["Shots"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.navigationBars["Shotr"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["15"].exists)
         let search = app.buttons["Search"]
         XCTAssertTrue(search.exists)
@@ -235,7 +235,7 @@ final class RedesignUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
         XCTAssertTrue(app.staticTexts["15"].waitForExistence(timeout: 10))
-        XCTAssertLessThan(app.staticTexts["Shots"].frame.minX, app.frame.width / 4)
+        XCTAssertLessThan(app.staticTexts["Shotr"].frame.minX, app.frame.width / 4)
         app.buttons["More"].tap()
         let grouped = app.buttons["Grouped by day"]
         tapMenuItem(app, "Grouped by day")

@@ -14,6 +14,10 @@ if dest.exists():
     raise SystemExit(f'{dest} already exists; inspect it before regenerating')
 shutil.copytree(root, dest, ignore=shutil.ignore_patterns('.build', '.git', '.release', 'release', 'scripts', 'captures'))
 
+# Keep the fixture self-contained while using the same shared UI package.
+shutil.copytree(root.parents[1] / 'packages/RDesign', dest / 'RDesign',
+                ignore=shutil.ignore_patterns('.build', '.swiftpm'))
+
 def edit(path, before, after):
     file = dest / path
     source = file.read_text()

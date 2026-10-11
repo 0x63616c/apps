@@ -53,7 +53,7 @@ struct LibraryView: View {
                 }
             }
             .background(Color.shotsBackground)
-            .navigationTitle(selecting ? "\(selection.count) selected" : (showingHidden ? "Hidden" : "Shots"))
+            .navigationTitle(selecting ? "\(selection.count) selected" : (showingHidden ? "Hidden" : "Shotr"))
             .navigationSubtitle(authorized && store.isReady ? resultCount : "")
             .toolbarTitleDisplayMode(.inlineLarge)
             .modifier(ScreenshotSearch(query: $query, searching: $searching, enabled: authorized && store.isReady && !selecting))
@@ -160,7 +160,7 @@ struct LibraryView: View {
             .alert("Unable to delete", isPresented: Binding(get: { deletionError != nil }, set: { if !$0 { deletionError = nil } })) {
                 Button("OK") { deletionError = nil }
             } message: { Text(deletionError ?? "") }
-            .alert("Shots", isPresented: Binding(get: { store.notice != nil }, set: { if !$0 { store.notice = nil } })) {
+            .alert("Shotr", isPresented: Binding(get: { store.notice != nil }, set: { if !$0 { store.notice = nil } })) {
                 Button("OK") { store.notice = nil }
             } message: { Text(store.notice ?? "") }
             .onChange(of: store.tags.map(\.id)) { _, ids in

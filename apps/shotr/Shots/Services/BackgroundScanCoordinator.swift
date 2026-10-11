@@ -14,7 +14,7 @@ final class BackgroundScanCoordinator {
 
     private(set) var hasRequest = false
     private(set) var isConfigured = false
-    private(set) var status = "Scans normally pause when you leave Shots."
+    private(set) var status = "Scans normally pause when you leave Shotr."
 
     var allowsBackgroundScanning: Bool { task != nil && !isStopping && !hasEnded }
 
@@ -48,7 +48,7 @@ final class BackgroundScanCoordinator {
                 self.begin(continued)
             }
         }
-        if !registered { status = "Background scanning is unavailable. Keep Shots open to scan." }
+        if !registered { status = "Background scanning is unavailable. Keep Shotr open to scan." }
     }
 
     /// Start returns false if the library cannot scan. Stop must cancel the scan,
@@ -65,11 +65,11 @@ final class BackgroundScanCoordinator {
     func requestContinuation(completed: Int, total: Int) async {
         guard !hasRequest else { return }
         guard registered, isConfigured else {
-            status = "Background scanning is unavailable. Keep Shots open to scan."
+            status = "Background scanning is unavailable. Keep Shotr open to scan."
             return
         }
         guard UIApplication.shared.applicationState == .active else {
-            status = "Open Shots and try again to start a background scan."
+            status = "Open Shotr and try again to start a background scan."
             return
         }
         guard total > completed else {
@@ -96,7 +96,7 @@ final class BackgroundScanCoordinator {
             try await Self.submit(request)
         } catch {
             if !hasEnded && !isStopping {
-                let message = "iOS couldn’t start background scanning. Keep Shots open, or try again later."
+                let message = "iOS couldn’t start background scanning. Keep Shotr open, or try again later."
                 if task != nil {
                     // A launch can race the iOS 27 submission completion. Even
                     // an error in that case must stop/checkpoint an active scan.

@@ -1,0 +1,14 @@
+name: Shotr
+project: Shots.xcodeproj
+scheme: Shots
+bundle_id: com.calum.shots
+apple_id: "6818884320"
+version: "1.0"
+# Keep automatic distribution off until monorepo signing and native validation pass.
+testflight: false
+testflight_group: Calum
+beta_description: A private screenshot library with local search and editable tags.
+profile_name: Shots App Store
+swift_package: true
+site: shotr
+tips: []

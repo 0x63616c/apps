@@ -48,8 +48,7 @@ def credentials():
     names = [PREFIX + name for name in ("KEY_ID", "ISSUER_ID", "P8_CONTENT")]
     if all(os.environ.get(name) for name in names):
         return
-    wrapper = Path(os.environ.get("SHOTS_SECRETS_WRAPPER",
-                                 str(ROOT.parent / "world-wide-webb/scripts/secrets.sh"))).expanduser()
+    wrapper = Path(os.environ.get("SHOTS_SECRETS_WRAPPER", "")).expanduser()
     if not wrapper.is_file():
         raise RuntimeError("Set APP_STORE_CONNECT_API__KEY_ID / ISSUER_ID / P8_CONTENT, or SHOTS_SECRETS_WRAPPER.")
     if os.environ.get("SHOTS_RELEASE_WRAPPED"):
@@ -193,7 +192,7 @@ def verify(output):
 
 def audit_ipa(ipa, version, build):
     with zipfile.ZipFile(ipa) as archive:
-        info = plistlib.loads(archive.read("Payload/Shots.app/Info.plist"))
+        info = plistlib.loads(archive.read("Payload/Shotr.app/Info.plist"))
         if (info.get("CFBundleIdentifier"), info.get("CFBundleShortVersionString"), info.get("CFBundleVersion")) != (BUNDLE, version, build):
             raise RuntimeError("Exported IPA bundle/version/build differs from the release request.")
         if info.get("ITSAppUsesNonExemptEncryption") is not False:
@@ -202,7 +201,7 @@ def audit_ipa(ipa, version, build):
             raise RuntimeError("Unexpected minimum iOS version or non-device IPA.")
         if "processing" not in info.get("UIBackgroundModes", []) or "com.calum.shots.scan.current" not in info.get("BGTaskSchedulerPermittedIdentifiers", []):
             raise RuntimeError("Background continuation registration missing from IPA.")
-        executable = archive.read("Payload/Shots.app/" + info["CFBundleExecutable"])
+        executable = archive.read("Payload/Shotr.app/" + info["CFBundleExecutable"])
         if any(marker in executable for marker in (b"CaptureSamples", b"--large-library", b"--test-scan",
                                                    b"--test-refresh-scan", b"--header-transitions", b"HeaderProbeCollectionView")):
             raise RuntimeError("Synthetic fixture detected in production IPA.")
@@ -318,15 +317,15 @@ def main():
              "-configuration", "Release", "-destination", "generic/platform=iOS",
              "-derivedDataPath", output / "signed", "-archivePath", archive,
              f"CURRENT_PROJECT_VERSION={number}", "archive"])
-        run(["codesign", "--verify", "--deep", "--strict", archive / "Products/Applications/Shots.app"])
+        run(["codesign", "--verify", "--deep", "--strict", archive / "Products/Applications/Shotr.app"])
         run(["xcodebuild", "-quiet", "-exportArchive", "-archivePath", archive,
              "-exportOptionsPlist", "release/ExportOptions.plist", "-exportPath", output / "export"])
-        ipa = output / "export/Shots.ipa"
+        ipa = output / "export/Shotr.ipa"
         digest = audit_ipa(ipa, version, number)
         # Verify the exported (potentially re-signed) app as well as the archive.
         with tempfile.TemporaryDirectory(prefix="ipa-audit-", dir=state) as directory:
             run(["ditto", "-x", "-k", ipa, directory])
-            run(["codesign", "--verify", "--deep", "--strict", Path(directory) / "Payload/Shots.app"])
+            run(["codesign", "--verify", "--deep", "--strict", Path(directory) / "Payload/Shotr.app"])
         if run(["git", "status", "--porcelain"], capture=True) or run(["git", "rev-parse", "HEAD"], capture=True) != revision:
             raise RuntimeError("Git source changed during signing; upload stopped.")
         ensure_newer(number, builds())
