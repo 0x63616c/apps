@@ -1,8 +1,8 @@
 import SwiftUI
 
 enum LiveStyle {
-    static let accent = Color(red: 0.98, green: 0.36, blue: 0.42)
-    static let live = Color(red: 0.25, green: 0.85, blue: 0.55)
+    static let accent = Color(white: 0.587)
+    static let live = Color(white: 0.550)
 
     static func time(_ date: Date, zone: String) -> String {
         let timeZone = TimeZone(identifier: zone) ?? .current

@@ -16,29 +16,29 @@ enum WallpaperTheme: String, CaseIterable, Identifiable {
     var background: LinearGradient {
         switch self {
         case .midnight:
-            LinearGradient(colors: [Color(red: 0.04, green: 0.04, blue: 0.09), Color(red: 0.12, green: 0.07, blue: 0.24), Color(red: 0.03, green: 0.03, blue: 0.07)], startPoint: .top, endPoint: .bottom)
+            LinearGradient(colors: [Color(white: 0.057), Color(white: 0.143), Color(white: 0.043)], startPoint: .top, endPoint: .bottom)
         case .sunset:
-            LinearGradient(colors: [Color(red: 0.98, green: 0.52, blue: 0.36), Color(red: 0.72, green: 0.15, blue: 0.47), Color(red: 0.20, green: 0.06, blue: 0.33)], startPoint: .topLeading, endPoint: .bottomTrailing)
+            LinearGradient(colors: [Color(white: 0.620), Color(white: 0.447), Color(white: 0.197)], startPoint: .topLeading, endPoint: .bottomTrailing)
         case .paper:
-            LinearGradient(colors: [Color(red: 0.97, green: 0.95, blue: 0.91), Color(red: 0.91, green: 0.88, blue: 0.82)], startPoint: .top, endPoint: .bottom)
+            LinearGradient(colors: [Color(white: 0.943), Color(white: 0.870)], startPoint: .top, endPoint: .bottom)
         }
     }
 
     var glow: Color {
         switch self {
-        case .midnight: Color(red: 0.55, green: 0.35, blue: 1.0).opacity(0.35)
-        case .sunset: Color(red: 1.0, green: 0.85, blue: 0.55).opacity(0.35)
-        case .paper: Color(red: 0.92, green: 0.55, blue: 0.42).opacity(0.18)
+        case .midnight: Color(white: 0.633).opacity(0.35)
+        case .sunset: Color(white: 0.800).opacity(0.35)
+        case .paper: Color(white: 0.630).opacity(0.18)
         }
     }
 
-    var primary: Color { self == .paper ? Color(red: 0.12, green: 0.11, blue: 0.10) : .white }
+    var primary: Color { self == .paper ? Color(white: 0.110) : .white }
     var secondary: Color { primary.opacity(self == .paper ? 0.55 : 0.68) }
     var accent: Color {
         switch self {
-        case .midnight: Color(red: 0.98, green: 0.45, blue: 0.55)
-        case .sunset: Color(red: 1.0, green: 0.88, blue: 0.62)
-        case .paper: Color(red: 0.80, green: 0.33, blue: 0.24)
+        case .midnight: Color(white: 0.660)
+        case .sunset: Color(white: 0.833)
+        case .paper: Color(white: 0.457)
         }
     }
 }

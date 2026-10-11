@@ -26,6 +26,7 @@
 		75509E5B3D1D8AF8F346613A /* FestrActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4815D661D49642EB6166F77 /* FestrActivityAttributes.swift */; };
 		9EFEB08BA2A7EF00C187774A /* ScreenshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F55BB6A3DC0AC7E35857F589 /* ScreenshotTests.swift */; };
 		A02EFE25618D8139F15B1530 /* FlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF7C401DC34307A53953C26 /* FlowTests.swift */; };
+		A1B898FBB18A5163412F769A /* RDesign in Frameworks */ = {isa = PBXBuildFile; productRef = A2AD92033072D875703B77F4 /* RDesign */; };
 		A88DC68B66651DFF67F50B9C /* FeedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F9DF47512F1FE9300232F99 /* FeedStore.swift */; };
 		B699BBB13CF062359B246747 /* LocalDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96B6A4B6A444E0BF73EF1D70 /* LocalDate.swift */; };
 		BDA988BFBF780A01FC8066A7 /* Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCC74AC6D1F5FE9AA44E719F /* Schedule.swift */; };
@@ -87,6 +88,7 @@
 		853E580DE281574FF9B7B84D /* seed-feed.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "seed-feed.json"; sourceTree = "<group>"; };
 		8541F0509BB90895BC08D2B1 /* LiveActivityViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityViews.swift; sourceTree = "<group>"; };
 		8AE9F3D43A01E0C1B52F7262 /* WallpaperCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WallpaperCanvas.swift; sourceTree = "<group>"; };
+		95700035DD59A943C0A681D3 /* RDesign */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RDesign; path = ../../packages/RDesign; sourceTree = SOURCE_ROOT; };
 		96B6A4B6A444E0BF73EF1D70 /* LocalDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDate.swift; sourceTree = "<group>"; };
 		A0470C0C2F08B72C73A5DEB8 /* Festr.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Festr.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB81A6B1CB6FC42CFB67B95E /* LockScreenPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockScreenPreview.swift; sourceTree = "<group>"; };
@@ -101,6 +103,17 @@
 		FCC74AC6D1F5FE9AA44E719F /* Schedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Schedule.swift; sourceTree = "<group>"; };
 		FD2C65458981CC7AD8B595E0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C076ED1D36040C0BABABC7A0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1B898FBB18A5163412F769A /* RDesign in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		00079659739172E89E844076 /* Festr */ = {
@@ -151,6 +164,7 @@
 				00079659739172E89E844076 /* Festr */,
 				04C74AAAE06B12AD0A296890 /* FestrUITests */,
 				0C68646D1827C9E5BE962FCE /* FestrWidgets */,
+				9596A2D368F7DEE3643DFFE8 /* Packages */,
 				DE1EAC1F28883F23470D462A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -207,6 +221,14 @@
 				7F278C4B96F31A6A497D092E /* FestrApp.swift */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		9596A2D368F7DEE3643DFFE8 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				95700035DD59A943C0A681D3 /* RDesign */,
+			);
+			name = Packages;
 			sourceTree = "<group>";
 		};
 		99A80B70422CED0E6B5E47CE /* Shared */ = {
@@ -301,6 +323,7 @@
 			buildPhases = (
 				C18D994446B3C0864D155AC6 /* Sources */,
 				32CE500BB90BC1440DFE7F60 /* Resources */,
+				C076ED1D36040C0BABABC7A0 /* Frameworks */,
 				2B9AA52DE50AB0F0EBBB7AAF /* Embed Foundation Extensions */,
 			);
 			buildRules = (
@@ -310,6 +333,7 @@
 			);
 			name = Festr;
 			packageProductDependencies = (
+				A2AD92033072D875703B77F4 /* RDesign */,
 			);
 			productName = Festr;
 			productReference = A0470C0C2F08B72C73A5DEB8 /* Festr.app */;
@@ -349,6 +373,9 @@
 			);
 			mainGroup = 350EF0F86F36EA063F6C20C1;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				0AC3BB6D612EBF99FC4DED8B /* XCLocalSwiftPackageReference "../../packages/RDesign" */,
+			);
 			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
@@ -731,6 +758,20 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		0AC3BB6D612EBF99FC4DED8B /* XCLocalSwiftPackageReference "../../packages/RDesign" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../packages/RDesign;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A2AD92033072D875703B77F4 /* RDesign */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RDesign;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 65464FB23C0433F2C18FA930 /* Project object */;
 }
