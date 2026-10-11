@@ -1,25 +1,30 @@
 name: Screenshots
 
+# Captures an app's App Store screenshots (light and dark) and frames them with RDesign's rframe.
+# CI calls this for each changed app on pull requests; the release workflow calls it before upload.
 on:
-  pull_request:
-    paths:
-      - 'Still/**'
-      - StillUITests/ScreenshotTests.swift
-      - scripts/capture-screenshots.sh
-      - scripts/frame-screenshots.swift
-      - .github/workflows/screenshots.yml
   workflow_dispatch:
+    inputs:
+      app:
+        description: 'App folder under apps/ (for example tendr)'
+        type: string
+        default: tendr
   workflow_call:
+    inputs:
+      app:
+        type: string
+        required: true
 
 permissions:
   contents: read
 
 jobs:
   screenshots:
-    runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-15' }}
+    runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
     timeout-minutes: 45
     env:
       DEVELOPER_DIR: ${{ vars.DEVELOPER_DIR || '/Applications/Xcode_26.2.app/Contents/Developer' }}
+      APP: ${{ inputs.app }}
     steps:
       - uses: actions/checkout@v4
       - name: Ensure an iOS 26 simulator runtime
@@ -32,18 +37,18 @@ jobs:
           xcrun simctl list runtimes
       - name: Capture iPhone 17 Pro Max screens (light and dark)
         timeout-minutes: 25
-        run: scripts/capture-screenshots.sh build/screenshots/raw light dark
+        run: scripts/capture-screenshots.sh "$APP" "build/screenshots/$APP/raw" light dark
       - name: Render App Store frames
-        run: |
-          swiftc -O -parse-as-library scripts/frame-screenshots.swift -o build/frame-screenshots
-          build/frame-screenshots build/screenshots/raw fastlane/screenshots/en-US build/screenshots/overview.png
+        timeout-minutes: 10
+        run: scripts/frame-screenshots.sh "$APP"
       - name: Check App Store dimensions
         run: |
-          python3 - <<'PY'
+          expected=$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV[0]))["shots"].size' "apps/$APP/screenshots.json")
+          python3 - "apps/$APP/fastlane/screenshots/en-US" "$expected" <<'PY'
           import pathlib, struct, sys
-          shots = sorted(pathlib.Path("fastlane/screenshots/en-US").glob("*.png"))
-          if len(shots) != 6:
-              sys.exit(f"expected 6 framed screenshots, found {len(shots)}")
+          shots = sorted(pathlib.Path(sys.argv[1]).glob("*.png"))
+          if len(shots) != int(sys.argv[2]):
+              sys.exit(f"expected {sys.argv[2]} framed screenshots, found {len(shots)}")
           for png in shots:
               data = png.read_bytes()
               width, height = struct.unpack(">II", data[16:24])
@@ -53,28 +58,28 @@ jobs:
                   sys.exit(f"{png.name} must be an opaque 1320x2868 RGB PNG")
           PY
           {
-            echo "### App Store screenshots"
+            echo "### $APP App Store screenshots"
             echo
-            for png in fastlane/screenshots/en-US/*.png; do echo "- \`$(basename "$png")\`"; done
+            for png in "apps/$APP/fastlane/screenshots/en-US"/*.png; do echo "- \`$(basename "$png")\`"; done
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
-          name: app-store-screenshots
-          path: fastlane/screenshots/en-US/*.png
+          name: app-store-screenshots-${{ inputs.app }}
+          path: apps/${{ inputs.app }}/fastlane/screenshots/en-US/*.png
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
-          name: screenshots-overview
-          path: build/screenshots/overview.png
+          name: screenshots-overview-${{ inputs.app }}
+          path: build/screenshots/${{ inputs.app }}/overview.png
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
-          name: screenshots-raw
-          path: build/screenshots/raw
+          name: screenshots-raw-${{ inputs.app }}
+          path: build/screenshots/${{ inputs.app }}/raw
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: screenshot-test-results
-          path: build/screenshots/*.xcresult
+          name: screenshot-test-results-${{ inputs.app }}
+          path: build/screenshots/${{ inputs.app }}/*.xcresult
           if-no-files-found: ignore

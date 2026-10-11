@@ -18,7 +18,8 @@ class ReleaseCheck
 
   def initialize
     @calls = []
-    instance_eval(File.read(File.expand_path("../fastlane/Fastfile", __dir__)))
+    fastfile = File.expand_path("../fastlane/Fastfile", __dir__)
+    instance_eval(File.read(fastfile), fastfile)
   end
 
   def default_platform(*); end
@@ -55,6 +56,11 @@ class ReleaseCheck
     "12345678-1234-1234-1234-123456789ABC"
   end
 
+  def update_code_signing_settings(**args)
+    @calls << [:signing, args]
+    File.write(File.join(args[:path], "project.pbxproj"), "temporary signing settings")
+  end
+
   def upload_to_testflight(**args)
     @calls << [:upload, args]
   end
@@ -65,9 +71,9 @@ class ReleaseCheck
 end
 
 check = ReleaseCheck.new
-ENV.delete("TENDR_PROFILE_UUID")
+ENV.delete("R_PROFILE_UUID")
 ENV.delete("GITHUB_ACTIONS")
-check.beta({})
+check.beta({ app: "tendr" })
 raise "release order" unless check.calls.map(&:first) == [:sh, :latest, :build, :upload]
 build = check.calls.assoc(:build).last
 raise "local signing changed" unless build[:export_xcargs] == "-allowProvisioningUpdates" && build[:export_options].empty?
@@ -79,7 +85,7 @@ check.calls.clear
 ENV["GITHUB_ACTIONS"] = "true"
 check.fail_provisioning = true
 begin
-  check.beta({})
+  check.beta({ app: "tendr" })
   raise "ignored provisioning failure"
 rescue RuntimeError => error
   raise unless error.message == "provisioning failure"
@@ -88,8 +94,8 @@ raise "uploaded without signing" if check.calls.assoc(:upload)
 
 check.calls.clear
 check.fail_provisioning = false
-ENV["TENDR_PROFILE_UUID"] = "unusable-xcode-managed-profile"
-check.beta({})
+ENV["R_PROFILE_UUID"] = "unusable-xcode-managed-profile"
+check.beta({ app: "tendr" })
 profile = check.calls.assoc(:profile).last
 raise "wrong profile selection" unless profile[:provisioning_name] == "Tendr CI App Store" && profile[:ignore_profiles_with_different_name] && profile[:api_key][:key_id] == "test-key"
 raise "release order" unless check.calls.map(&:first) == [:sh, :latest, :profile, :build, :upload]
@@ -101,7 +107,7 @@ raise "CI export signing" unless build[:export_options][:provisioningProfiles] =
 check.calls.clear
 check.fail_tests = true
 begin
-  check.beta({})
+  check.beta({ app: "tendr" })
   raise "ignored failing tests"
 rescue RuntimeError => error
   raise unless error.message == "test failure"
@@ -109,29 +115,58 @@ end
 raise "released after failing tests" unless check.calls.map(&:first) == [:sh]
 
 check.calls.clear
+ENV.delete("APP")
+begin
+  check.beta({})
+  raise "beta ran without an app"
+rescue RuntimeError => error
+  raise unless error.message.start_with?("Pass app:")
+end
+raise "built without an app" unless check.calls.empty?
+
+check.calls.clear
 ENV["ASC_REVIEW_PHONE"] = "+1 555 0100"
-check.metadata({})
+check.metadata({ app: "tendr" })
 listing = check.calls.assoc(:deliver).last
 raise "metadata lane must never submit or upload a binary" unless listing[:submit_for_review] == false && listing[:skip_binary_upload] == true && !listing.key?(:ipa)
 raise "metadata lane must run unattended" unless listing[:force] && listing[:run_precheck_before_submit] == false
-raise "metadata paths" unless listing[:metadata_path] == "./fastlane/metadata" && listing[:screenshots_path] == "./fastlane/screenshots" && listing[:overwrite_screenshots]
+tendr = File.expand_path("../apps/tendr", __dir__)
+raise "metadata paths" unless listing[:metadata_path] == "#{tendr}/fastlane/metadata" && listing[:screenshots_path] == "#{tendr}/fastlane/screenshots" && listing[:overwrite_screenshots]
+raise "metadata app" unless listing[:app_identifier] == "com.calumwebb.still" && listing[:app_version] == "1.0.1"
 raise "review phone from environment" unless listing[:app_review_information] == { phone_number: "+1 555 0100" }
 check.calls.clear
-check.metadata({ skip_screenshots: "true" })
+check.metadata({ app: "tendr", skip_screenshots: "true" })
 raise "skip_screenshots option" unless check.calls.assoc(:deliver).last[:skip_screenshots]
 
-metadata = File.expand_path("../fastlane/metadata", __dir__)
-limits = { "name" => 30, "subtitle" => 30, "keywords" => 100, "promotional_text" => 170, "description" => 4000, "release_notes" => 4000 }
-limits.each do |field, limit|
-  text = File.read(File.join(metadata, "en-US", "#{field}.txt"))
-  raise "#{field} is empty" if text.strip.empty?
-  raise "#{field} is #{text.length} characters; the App Store limit is #{limit}" if text.length > limit
+# The app and widget must each receive their own profile, and the project is restored.
+check.fail_tests = false
+check.calls.clear
+ENV["GITHUB_ACTIONS"] = "true"
+ENV.delete("R_PROFILE_UUID")
+project = File.expand_path("../apps/festr/Festr.xcodeproj/project.pbxproj", __dir__)
+original = File.binread(project)
+check.beta({ app: "festr" })
+raise "project signing leaked" unless File.binread(project) == original
+profiles = check.calls.select { |name, _| name == :profile }.map { |_, args| args[:app_identifier] }
+raise "missing widget profile" unless profiles == ["com.calumwebb.festr", "com.calumwebb.festr.widgets"]
+build = check.calls.assoc(:build).last
+raise "global profile overrides widget" if build[:xcargs].include?("PROVISIONING_PROFILE_SPECIFIER")
+raise "missing export profiles" unless build[:export_options][:provisioningProfiles].keys == profiles
+raise "wrong archive project" unless build[:project].end_with?("apps/festr/Festr.xcodeproj")
+
+Dir[File.expand_path("../apps/*/fastlane/metadata", __dir__)].sort.each do |metadata|
+  limits = { "name" => 30, "subtitle" => 30, "keywords" => 100, "promotional_text" => 170, "description" => 4000, "release_notes" => 4000 }
+  limits.each do |field, limit|
+    text = File.read(File.join(metadata, "en-US", "#{field}.txt"))
+    raise "#{metadata}: #{field} is empty" if text.strip.empty?
+    raise "#{field} is #{text.length} characters; the App Store limit is #{limit}" if text.length > limit
+  end
+  %w[privacy_url support_url marketing_url].each do |field|
+    raise "#{field} must be https" unless File.read(File.join(metadata, "en-US", "#{field}.txt")).strip.match?(%r{\Ahttps://\S+\z})
+  end
+  raise "keywords must be comma separated without spaces" if File.read(File.join(metadata, "en-US", "keywords.txt")).match?(/,\s/)
+  listing_text = Dir[File.join(metadata, "**", "*.txt")].map { |path| File.read(path) }.join("\n")
+  banned = /semaglutide|tirzepatide|ozempic|wegovy|mounjaro|zepbound|saxenda|liraglutide|syringe|\bcures?\b|guarantee/i
+  raise "listing mentions #{listing_text[banned]}; keep drug names and medical claims out of the listing" if listing_text.match?(banned)
 end
-%w[privacy_url support_url marketing_url].each do |field|
-  raise "#{field} must be https" unless File.read(File.join(metadata, "en-US", "#{field}.txt")).match?(%r{\Ahttps://\S+\z})
-end
-raise "keywords must be comma separated without spaces" if File.read(File.join(metadata, "en-US", "keywords.txt")).match?(/,\s/)
-listing_text = Dir[File.join(metadata, "**", "*.txt")].map { |path| File.read(path) }.join("\n")
-banned = /semaglutide|tirzepatide|ozempic|wegovy|mounjaro|zepbound|saxenda|liraglutide|syringe|\bcures?\b|guarantee/i
-raise "listing mentions #{listing_text[banned]}; keep drug names and medical claims out of the listing" if listing_text.match?(banned)
-puts "Release checks passed (local signing, CI signing, next build, distribution, failure gates, App Store listing)."
+puts "Release checks passed (app selection, local signing, CI signing, next build, distribution, failure gates, App Store listings)."

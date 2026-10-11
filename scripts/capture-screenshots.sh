@@ -1,19 +1,24 @@
 #!/usr/bin/env bash
-# Captures raw App Store screenshots from the --screenshots fixture on a fresh
-# iPhone 17 Pro Max simulator (6.9", 1320x2868) with a 9:41 status bar.
-# Usage: scripts/capture-screenshots.sh [output-dir] [appearance...]
-# Writes <output-dir>/<appearance>/<screen>.png; defaults to build/screenshots/raw and light dark.
+# Captures an app's raw App Store screenshots (its screenshot_test in apps/<app>/app.yml) on a
+# fresh iPhone 17 Pro Max simulator (6.9", 1320x2868) with a 9:41 status bar.
+# Usage: scripts/capture-screenshots.sh <app> [output-dir] [appearance...]
+# Writes <output-dir>/<appearance>/<screen>.png; defaults to build/screenshots/<app>/raw and light dark.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-out=${1:-build/screenshots/raw}
-shift || true
+app=${1:?usage: capture-screenshots.sh <app> [output-dir] [appearance...]}
+project=$(ruby scripts/app-config.rb "$app" project_path)
+scheme=$(ruby scripts/app-config.rb "$app" scheme)
+test_id=$(ruby scripts/app-config.rb "$app" screenshot_test)
+name=$(ruby scripts/app-config.rb "$app" name)
+out=${2:-build/screenshots/$app/raw}
+shift $(( $# > 1 ? 2 : 1 ))
 appearances=("$@")
 [[ ${#appearances[@]} -gt 0 ]] || appearances=(light dark)
 device_type=com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max
-derived=build/screenshots/DerivedData
+derived=build/screenshots/$app/DerivedData
 
-runtime=${TENDR_SIM_RUNTIME:-$(xcrun simctl list runtimes --json | python3 -c '
+runtime=${R_SIM_RUNTIME:-$(xcrun simctl list runtimes --json | python3 -c '
 import json, sys
 runtimes = [r for r in json.load(sys.stdin)["runtimes"] if r["platform"] == "iOS" and r["isAvailable"]]
 runtimes.sort(key=lambda r: [int(p) for p in r["version"].split(".")])
@@ -22,14 +27,14 @@ print(runtimes[-1]["identifier"] if runtimes else "")
 [[ -n "$runtime" ]] || { echo "No iOS simulator runtime is installed" >&2; exit 1; }
 echo "Using $runtime"
 
-udid=$(xcrun simctl create "Tendr Screenshots" "$device_type" "$runtime")
+udid=$(xcrun simctl create "$name Screenshots" "$device_type" "$runtime")
 trap 'xcrun simctl shutdown "$udid" >/dev/null 2>&1 || true; xcrun simctl delete "$udid" >/dev/null 2>&1 || true' EXIT
 scripts/boot-simulator.sh "$udid" 300
 
-xcodebuild build-for-testing -project Still.xcodeproj -scheme Still \
+xcodebuild build-for-testing -project "$project" -scheme "$scheme" \
   -destination "id=$udid" -derivedDataPath "$derived" CODE_SIGNING_ALLOWED=NO -quiet
 
-rm -rf "$out" build/screenshots/*.xcresult
+rm -rf "$out" "build/screenshots/$app"/*.xcresult
 for appearance in "${appearances[@]}"; do
   xcrun simctl ui "$udid" appearance "$appearance"
   xcrun simctl status_bar "$udid" override --time "9:41" \
@@ -38,10 +43,10 @@ for appearance in "${appearances[@]}"; do
     --batteryState discharging --batteryLevel 100
   mkdir -p "$out/$appearance"
   TEST_RUNNER_SCREENSHOT_DIR="$PWD/$out/$appearance" xcodebuild test-without-building \
-    -project Still.xcodeproj -scheme Still -destination "id=$udid" -derivedDataPath "$derived" \
-    -only-testing:StillUITests/ScreenshotTests \
+    -project "$project" -scheme "$scheme" -destination "id=$udid" -derivedDataPath "$derived" \
+    -only-testing:"$test_id" \
     -test-timeouts-enabled YES -default-test-execution-time-allowance 300 -maximum-test-execution-time-allowance 600 \
-    -resultBundlePath "build/screenshots/ScreenshotTests-$appearance.xcresult" -quiet
+    -resultBundlePath "build/screenshots/$app/ScreenshotTests-$appearance.xcresult" -quiet
 done
 
 python3 - "$out" <<'PY'
