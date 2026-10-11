@@ -12,14 +12,14 @@ Both send a strong `ETag` (SHA-256 of the body), answer `If-None-Match` with `30
 ## Local setup
 
 ```bash
-pnpm install
+bun install
 docker compose up -d            # or any Postgres 16; set DATABASE_URL
 cp .env.example .env.local      # then fill in the values below
-pnpm hash-password              # prints ADMIN_PASSWORD_HASH (escaped form for .env files)
+bun hash-password              # prints ADMIN_PASSWORD_HASH (escaped form for .env files)
 openssl rand -hex 32            # SESSION_SECRET
-pnpm db:migrate
-pnpm db:seed                    # upserts ../Festr/Resources/seed-feed.json, then publishes
-pnpm dev
+bun db:migrate
+bun db:seed                    # upserts ../Festr/Resources/seed-feed.json, then publishes
+bun dev
 ```
 
 Sign in with `ADMIN_EMAIL` (default `calumpeterwebb@icloud.com`) and the password you hashed.
@@ -27,16 +27,16 @@ Sign in with `ADMIN_EMAIL` (default `calumpeterwebb@icloud.com`) and the passwor
 ## Checks
 
 ```bash
-pnpm lint          # ESLint: next/core-web-vitals, next/typescript, eslint-plugin-shadcn (radix-all)
-pnpm format:check  # Prettier with prettier-plugin-tailwindcss
-pnpm typecheck     # next typegen + tsc
-pnpm test          # Vitest: time zones, feed, import parsing, vision extraction (mock model), sessions, rate limit
-pnpm ui:check      # shadcn CLI: installed components match the registry
-pnpm build
-E2E_PASSWORD=… E2E_BASE_URL=http://localhost:3000 pnpm e2e   # Playwright, against a running server with FESTR_VISION_MOCK=1
+bun lint          # ESLint: next/core-web-vitals, next/typescript, eslint-plugin-shadcn (radix-all)
+bun format:check  # Prettier with prettier-plugin-tailwindcss
+bun typecheck     # next typegen + tsc
+bun test          # Vitest: time zones, feed, import parsing, vision extraction (mock model), sessions, rate limit
+bun ui:check      # shadcn CLI: installed components match the registry
+bun build
+E2E_PASSWORD=… E2E_BASE_URL=http://localhost:3000 bun e2e   # Playwright, against a running server with FESTR_VISION_MOCK=1
 ```
 
-`src/components/ui` holds unmodified shadcn/ui registry components (Prettier and the shadcn lint rules skip them; `ui:check` keeps them in sync). Add more with `pnpm dlx shadcn@latest add <name>`.
+`src/components/ui` holds unmodified shadcn/ui registry components (Prettier and the shadcn lint rules skip them; `ui:check` keeps them in sync). Add more with `bun dlx shadcn@latest add <name>`.
 
 ## Features
 
@@ -54,8 +54,10 @@ A single admin: email + bcrypt hash from the environment, compared in constant w
 1. Import the repository in Vercel and set **Root Directory** to `admin` (Next.js is detected; `vercel.json` sets the install and build commands).
 2. **Storage → Marketplace → Neon → Connect** to the project. This adds `DATABASE_URL` and `DATABASE_URL_UNPOOLED`.
 3. Add environment variables: `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH` (raw hash, no escaping), `SESSION_SECRET`, and optionally `AI_GATEWAY_API_KEY` (or enable AI Gateway on the project, which uses the deployment's OIDC token).
-4. Deploy. The build runs `pnpm db:migrate` (Drizzle migrations from `drizzle/`, using the unpooled URL), then `next build`.
-5. Seed once from your machine against the Neon database: `DATABASE_URL=<neon url> pnpm db:seed`.
+4. Deploy. The build runs `bun db:migrate` (Drizzle migrations from `drizzle/`, using the unpooled URL), then `next build`.
+5. Seed once from your machine against the Neon database: `DATABASE_URL=<neon url> bun db:seed`.
 6. Point the iOS app at the deployment: set `FEED_BASE_URL` in `project.yml` (for example `https://festr-admin.vercel.app`) and regenerate the Xcode project. The app reads `<FEED_BASE_URL>/feed/index.json`.
 
-Schema changes: edit `src/db/schema.ts`, run `pnpm db:generate`, commit the new file in `drizzle/`.
+Schema changes: edit `src/db/schema.ts`, run `bun db:generate`, commit the new file in `drizzle/`.
+
+In the monorepo, set the Vercel project Root Directory to `web/festr-admin`. The bundled seed feed is read from `../../apps/festr/Festr/Resources/seed-feed.json`; override `SEED_FEED_PATH` when seeding outside this checkout. Use bun for installation and scripts. Deployment and migrations are separate from a local production build.

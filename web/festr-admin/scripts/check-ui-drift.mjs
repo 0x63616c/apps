@@ -3,7 +3,7 @@
 import { execFileSync } from "node:child_process";
 
 const shadcn = (args) =>
-  execFileSync("pnpm", ["exec", "shadcn", ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  execFileSync("bunx", [ "shadcn", ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
 
 const info = JSON.parse(shadcn(["info", "--json"]));
 const installed = info.components ?? info.installedComponents ?? [];

@@ -7,7 +7,7 @@ export default defineConfig([
   ...nextVitals,
   ...nextTs,
   {
-    // Registry components stay byte-for-byte upstream (checked by `pnpm ui:check`); the shadcn rules cover app code.
+    // Registry components stay byte-for-byte upstream (checked by `bun run ui:check`); the shadcn rules cover app code.
     ...shadcn.configs["radix-all"],
     files: ["src/**/*.tsx"],
     ignores: ["src/components/ui/**"],

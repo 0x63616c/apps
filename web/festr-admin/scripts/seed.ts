@@ -8,9 +8,9 @@ import { upsertRows } from "../src/db/queries";
 import { feedToRows } from "../src/lib/feed";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const BUNDLED_FEED = process.env.SEED_FEED_PATH ?? resolve(here, "../../Festr/Resources/seed-feed.json");
+const BUNDLED_FEED = process.env.SEED_FEED_PATH ?? resolve(here, "../../../apps/festr/Festr/Resources/seed-feed.json");
 
-// Upserts the iOS app's bundled feed (non-destructive), then publishes. Usage: pnpm db:seed [--no-publish]
+// Upserts the iOS app's bundled feed (non-destructive), then publishes. Usage: bun run db:seed [--no-publish]
 async function main() {
   const rows = feedToRows(JSON.parse(readFileSync(BUNDLED_FEED, "utf8")));
   const db = getDb();

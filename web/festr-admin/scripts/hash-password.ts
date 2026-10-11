@@ -1,8 +1,8 @@
 import bcrypt from "bcryptjs";
 import { createInterface } from "node:readline/promises";
 
-// Usage: pnpm hash-password            (prompts; input is not echoed)
-//        echo -n 'secret' | pnpm hash-password
+// Usage: bun run hash-password            (prompts; input is not echoed)
+//        echo -n 'secret' | bun run hash-password
 async function readPassword(): Promise<string> {
   if (!process.stdin.isTTY) {
     const chunks: Buffer[] = [];

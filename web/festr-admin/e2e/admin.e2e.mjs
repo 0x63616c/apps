@@ -1,5 +1,5 @@
 // End-to-end check against a running admin with a seeded database and FESTR_VISION_MOCK=1.
-// Usage: E2E_PASSWORD=... [E2E_BASE_URL=http://localhost:3000] [E2E_SCREENSHOTS=dir] pnpm e2e
+// Usage: E2E_PASSWORD=... [E2E_BASE_URL=http://localhost:3000] [E2E_SCREENSHOTS=dir] bun run e2e
 // Note: the final step locks out the client IP for 15 minutes (clear the login_attempts table to reset).
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";

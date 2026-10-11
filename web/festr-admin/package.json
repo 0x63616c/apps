@@ -19,7 +19,7 @@
     "format:check": "prettier --check .",
     "ui:check": "node scripts/check-ui-drift.mjs",
     "hash-password": "tsx scripts/hash-password.ts",
-    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm ui:check",
+    "check": "bun run lint && bun run format:check && bun run typecheck && bun run test && bun run ui:check",
     "e2e": "node e2e/admin.e2e.mjs"
   },
   "dependencies": {
@@ -62,12 +62,10 @@
     "typescript": "^5.9",
     "vitest": "^5.0.3"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "sharp",
-      "unrs-resolver"
-    ]
-  },
-  "packageManager": "pnpm@10.33.3"
+  "packageManager": "bun@1.4.2",
+  "trustedDependencies": [
+    "esbuild",
+    "sharp",
+    "unrs-resolver"
+  ]
 }
