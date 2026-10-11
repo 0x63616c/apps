@@ -1,5 +1,6 @@
 name: Still
 options:
+  schemePathPrefix: ../
   bundleIdPrefix: com.calumwebb
   deploymentTarget:
     iOS: '17.0'

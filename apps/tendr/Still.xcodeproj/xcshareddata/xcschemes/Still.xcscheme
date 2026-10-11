@@ -91,7 +91,7 @@
       <CommandLineArguments>
       </CommandLineArguments>
       <StoreKitConfigurationFileReference
-         identifier = "../../Tendr.storekit">
+         identifier = "../Tendr.storekit">
       </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction

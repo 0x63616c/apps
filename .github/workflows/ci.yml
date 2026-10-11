@@ -92,6 +92,10 @@ jobs:
           else
             echo "$APP has no Swift package tests"
           fi
+      - name: App-specific portable checks
+        run: |
+          if [[ "$APP" == festr ]]; then python3 apps/festr/scripts/make-seed-feed.py --check; fi
+          if [[ "$APP" == shotr ]]; then python3 -m unittest discover -s apps/shotr/scripts/tests; fi
       - name: Project is generated from project.yml
         run: |
           brew list xcodegen >/dev/null 2>&1 || brew install xcodegen

@@ -2,7 +2,7 @@
 // (one week, one dose to go), on a near-black tile. Monochrome only.
 // Every icon asset comes from the geometry below; edit it here, then run from the repo root:
 //
-//   swift scripts/render-icon.swift
+//   swift apps/tendr/scripts/render-icon.swift
 //
 // Writes design/icon/*.svg and *.png, the AppIcon set (any, dark and tinted; 1024, opaque),
 // the LaunchGlyph image set and the site icons. CI (icon.yml) fails if the committed files differ.
@@ -110,14 +110,14 @@ func write(_ text: String, to path: String) throws {
 }
 
 FileManager.default.changeCurrentDirectoryPath(CommandLine.arguments.dropFirst().first ?? ".")
-let appIcon = "Still/Assets.xcassets/AppIcon.appiconset"
-let launch = "Still/Assets.xcassets/LaunchGlyph.imageset"
+let appIcon = "apps/tendr/Still/Assets.xcassets/AppIcon.appiconset"
+let launch = "apps/tendr/Still/Assets.xcassets/LaunchGlyph.imageset"
 do {
-    try write(svg(.launch), to: "design/icon/cycle-glyph.svg")
-    try write(svg(.dark), to: "design/icon/tendr-icon-dark.svg")
-    try write(svg(.light), to: "design/icon/tendr-icon-light.svg")
-    try write(render(.dark, pixels: 1024), to: "design/icon/tendr-icon-dark-1024.png")
-    try write(render(.light, pixels: 1024), to: "design/icon/tendr-icon-light-1024.png")
+    try write(svg(.launch), to: "apps/tendr/design/icon/cycle-glyph.svg")
+    try write(svg(.dark), to: "apps/tendr/design/icon/tendr-icon-dark.svg")
+    try write(svg(.light), to: "apps/tendr/design/icon/tendr-icon-light.svg")
+    try write(render(.dark, pixels: 1024), to: "apps/tendr/design/icon/tendr-icon-dark-1024.png")
+    try write(render(.light, pixels: 1024), to: "apps/tendr/design/icon/tendr-icon-light-1024.png")
 
     try write(render(.dark, pixels: 1024), to: "\(appIcon)/AppIcon.png")
     try write(render(.dark, pixels: 1024), to: "\(appIcon)/AppIcon-Dark.png")
@@ -129,9 +129,9 @@ do {
         try write(render(.launch, pixels: 120 * scale, inset: ringInset), to: "\(launch)/LaunchGlyph\(scale == 1 ? "" : "@\(scale)x").png")
     }
 
-    try write(render(.dark, pixels: 256), to: "site/assets/icon-256.png")
-    try write(render(.dark, pixels: 180), to: "site/assets/apple-touch-icon.png")
-    try write(render(.dark, pixels: 64), to: "site/assets/favicon-64.png")
+    try write(render(.dark, pixels: 256), to: "site/tendr/assets/icon-256.png")
+    try write(render(.dark, pixels: 180), to: "site/tendr/assets/apple-touch-icon.png")
+    try write(render(.dark, pixels: 64), to: "site/tendr/assets/favicon-64.png")
 } catch {
     FileHandle.standardError.write(Data("render-icon: \(error)\n".utf8))
     exit(1)
