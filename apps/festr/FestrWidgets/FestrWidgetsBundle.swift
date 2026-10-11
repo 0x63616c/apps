@@ -13,16 +13,17 @@ struct FestrLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: FestrActivityAttributes.self) { context in
             LiveActivityLockScreenView(attributes: context.attributes, state: context.state)
+                .foregroundStyle(.white)
                 .activityBackgroundTint(Color.black.opacity(0.55))
                 .activitySystemActionForegroundColor(LiveStyle.accent)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(context.state.current == nil ? "UP NEXT" : "NOW")
+                        Text(context.attributes.isStopwatch ? "STOPWATCH" : (context.state.current == nil ? "UP NEXT" : "NOW"))
                             .font(.caption2.weight(.heavy))
                             .foregroundStyle(context.state.current == nil ? LiveStyle.accent : LiveStyle.live)
-                        Text((context.state.current ?? context.state.next)?.artist ?? "Done for today")
+                        Text((context.state.current ?? context.state.next)?.artist ?? (context.attributes.isStopwatch ? "Festr" : "Done for today"))
                             .font(.headline)
                             .lineLimit(1)
                     }
@@ -55,16 +56,19 @@ struct FestrLiveActivity: Widget {
                                     .font(.caption.monospacedDigit())
                             }
                         }
+                        if let stopwatch = context.state.stopwatch {
+                            StopwatchActivityView(timer: stopwatch)
+                        }
                     }
                     .padding(.horizontal, 4)
                 }
             } compactLeading: {
-                Image(systemName: "music.note")
+                Image(systemName: context.attributes.isStopwatch ? "stopwatch" : "music.note")
                     .foregroundStyle(LiveStyle.accent)
             } compactTrailing: {
                 LiveActivityCompactTrailing(state: context.state)
             } minimal: {
-                Image(systemName: "music.note")
+                Image(systemName: context.state.stopwatch?.isRunning == true ? "stopwatch" : "music.note")
                     .foregroundStyle(LiveStyle.accent)
             }
             .keylineTint(LiveStyle.accent)

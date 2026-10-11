@@ -19,6 +19,10 @@ targets:
   Festr:
     type: application
     platform: iOS
+    entitlements:
+      path: Festr/Festr.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.calumwebb.festr]
     sources:
       - path: Festr
     dependencies:
@@ -43,10 +47,15 @@ targets:
   FestrWidgets:
     type: app-extension
     platform: iOS
+    entitlements:
+      path: FestrWidgets/FestrWidgets.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.calumwebb.festr]
     sources:
       - path: FestrWidgets
       - path: Festr/Core
       - path: Festr/Shared
+      - path: Festr/PrivacyInfo.xcprivacy
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.calumwebb.festr.widgets

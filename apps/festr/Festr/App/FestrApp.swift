@@ -16,7 +16,7 @@ struct FestrApp: App {
 }
 
 enum AppTab: Hashable {
-    case discover, schedule, wallpaper
+    case discover, schedule, wallpaper, stopwatch
 }
 
 struct RootView: View {
@@ -35,6 +35,9 @@ struct RootView: View {
             }
             Tab("Wallpaper", systemImage: "iphone.gen3", value: AppTab.wallpaper) {
                 WallpaperStudioView()
+            }
+            Tab("Stopwatch", systemImage: "stopwatch", value: AppTab.stopwatch) {
+                StopwatchView()
             }
         }
         .tabBarMinimizeBehavior(.onScrollDown)

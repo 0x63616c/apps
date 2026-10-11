@@ -13,4 +13,9 @@ struct FestrActivityAttributes: ActivityAttributes {
     var timeZoneIdentifier: String
 
     var key: String { "\(festivalID)|\(day)" }
+    var isStopwatch: Bool { festivalID == "stopwatch" }
+
+    static var stopwatch: Self {
+        Self(festivalID: "stopwatch", festivalName: "Stopwatch", day: "", dayLabel: "", timeZoneIdentifier: "UTC")
+    }
 }

@@ -30,7 +30,9 @@ final class LiveActivityController {
     }
 
     func restore() {
-        activeKey = activities.first { $0.activityState == .active }?.attributes.key
+        activeKey = activities.first {
+            !$0.attributes.isStopwatch && ($0.activityState == .active || $0.activityState == .stale)
+        }?.attributes.key
     }
 
     /// Today's plan: the festival happening now that has chosen sets, otherwise a favourite's full lineup.
@@ -66,10 +68,8 @@ final class LiveActivityController {
             return
         }
         let key = Self.key(plan)
-        for activity in activities where activity.attributes.key != key {
-            Task { await activity.end(nil, dismissalPolicy: .immediate) }
-        }
-        if let existing = activities.first(where: { $0.attributes.key == key && $0.activityState == .active }) {
+        if let existing = activities.first(where: { $0.attributes.key == key && ($0.activityState == .active || $0.activityState == .stale) }) {
+            endOtherActivities(keeping: key)
             activeKey = key
             update(existing, plan: plan, now: now)
             return
@@ -82,11 +82,15 @@ final class LiveActivityController {
             timeZoneIdentifier: plan.festival.timeZoneIdentifier
         )
         do {
+            StopwatchController.shared.reload()
+            var state = plan.content(at: now)
+            state.stopwatch = StopwatchController.shared.timer.summary
             _ = try Activity.request(
                 attributes: attributes,
-                content: ActivityContent(state: plan.content(at: now), staleDate: plan.staleDate(at: now)),
+                content: ActivityContent(state: state, staleDate: plan.staleDate(at: now)),
                 pushType: nil
             )
+            endOtherActivities(keeping: key)
             activeKey = key
             message = nil
             defaults.removeObject(forKey: Self.stoppedKey)
@@ -108,6 +112,7 @@ final class LiveActivityController {
         guard !model.environment.isScreenshotMode else { return }
         let now = model.now()
         for activity in activities {
+            guard !activity.attributes.isStopwatch else { continue }
             let key = activity.attributes.key
             guard let festival = model.festival(id: activity.attributes.festivalID),
                   let day = LocalDate(activity.attributes.day) else {
@@ -116,8 +121,9 @@ final class LiveActivityController {
             }
             let dayPlan = plan(for: festival, day: day, model: model)
             if dayPlan.isOver(at: now) {
-                let final = ActivityContent(state: dayPlan.content(at: now), staleDate: nil)
-                Task { await activity.end(final, dismissalPolicy: .default) }
+                Task {
+                    await StopwatchController.shared.update(activity, state: dayPlan.content(at: now), staleDate: nil, end: true)
+                }
                 if activeKey == key { activeKey = nil }
             } else {
                 update(activity, plan: dayPlan, now: now)
@@ -132,9 +138,17 @@ final class LiveActivityController {
     }
 
     private func update(_ activity: Activity<FestrActivityAttributes>, plan: LivePlan, now: Date) {
-        let content = ActivityContent(state: plan.content(at: now), staleDate: plan.staleDate(at: now))
-        Task { await activity.update(content) }
+        Task {
+            await StopwatchController.shared.update(activity, state: plan.content(at: now), staleDate: plan.staleDate(at: now))
+        }
     }
 
     private static func key(_ plan: LivePlan) -> String { "\(plan.festival.id)|\(plan.day.description)" }
+
+    private func endOtherActivities(keeping key: String) {
+        // Keep the stopwatch visible if requesting its replacement fails.
+        for activity in activities where activity.attributes.key != key {
+            Task { await activity.end(nil, dismissalPolicy: .immediate) }
+        }
+    }
 }

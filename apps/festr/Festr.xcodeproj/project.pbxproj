@@ -7,9 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00063DE360E5BC18C2D80A47 /* Stopwatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D92A8A76631A3F10533C2F /* Stopwatch.swift */; };
 		0AD22DEF7D61D3CD4EA1B36A /* LockScreenPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB81A6B1CB6FC42CFB67B95E /* LockScreenPreview.swift */; };
 		0D5164802F9EFF1291C7FCA0 /* seed-feed.json in Resources */ = {isa = PBXBuildFile; fileRef = 853E580DE281574FF9B7B84D /* seed-feed.json */; };
 		27F371A1FA755CFF0A1F86D5 /* ScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 604C9B53AE6EC63FA9144096 /* ScheduleView.swift */; };
+		338DAA009A8BAFF58E1BF6F3 /* StopwatchIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61B4EBE9AF216B1F8FD0A722 /* StopwatchIntents.swift */; };
 		34F9231C2A8E69725BC4D415 /* LocalDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96B6A4B6A444E0BF73EF1D70 /* LocalDate.swift */; };
 		36975F07D38FA965FC0B9729 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E96BE4476667B254B4138F4C /* DiscoverView.swift */; };
 		3F24F6FECCA895EF8792A581 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = CE11272AEF4C934CF3815821 /* PrivacyInfo.xcprivacy */; };
@@ -17,6 +19,7 @@
 		432687419E1CDD0C45C80D34 /* LiveActivityViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8541F0509BB90895BC08D2B1 /* LiveActivityViews.swift */; };
 		4589312777490EF26B5674D4 /* FeedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F9DF47512F1FE9300232F99 /* FeedStore.swift */; };
 		4FD0C2A8AF022DCF7DEBB5BC /* FestrApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F278C4B96F31A6A497D092E /* FestrApp.swift */; };
+		5ACA089A89FF38424C3BA887 /* StopwatchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7625729A8AA6D04B85764ACD /* StopwatchStore.swift */; };
 		5B72041ABC56F5BA07AD6E43 /* Design.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21558049C9B231E33483B3AD /* Design.swift */; };
 		636C5A12C1CB9953D8189EBA /* LiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A076104A8874A7BABA611C /* LiveActivityController.swift */; };
 		64727623300B1C3ED583906A /* FestrWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2258167A1C035AA410F3CD0C /* FestrWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -24,19 +27,28 @@
 		6D7012026D4493DD724D26DF /* WallpaperCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AE9F3D43A01E0C1B52F7262 /* WallpaperCanvas.swift */; };
 		74224D5D9F27E90161F12A99 /* FestrWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32AE0E12853209ED124B7AF2 /* FestrWidgetsBundle.swift */; };
 		75509E5B3D1D8AF8F346613A /* FestrActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4815D661D49642EB6166F77 /* FestrActivityAttributes.swift */; };
+		84B56AFA8123CFF645FEC338 /* StopwatchController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3544D728E6EE262CCC803325 /* StopwatchController.swift */; };
+		94DE30A6AA5F6C9D261BDCA7 /* StopwatchController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3544D728E6EE262CCC803325 /* StopwatchController.swift */; };
+		9E0BD14457FE64281D930E6D /* StopwatchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7625729A8AA6D04B85764ACD /* StopwatchStore.swift */; };
 		9EFEB08BA2A7EF00C187774A /* ScreenshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F55BB6A3DC0AC7E35857F589 /* ScreenshotTests.swift */; };
 		A02EFE25618D8139F15B1530 /* FlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF7C401DC34307A53953C26 /* FlowTests.swift */; };
 		A1B898FBB18A5163412F769A /* RDesign in Frameworks */ = {isa = PBXBuildFile; productRef = A2AD92033072D875703B77F4 /* RDesign */; };
 		A88DC68B66651DFF67F50B9C /* FeedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F9DF47512F1FE9300232F99 /* FeedStore.swift */; };
+		AF02C7169B86F9041B618F1F /* StopwatchViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01BCC48B4B85E05C6DCDC295 /* StopwatchViews.swift */; };
+		B61148A4B22323E26E2D92DD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = CE11272AEF4C934CF3815821 /* PrivacyInfo.xcprivacy */; };
 		B699BBB13CF062359B246747 /* LocalDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96B6A4B6A444E0BF73EF1D70 /* LocalDate.swift */; };
+		BBCADF84119AC90E134F6CE4 /* Stopwatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D92A8A76631A3F10533C2F /* Stopwatch.swift */; };
 		BDA988BFBF780A01FC8066A7 /* Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCC74AC6D1F5FE9AA44E719F /* Schedule.swift */; };
 		BFBAAD352958419B660EB824 /* FestivalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41129A0E57FE75F2C3A78ACB /* FestivalView.swift */; };
 		C09D47438A6C99FBACDCE310 /* Feed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BDBD4D553FD4EB0AC5BC65C /* Feed.swift */; };
+		C4436A81D83F2C7EB5E9DEAF /* StopwatchViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01BCC48B4B85E05C6DCDC295 /* StopwatchViews.swift */; };
 		C47F9CE5C4D4DD60E7F8AB7F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3F67100CDF1CE2FF2AC000F5 /* Assets.xcassets */; };
 		D21D2150282783CC95E636D6 /* Feed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BDBD4D553FD4EB0AC5BC65C /* Feed.swift */; };
 		D44A3B57CE77326579EFD3CB /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE1F46CD3144CEDACE432120 /* AppModel.swift */; };
+		D5F46672C502E3E7A27C7F29 /* StopwatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33D943B4A0D7937274A46E1F /* StopwatchView.swift */; };
 		DC08544243BDA141096E29D4 /* Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCC74AC6D1F5FE9AA44E719F /* Schedule.swift */; };
 		E470C1B5F769D0B9C41FA4AE /* FestrActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4815D661D49642EB6166F77 /* FestrActivityAttributes.swift */; };
+		EA1FC0EC7E87814D0E3BF110 /* StopwatchIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61B4EBE9AF216B1F8FD0A722 /* StopwatchIntents.swift */; };
 		EB8BE9F0373531CB71E91299 /* LivePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FD5D958E5708ADC4D4DD1D6 /* LivePlan.swift */; };
 		EE24B52A04CE54BFC031C2EA /* LivePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FD5D958E5708ADC4D4DD1D6 /* LivePlan.swift */; };
 /* End PBXBuildFile section */
@@ -73,17 +85,24 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		01BCC48B4B85E05C6DCDC295 /* StopwatchViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopwatchViews.swift; sourceTree = "<group>"; };
 		0FD5D958E5708ADC4D4DD1D6 /* LivePlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePlan.swift; sourceTree = "<group>"; };
 		1BDBD4D553FD4EB0AC5BC65C /* Feed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feed.swift; sourceTree = "<group>"; };
 		21558049C9B231E33483B3AD /* Design.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Design.swift; sourceTree = "<group>"; };
 		2258167A1C035AA410F3CD0C /* FestrWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = FestrWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		22D92A8A76631A3F10533C2F /* Stopwatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stopwatch.swift; sourceTree = "<group>"; };
 		32AE0E12853209ED124B7AF2 /* FestrWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FestrWidgetsBundle.swift; sourceTree = "<group>"; };
+		33D943B4A0D7937274A46E1F /* StopwatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopwatchView.swift; sourceTree = "<group>"; };
+		3544D728E6EE262CCC803325 /* StopwatchController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopwatchController.swift; sourceTree = "<group>"; };
 		3F67100CDF1CE2FF2AC000F5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		3F9DF47512F1FE9300232F99 /* FeedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedStore.swift; sourceTree = "<group>"; };
 		41129A0E57FE75F2C3A78ACB /* FestivalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FestivalView.swift; sourceTree = "<group>"; };
 		4ACA2CA69F5D3BABED80277A /* WallpaperStudioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WallpaperStudioView.swift; sourceTree = "<group>"; };
+		50694010E51DDD2A5B095E66 /* FestrWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FestrWidgets.entitlements; sourceTree = "<group>"; };
 		604C9B53AE6EC63FA9144096 /* ScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleView.swift; sourceTree = "<group>"; };
+		61B4EBE9AF216B1F8FD0A722 /* StopwatchIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopwatchIntents.swift; sourceTree = "<group>"; };
 		63128686E8B88AD898A829DD /* FestrUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FestrUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7625729A8AA6D04B85764ACD /* StopwatchStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopwatchStore.swift; sourceTree = "<group>"; };
 		7F278C4B96F31A6A497D092E /* FestrApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FestrApp.swift; sourceTree = "<group>"; };
 		853E580DE281574FF9B7B84D /* seed-feed.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "seed-feed.json"; sourceTree = "<group>"; };
 		8541F0509BB90895BC08D2B1 /* LiveActivityViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityViews.swift; sourceTree = "<group>"; };
@@ -96,6 +115,7 @@
 		CCF7C401DC34307A53953C26 /* FlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowTests.swift; sourceTree = "<group>"; };
 		CE11272AEF4C934CF3815821 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		CE1F46CD3144CEDACE432120 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		E3CA886D1CEC80BA01EB319C /* Festr.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Festr.entitlements; sourceTree = "<group>"; };
 		E4815D661D49642EB6166F77 /* FestrActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FestrActivityAttributes.swift; sourceTree = "<group>"; };
 		E96BE4476667B254B4138F4C /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
 		EB276B70A1DB4D23B1D1B208 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -120,6 +140,7 @@
 			isa = PBXGroup;
 			children = (
 				3F67100CDF1CE2FF2AC000F5 /* Assets.xcassets */,
+				E3CA886D1CEC80BA01EB319C /* Festr.entitlements */,
 				FD2C65458981CC7AD8B595E0 /* Info.plist */,
 				CE11272AEF4C934CF3815821 /* PrivacyInfo.xcprivacy */,
 				7CC27565FA17E0E3E31CECD3 /* App */,
@@ -144,6 +165,7 @@
 		0C68646D1827C9E5BE962FCE /* FestrWidgets */ = {
 			isa = PBXGroup;
 			children = (
+				50694010E51DDD2A5B095E66 /* FestrWidgets.entitlements */,
 				32AE0E12853209ED124B7AF2 /* FestrWidgetsBundle.swift */,
 				EB276B70A1DB4D23B1D1B208 /* Info.plist */,
 			);
@@ -202,6 +224,7 @@
 			children = (
 				C2A076104A8874A7BABA611C /* LiveActivityController.swift */,
 				BB81A6B1CB6FC42CFB67B95E /* LockScreenPreview.swift */,
+				33D943B4A0D7937274A46E1F /* StopwatchView.swift */,
 			);
 			path = Live;
 			sourceTree = "<group>";
@@ -236,6 +259,9 @@
 			children = (
 				E4815D661D49642EB6166F77 /* FestrActivityAttributes.swift */,
 				8541F0509BB90895BC08D2B1 /* LiveActivityViews.swift */,
+				3544D728E6EE262CCC803325 /* StopwatchController.swift */,
+				61B4EBE9AF216B1F8FD0A722 /* StopwatchIntents.swift */,
+				01BCC48B4B85E05C6DCDC295 /* StopwatchViews.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -248,6 +274,8 @@
 				0FD5D958E5708ADC4D4DD1D6 /* LivePlan.swift */,
 				96B6A4B6A444E0BF73EF1D70 /* LocalDate.swift */,
 				FCC74AC6D1F5FE9AA44E719F /* Schedule.swift */,
+				22D92A8A76631A3F10533C2F /* Stopwatch.swift */,
+				7625729A8AA6D04B85764ACD /* StopwatchStore.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -287,6 +315,7 @@
 			buildConfigurationList = 4DEC46A8496AB1F07F019BC5 /* Build configuration list for PBXNativeTarget "FestrWidgets" */;
 			buildPhases = (
 				640C10EB8CA214707B24E6C7 /* Sources */,
+				B5E271AB8646AE6DF8C4A844 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -398,6 +427,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B5E271AB8646AE6DF8C4A844 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B61148A4B22323E26E2D92DD /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -413,6 +450,11 @@
 				EE24B52A04CE54BFC031C2EA /* LivePlan.swift in Sources */,
 				34F9231C2A8E69725BC4D415 /* LocalDate.swift in Sources */,
 				DC08544243BDA141096E29D4 /* Schedule.swift in Sources */,
+				BBCADF84119AC90E134F6CE4 /* Stopwatch.swift in Sources */,
+				94DE30A6AA5F6C9D261BDCA7 /* StopwatchController.swift in Sources */,
+				EA1FC0EC7E87814D0E3BF110 /* StopwatchIntents.swift in Sources */,
+				9E0BD14457FE64281D930E6D /* StopwatchStore.swift in Sources */,
+				AF02C7169B86F9041B618F1F /* StopwatchViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -444,6 +486,12 @@
 				0AD22DEF7D61D3CD4EA1B36A /* LockScreenPreview.swift in Sources */,
 				BDA988BFBF780A01FC8066A7 /* Schedule.swift in Sources */,
 				27F371A1FA755CFF0A1F86D5 /* ScheduleView.swift in Sources */,
+				00063DE360E5BC18C2D80A47 /* Stopwatch.swift in Sources */,
+				84B56AFA8123CFF645FEC338 /* StopwatchController.swift in Sources */,
+				338DAA009A8BAFF58E1BF6F3 /* StopwatchIntents.swift in Sources */,
+				5ACA089A89FF38424C3BA887 /* StopwatchStore.swift in Sources */,
+				D5F46672C502E3E7A27C7F29 /* StopwatchView.swift in Sources */,
+				C4436A81D83F2C7EB5E9DEAF /* StopwatchViews.swift in Sources */,
 				6D7012026D4493DD724D26DF /* WallpaperCanvas.swift in Sources */,
 				6505BE73C4C824CA5CD25545 /* WallpaperStudioView.swift in Sources */,
 			);
@@ -468,6 +516,7 @@
 		04015408B7226FB61519244C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FestrWidgets/FestrWidgets.entitlements;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FestrWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Festr;
@@ -490,6 +539,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Festr/Festr.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				FEED_BASE_URL = "";
 				GENERATE_INFOPLIST_FILE = YES;
@@ -600,6 +650,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Festr/Festr.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				FEED_BASE_URL = "";
 				GENERATE_INFOPLIST_FILE = YES;
@@ -701,6 +752,7 @@
 		F3F7E881C1DFC409D99164D9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FestrWidgets/FestrWidgets.entitlements;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FestrWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Festr;

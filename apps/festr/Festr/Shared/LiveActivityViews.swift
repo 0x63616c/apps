@@ -20,73 +20,109 @@ struct LiveActivityLockScreenView: View {
     var referenceDate: Date? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: state.stopwatch == nil ? 10 : 6) {
             HStack {
                 Text(attributes.festivalName)
                     .font(.caption.weight(.semibold))
-                Text("· \(attributes.dayLabel)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if !attributes.isStopwatch {
+                    Text("· \(attributes.dayLabel)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
-                Image(systemName: "music.note")
+                Image(systemName: attributes.isStopwatch ? "stopwatch" : "music.note")
                     .font(.caption.weight(.bold))
                     .foregroundStyle(LiveStyle.accent)
             }
 
-            if let current = state.current {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text("NOW")
-                            .font(.caption2.weight(.heavy))
-                            .foregroundStyle(LiveStyle.live)
-                        Text(current.artist)
-                            .font(.headline)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
+            if state.stopwatch != nil {
+                compactSchedule
+            } else {
+                if let current = state.current {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(alignment: .firstTextBaseline) {
+                            Text("NOW")
+                                .font(.caption2.weight(.heavy))
+                                .foregroundStyle(LiveStyle.live)
+                            Text(current.artist)
+                                .font(.headline)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
+                        SetProgress(slot: current, referenceDate: referenceDate)
+                        HStack {
+                            Text(current.stage)
+                            Spacer()
+                            Text(current.isOpenEnded ? "till late" : "until \(LiveStyle.time(current.end, zone: attributes.timeZoneIdentifier))")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     }
-                    SetProgress(slot: current, referenceDate: referenceDate)
+                } else if state.next == nil, !attributes.isStopwatch {
+                    Text("That's a wrap for today.")
+                        .font(.headline)
+                }
+
+                if let next = state.next {
+                    HStack(spacing: 6) {
+                        Text(state.current == nil ? "UP NEXT" : "NEXT")
+                            .font(.caption2.weight(.heavy))
+                            .foregroundStyle(LiveStyle.accent)
+                        Text(next.artist)
+                            .font(state.current == nil ? .headline : .subheadline.weight(.semibold))
+                            .lineLimit(1)
+                        Spacer(minLength: 4)
+                        Text(LiveStyle.time(next.start, zone: attributes.timeZoneIdentifier))
+                            .font(.subheadline.weight(.semibold).monospacedDigit())
+                    }
                     HStack {
-                        Text(current.stage)
+                        Text(next.stage)
                         Spacer()
-                        Text(current.isOpenEnded ? "till late" : "until \(LiveStyle.time(current.end, zone: attributes.timeZoneIdentifier))")
+                        if state.current == nil, let referenceDate {
+                            Text("starts in \(Duration.seconds(max(0, next.start.timeIntervalSince(referenceDate))).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated)))")
+                        } else if state.current == nil {
+                            Text("starts in \(Text(timerInterval: Date.now...max(Date.now, next.start), countsDown: true))")
+                                .monospacedDigit()
+                        } else if state.remainingAfterNext > 0 {
+                            Text("+\(state.remainingAfterNext) more")
+                        }
                     }
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 }
-            } else if state.next == nil {
-                Text("That's a wrap for today.")
-                    .font(.headline)
             }
-
-            if let next = state.next {
-                HStack(spacing: 6) {
-                    Text(state.current == nil ? "UP NEXT" : "NEXT")
-                        .font(.caption2.weight(.heavy))
-                        .foregroundStyle(LiveStyle.accent)
-                    Text(next.artist)
-                        .font(state.current == nil ? .headline : .subheadline.weight(.semibold))
-                        .lineLimit(1)
-                    Spacer(minLength: 4)
-                    Text(LiveStyle.time(next.start, zone: attributes.timeZoneIdentifier))
-                        .font(.subheadline.weight(.semibold).monospacedDigit())
-                }
-                HStack {
-                    Text(next.stage)
-                    Spacer()
-                    if state.current == nil, let referenceDate {
-                        Text("starts in \(Duration.seconds(max(0, next.start.timeIntervalSince(referenceDate))).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated)))")
-                    } else if state.current == nil {
-                        Text("starts in \(Text(timerInterval: Date.now...max(Date.now, next.start), countsDown: true))")
-                            .monospacedDigit()
-                    } else if state.remainingAfterNext > 0 {
-                        Text("+\(state.remainingAfterNext) more")
-                    }
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            if let stopwatch = state.stopwatch {
+                StopwatchActivityView(timer: stopwatch, referenceDate: referenceDate)
             }
         }
-        .padding(16)
+        .padding(state.stopwatch == nil ? 16 : 12)
+    }
+
+    // Two compact set rows leave room for the controls within the Lock Screen banner.
+    private var compactSchedule: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            if let current = state.current {
+                setRow("NOW", slot: current, time: current.isOpenEnded ? "late" : LiveStyle.time(current.end, zone: attributes.timeZoneIdentifier))
+            }
+            if let next = state.next {
+                setRow("NEXT", slot: next, time: LiveStyle.time(next.start, zone: attributes.timeZoneIdentifier))
+            }
+            if state.current == nil, state.next == nil, !attributes.isStopwatch {
+                Text("That's a wrap for today.").font(.caption)
+            }
+        }
+    }
+
+    private func setRow(_ label: String, slot: LiveActivityContent.Slot, time: String) -> some View {
+        HStack(spacing: 5) {
+            Text(label).font(.caption2.weight(.heavy)).foregroundStyle(LiveStyle.accent)
+            Text(slot.artist).fontWeight(.semibold)
+            Text(slot.stage).foregroundStyle(.secondary)
+            Spacer(minLength: 0)
+            Text(time).monospacedDigit()
+        }
+        .font(.caption)
+        .lineLimit(1)
     }
 }
 
@@ -121,7 +157,10 @@ struct LiveActivityCompactTrailing: View {
     var state: LiveActivityContent
 
     var body: some View {
-        if let current = state.current, !current.isOpenEnded {
+        if let stopwatch = state.stopwatch, stopwatch.hasStarted {
+            StopwatchElapsedText(timer: stopwatch)
+                .frame(width: 52)
+        } else if let current = state.current, !current.isOpenEnded {
             Text(timerInterval: Date.now...max(Date.now, current.end), countsDown: true)
                 .monospacedDigit()
                 .frame(maxWidth: 52)

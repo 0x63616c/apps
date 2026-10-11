@@ -53,3 +53,13 @@ Schema version 1 (see `Festr/Core/Feed.swift` and `../../web/festr-admin/src/lib
 - The app bundles the seed feed and refreshes from `<FEED_BASE_URL>/feed/index.json` (`FEED_BASE_URL` build setting in `project.yml`, or the base URL field in About; unset means bundled only) with `If-None-Match`, caching the last good response on disk for offline use. A cached feed is used only if it is newer than the bundled one.
 
 To change the bundled data, edit `data/festivals.source.json` (local wall-clock times) and run `python3 scripts/make-seed-feed.py`.
+
+## Stopwatch
+
+The Stopwatch tab offers Start/Stop, Lap and Reset. Laps are split durations and exclude paused time. Reset stops the timer and clears its laps. `Core/Stopwatch.swift` is a pure Codable model: elapsed time comes from a start date plus accumulated time, so it survives suspension and relaunch without a background ticking task.
+
+`StopwatchStore` saves the full state in UserDefaults under `group.com.calumwebb.festr`. Both targets declare that App Group in `project.yml`; signing profiles must include it. LiveActivityIntent actions run through the same main-actor controller as the app. Activity updates are serialized and schedule refreshes merge the latest stopwatch summary (start date, accumulated time, last lap and count), keeping the activity payload bounded as the lap history grows.
+
+The existing festival activity keeps current/next sets alongside the stopwatch. Without a festival activity, starting the stopwatch creates a stopwatch-only activity using the same attributes. Reset ends a stopwatch-only activity and leaves festival activities intact. Running elapsed text uses `Text(timerInterval:)`; paused text is static. The timer persists independently of the system's Live Activity lifetime.
+
+Linux coverage includes pause/resume, lap splits, reset, Codable restoration, shared defaults, and payload size. On macOS/Xcode 26.2+, build both targets and verify on a device: start and lap from the app, use all Lock Screen/expanded Dynamic Island controls, relaunch while running and paused, and confirm a schedule refresh preserves the timer and laps. Check both a festival activity and a stopwatch-only activity. The Lock Screen preview uses synthetic timer data and disables its buttons.

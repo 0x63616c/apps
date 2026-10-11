@@ -77,6 +77,17 @@ final class StopwatchTests: XCTestCase {
         XCTAssertEqual(StopwatchSummary.formatted(3_661), "01:01:01")
     }
 
+    func testLegacyActivityContentStillDecodesWithNoStopwatch() throws {
+        let legacy = Data(#"{"current":{"artist":"Test artist","stage":"Main","start":1000,"end":2000,"isOpenEnded":false},"remainingAfterNext":2}"#.utf8)
+        var content = try JSONDecoder().decode(LiveActivityContent.self, from: legacy)
+        XCTAssertNil(content.stopwatch)
+        content.stopwatch = StopwatchSummary(accumulated: 125, lastLap: 60, lapCount: 2)
+        let restored = try JSONDecoder().decode(LiveActivityContent.self, from: JSONEncoder().encode(content))
+        XCTAssertEqual(restored.current?.artist, "Test artist")
+        XCTAssertEqual(restored.remainingAfterNext, 2)
+        XCTAssertEqual(restored.stopwatch?.lapCount, 2)
+    }
+
     func testStoreRestoresAndReadsLatestStateBeforeMutating() async throws {
         let epoch = epoch
         try await MainActor.run {

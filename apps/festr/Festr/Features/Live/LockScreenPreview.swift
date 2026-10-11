@@ -57,6 +57,9 @@ struct LockScreenPreview: View {
     }
 
     private var previewState: LiveActivityContent {
-        plan.content(at: previewNow)
+        var state = plan.content(at: previewNow)
+        // Synthetic example; previews never read or change the saved stopwatch.
+        state.stopwatch = StopwatchSummary(accumulated: 125, lastLap: 60, lapCount: 2)
+        return state
     }
 }
