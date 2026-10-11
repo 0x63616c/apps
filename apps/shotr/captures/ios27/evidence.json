@@ -1,0 +1,29 @@
+{
+  "runtime": "iOS 27.0 (24A434)",
+  "device": "iPhone 16 Pro",
+  "udid": "5C5A6D35-1FD0-4FB6-864C-B4C819AE2ADB",
+  "minimumOSVersion": "26.0",
+  "content": "synthetic library; PhotoKit replaced in capture copy; original AI implementation retained but not exercised",
+  "screens": {
+    "light": {
+      "width": 1206,
+      "height": 2622,
+      "sha256": "471006e337f6905317eed0abb466b3489a931002a7b7f7201acb0493a7b0dbe4"
+    },
+    "dark": {
+      "width": 1206,
+      "height": 2622,
+      "sha256": "534fc87ce3bd1796146573fb87d6006fa9ea70e73b56a9b27cef1427617edbd4"
+    },
+    "search": {
+      "width": 1206,
+      "height": 2622,
+      "sha256": "218a18ea9bbaed6be2a60472f1ec31f222ab9369af3233e2b9d80c10de27f4af"
+    },
+    "tags": {
+      "width": 1206,
+      "height": 2622,
+      "sha256": "2b61f85286db294a4625bc28a1aacb73f544ddd994f8418f9616405a2bcba5d8"
+    }
+  }
+}

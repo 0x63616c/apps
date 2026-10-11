@@ -1,0 +1,14 @@
+Historical initial verification performed in Linux
+
+Superseded by the macOS/Xcode/TestFlight evidence in REVIEW.md and HANDOFF.md.
+The statements below describe only the original Linux verification run.
+
+Swift 6.0.3 frontend parsed 14 application sources: PASS
+PBX project parsed and all 14 Swift sources referenced exactly once: PASS
+Shared Xcode scheme XML: PASS
+Privacy manifest plist: PASS
+All nine icon catalog entries: correct dimensions and opaque RGB: PASS
+Portable core: compiled with Swift 6.0.3; 11 XCTest tests passed (subagent execution).
+
+No Apple SDK type-check, simulator launch, device run, signing, or IPA creation was performed.
+See REVIEW.md for required Xcode/iPhone checks.
