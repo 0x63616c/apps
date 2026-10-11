@@ -1,0 +1,70 @@
+name: App Store release
+
+# Prepares the App Store version for review and stops before Submit for Review.
+# Run it manually, or push an `app-store/*` tag (for example app-store/1.0.0-1).
+on:
+  workflow_dispatch:
+    inputs:
+      skip_screenshots:
+        description: 'Upload the listing only and keep the screenshots already in App Store Connect'
+        type: boolean
+        default: false
+  push:
+    tags: ['app-store/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-store-release
+  cancel-in-progress: false
+
+jobs:
+  screenshots:
+    if: ${{ !inputs.skip_screenshots }}
+    uses: ./.github/workflows/screenshots.yml
+
+  app-store-connect:
+    needs: screenshots
+    if: ${{ !cancelled() && (needs.screenshots.result == 'success' || needs.screenshots.result == 'skipped') }}
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      FASTLANE_SKIP_UPDATE_CHECK: '1'
+      FASTLANE_HIDE_CHANGELOG: '1'
+      FASTLANE_SKIP_DOCS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check release secrets
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+          ASC_BETA_FEEDBACK_EMAIL: ${{ secrets.ASC_BETA_FEEDBACK_EMAIL }}
+        run: |
+          missing=0
+          for name in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_CONTENT ASC_BETA_FEEDBACK_EMAIL; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing repository secret $name; see docs/RELEASE.md"
+              missing=1
+            fi
+          done
+          exit "$missing"
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+      - uses: actions/download-artifact@v4
+        if: ${{ !inputs.skip_screenshots }}
+        with:
+          name: app-store-screenshots
+          path: fastlane/screenshots/en-US
+      - name: Upload listing and select the latest build (no submission)
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+          ASC_BETA_FEEDBACK_EMAIL: ${{ secrets.ASC_BETA_FEEDBACK_EMAIL }}
+          ASC_REVIEW_PHONE: ${{ secrets.ASC_REVIEW_PHONE }}
+          ASC_REVIEW_EMAIL: ${{ secrets.ASC_REVIEW_EMAIL }}
+        run: bundle exec fastlane ios prepare_review skip_screenshots:${{ inputs.skip_screenshots == true }}

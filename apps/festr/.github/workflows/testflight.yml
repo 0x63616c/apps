@@ -1,0 +1,111 @@
+name: TestFlight
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      confirm_branch_release:
+        description: 'Publish this selected non-main branch to TestFlight'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# latest_testflight_build_number + 1 must have only one publisher at a time.
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+jobs:
+  beta:
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.confirm_branch_release)
+    runs-on: macos-15
+    timeout-minutes: 90
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+      FASTLANE_SKIP_UPDATE_CHECK: '1'
+      FASTLANE_HIDE_CHANGELOG: '1'
+      FASTLANE_SKIP_DOCS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check release secrets
+        id: secrets
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+          ASC_BETA_FEEDBACK_EMAIL: ${{ secrets.ASC_BETA_FEEDBACK_EMAIL }}
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+        run: |
+          missing=()
+          for name in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_CONTENT ASC_BETA_FEEDBACK_EMAIL BUILD_CERTIFICATE_BASE64 P12_PASSWORD; do
+            [[ -n "${!name}" ]] || missing+=("$name")
+          done
+          if (( ${#missing[@]} )); then
+            # Until the secrets exist, build and test but stop before signing and upload.
+            echo "::warning::TestFlight upload skipped. Missing repository secrets: ${missing[*]} (see docs/RELEASE.md)"
+            {
+              echo "### TestFlight upload skipped"
+              echo
+              echo "Add these repository secrets, then rerun: \`${missing[*]}\`. See docs/RELEASE.md."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Select release toolchain
+        run: xcodebuild -version
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+      - name: Core tests and unsigned Release build
+        if: steps.secrets.outputs.ready != 'true'
+        run: |
+          swift test
+          xcodebuild build -project Festr.xcodeproj -scheme Festr -configuration Release \
+            -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO -quiet
+      - name: Install release signing assets
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+        run: |
+          umask 077
+          certificate="$RUNNER_TEMP/festr-signing.p12"
+          keychain="$RUNNER_TEMP/festr-signing.keychain-db"
+          keychain_password=$(openssl rand -hex 32)
+          echo "::add-mask::$keychain_password"
+          printf '%s' "$BUILD_CERTIFICATE_BASE64" | base64 --decode > "$certificate"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$certificate" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -k "$keychain_password" "$keychain"
+          security list-keychains -d user -s "$keychain"
+      - name: Test, upload, and distribute to Owner Preview
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+          ASC_BETA_FEEDBACK_EMAIL: ${{ secrets.ASC_BETA_FEEDBACK_EMAIL }}
+        run: bundle exec fastlane ios beta changelog:"Build from $GITHUB_REF_NAME ($GITHUB_SHA)"
+      - name: Remove release signing assets
+        if: always()
+        run: |
+          keychain="$RUNNER_TEMP/festr-signing.keychain-db"
+          if [[ -f "$keychain" ]]; then
+            security delete-keychain "$keychain"
+          fi
+          for profile in "$RUNNER_TEMP"/*.mobileprovision; do
+            [[ -f "$profile" ]] || continue
+            security cms -D -i "$profile" > "$RUNNER_TEMP/festr-profile.plist"
+            profile_uuid=$(/usr/libexec/PlistBuddy -c 'Print UUID' "$RUNNER_TEMP/festr-profile.plist")
+            [[ "$profile_uuid" =~ ^[A-Fa-f0-9-]{36}$ ]] && rm -f "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/$profile_uuid.mobileprovision"
+            rm -f "$profile"
+          done
+          rm -f "$RUNNER_TEMP/festr-signing.p12" "$RUNNER_TEMP/festr-profile.plist"

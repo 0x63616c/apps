@@ -1,0 +1,28 @@
+Festr is a simple, fast way to plan a music festival weekend on your iPhone.
+
+DISCOVER
+• Upcoming festivals across the US with dates, city and a countdown
+• Tap the heart to keep the ones you're going to in Favourites
+
+SET TIMES
+• Each day's lineup as a clean timeline: stage, time and artist
+• Times are always shown in the festival's local time zone, including sets that run past midnight
+• Tap a set to add it to My Schedule; clashes are highlighted straight away
+
+MY SCHEDULE
+• Your chosen sets, day by day
+• See at a glance where two picks overlap
+
+LOCK-SCREEN WALLPAPER
+• Turn your day, or the full lineup, into a wallpaper at your iPhone's full resolution
+• The top is left clear for the clock
+• Choose from three themes and save one day or every day to Photos
+
+LIVE ACTIVITY
+• Follow the day from your Lock Screen and Dynamic Island: who's on now, a progress bar, and what's next
+• Starts on festival days, or start and stop it yourself
+
+PRIVATE BY DESIGN
+No account and no tracking. Your favourites and schedule stay on your iPhone.
+
+Set times change. Festr shows the latest times it has and when they were last updated; check the festival's own channels on the day. Festr is an independent app and is not affiliated with any festival or promoter.

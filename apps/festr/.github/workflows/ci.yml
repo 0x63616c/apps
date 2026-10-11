@@ -1,0 +1,77 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  core:
+    runs-on: macos-15
+    timeout-minutes: 20
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+      - run: ruby scripts/check-release.rb
+      - name: Seed feed matches data/festivals.source.json
+        run: python3 scripts/make-seed-feed.py --check
+      - name: Unit tests (time, time zones, clashes, Live Activity plan, feed cache)
+        run: swift test
+
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure an iOS 26 simulator runtime
+        run: |
+          xcodebuild -version
+          if ! xcrun simctl list runtimes | grep -q '^iOS 26'; then
+            xcodebuild -downloadPlatform iOS
+          fi
+          xcrun simctl list runtimes
+      - name: Build for the device SDK (unsigned)
+        run: |
+          xcodebuild build -project Festr.xcodeproj -scheme Festr -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath build/DeviceData CODE_SIGNING_ALLOWED=NO -quiet
+      - name: UI tests and screenshots (light and dark)
+        env:
+          RUN_FLOW_TESTS: '1'
+        run: scripts/capture-screenshots.sh build/screenshots/raw light dark
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: build/screenshots/raw
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ui-test-results
+          path: build/screenshots/*.xcresult
+          if-no-files-found: ignore
+
+  admin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: admin/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm build
