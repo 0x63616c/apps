@@ -94,7 +94,7 @@ platform :ios do
 
     xcargs = "MARKETING_VERSION=#{version} CURRENT_PROJECT_VERSION=#{build_number}"
     export_options = {}
-    profile_uuid = ENV["R_PROFILE_UUID"]
+    profile_uuid = app["signed_targets"] ? nil : ENV["R_PROFILE_UUID"]
     signing_original = nil
     signing_project = File.join(app["dir"], app["project"], "project.pbxproj")
     if ENV["GITHUB_ACTIONS"] == "true" && app["signed_targets"]
