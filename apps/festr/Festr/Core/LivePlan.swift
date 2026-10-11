@@ -15,6 +15,8 @@ struct LiveActivityContent: Codable, Hashable, Sendable {
     var next: Slot?
     /// Sets left after `next`, for the "+2 more" hint.
     var remainingAfterNext: Int
+    /// Optional so activities created before the stopwatch update still decode.
+    var stopwatch: StopwatchSummary? = nil
 }
 
 /// Plans one Live Activity per festival day. ActivityKit ends an activity after roughly eight hours,
