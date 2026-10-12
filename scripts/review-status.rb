@@ -1,9 +1,14 @@
-# Read-only App Store Connect review status for Tendr. Prints greppable lines
+# Read-only App Store Connect review status for one app. Prints greppable lines
 # (STATUS:, REVIEW:, ITEM:, REJECTION:) and a Markdown table for the job summary.
-# Usage: ASC_KEY_ID=… ASC_ISSUER_ID=… ASC_KEY_CONTENT=… bundle exec ruby scripts/review-status.rb
+# Usage: ASC_KEY_ID=… ASC_ISSUER_ID=… ASC_KEY_CONTENT=… bundle exec ruby scripts/review-status.rb <app>
 require "spaceship"
+require "yaml"
 
-APP_ID = "6809098849"
+APP = ARGV.first || ENV["APP"] || abort("usage: review-status.rb <app>")
+abort("Invalid app slug") unless APP.match?(/\A[a-z][a-z0-9-]*\z/)
+CONFIG = YAML.safe_load_file(File.expand_path("../apps/#{APP}/app.yml", __dir__))
+APP_ID = CONFIG["apple_id"].to_s
+abort("Set apple_id in apps/#{APP}/app.yml before checking review status") if APP_ID.empty?
 
 Spaceship::ConnectAPI.auth(key_id: ENV.fetch("ASC_KEY_ID"), issuer_id: ENV.fetch("ASC_ISSUER_ID"), key: ENV.fetch("ASC_KEY_CONTENT"))
 asc = Spaceship::ConnectAPI.client.tunes_request_client
@@ -22,7 +27,7 @@ versions = response["data"].map do |version|
   }
 end.sort_by { |version| version[:created].to_s }.reverse
 
-summary = ["## Tendr review status", "", "| Version | appVersionState | appStoreState | Build |", "| --- | --- | --- | --- |"]
+summary = ["## #{CONFIG.fetch('name')} review status", "", "| Version | appVersionState | appStoreState | Build |", "| --- | --- | --- | --- |"]
 versions.each do |version|
   state = version[:app_version_state] || version[:app_store_state]
   puts "STATUS: #{version[:version]} #{state} (appStoreState=#{version[:app_store_state]}, appVersionState=#{version[:app_version_state]}, build=#{version[:build]})"

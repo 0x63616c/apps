@@ -1,10 +1,15 @@
 name: App Store release
 
-# Prepares the App Store version for review and stops before Submit for Review.
-# Run it manually, or push an `app-store/*` tag (for example app-store/1.0.0-1).
+# Prepares an app's App Store version for review and stops before Submit for Review.
+# Run it manually, or push a tag app-store/<app>/<anything> (for example app-store/tendr/1.0.1-2).
+# Older tags without an app (app-store/1.0.0-28) mean Tendr.
 on:
   workflow_dispatch:
     inputs:
+      app:
+        description: 'App folder under apps/ (for example tendr)'
+        type: string
+        default: tendr
       skip_screenshots:
         description: 'Upload the listing only and keep the screenshots already in App Store Connect'
         type: boolean
@@ -16,23 +21,64 @@ permissions:
   contents: read
 
 concurrency:
-  group: app-store-release
+  group: app-store-release-${{ inputs.app || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      app: ${{ steps.app.outputs.app }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: app
+        env:
+          INPUT_APP: ${{ inputs.app }}
+        run: |
+          app=$INPUT_APP
+          if [[ -z "$app" && "$GITHUB_REF_TYPE" == tag ]]; then
+            candidate=$(cut -d/ -f2 <<< "$GITHUB_REF_NAME")
+            [[ -f "apps/$candidate/app.yml" ]] && app=$candidate || app=tendr
+          fi
+          [[ -f "apps/${app:?no app}/app.yml" ]] || { echo "::error::Unknown app '$app'"; exit 1; }
+          echo "app=$app" >> "$GITHUB_OUTPUT"
+
   screenshots:
+    needs: resolve
     if: ${{ !inputs.skip_screenshots }}
-    uses: ./.github/workflows/screenshots.yml
+    runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
+    timeout-minutes: 45
+    env:
+      DEVELOPER_DIR: ${{ vars.DEVELOPER_DIR || '/Applications/Xcode_26.2.app/Contents/Developer' }}
+      APP: ${{ needs.resolve.outputs.app }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Capture and frame App Store screenshots
+        run: |
+          scripts/capture-screenshots.sh "$APP"
+          scripts/frame-screenshots.sh "$APP"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-store-screenshots-${{ needs.resolve.outputs.app }}
+          path: apps/${{ needs.resolve.outputs.app }}/fastlane/screenshots/en-US/*.png
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-overview-${{ needs.resolve.outputs.app }}
+          path: build/screenshots/${{ needs.resolve.outputs.app }}/overview.png
+          if-no-files-found: error
 
   app-store-connect:
-    needs: screenshots
-    if: ${{ !cancelled() && (needs.screenshots.result == 'success' || needs.screenshots.result == 'skipped') }}
-    runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-15' }}
+    needs: [resolve, screenshots]
+    if: ${{ !cancelled() && needs.resolve.result == 'success' && (needs.screenshots.result == 'success' || needs.screenshots.result == 'skipped') }}
+    runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
     timeout-minutes: 30
     env:
       FASTLANE_SKIP_UPDATE_CHECK: '1'
       FASTLANE_HIDE_CHANGELOG: '1'
       FASTLANE_SKIP_DOCS: '1'
+      APP: ${{ needs.resolve.outputs.app }}
     steps:
       - uses: actions/checkout@v4
       - name: Check release secrets
@@ -57,8 +103,8 @@ jobs:
       - uses: actions/download-artifact@v4
         if: ${{ !inputs.skip_screenshots }}
         with:
-          name: app-store-screenshots
-          path: fastlane/screenshots/en-US
+          name: app-store-screenshots-${{ needs.resolve.outputs.app }}
+          path: apps/${{ needs.resolve.outputs.app }}/fastlane/screenshots/en-US
       - name: Upload listing, set pricing and select the latest build (no submission)
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
@@ -67,4 +113,4 @@ jobs:
           ASC_BETA_FEEDBACK_EMAIL: ${{ secrets.ASC_BETA_FEEDBACK_EMAIL }}
           ASC_REVIEW_PHONE: ${{ secrets.ASC_REVIEW_PHONE }}
           ASC_REVIEW_EMAIL: ${{ secrets.ASC_REVIEW_EMAIL }}
-        run: bundle exec fastlane ios prepare_review skip_screenshots:${{ inputs.skip_screenshots == true }}
+        run: bundle exec fastlane ios prepare_review app:"$APP" skip_screenshots:${{ inputs.skip_screenshots == true }}

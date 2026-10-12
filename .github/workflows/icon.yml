@@ -3,11 +3,11 @@ name: Icon and launch screen
 on:
   pull_request:
     paths:
-      - scripts/render-icon.swift
-      - design/icon/**
-      - Still/Assets.xcassets/**
-      - Still/Info.plist
-      - site/assets/*.png
+      - apps/tendr/scripts/render-icon.swift
+      - apps/tendr/design/icon/**
+      - apps/tendr/Still/Assets.xcassets/**
+      - apps/tendr/Still/Info.plist
+      - site/tendr/assets/*.png
       - .github/workflows/icon.yml
   workflow_dispatch:
 
@@ -16,19 +16,19 @@ permissions:
 
 jobs:
   icon:
-    runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-15' }}
+    runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
     timeout-minutes: 15
     env:
       DEVELOPER_DIR: ${{ vars.DEVELOPER_DIR || '/Applications/Xcode_26.2.app/Contents/Developer' }}
     steps:
       - uses: actions/checkout@v4
       - name: Regenerate icon assets
-        run: swift scripts/render-icon.swift
+        run: swift apps/tendr/scripts/render-icon.swift
       - name: App icons are opaque 1024 PNGs
         run: |
           python3 - <<'PY'
           import pathlib, struct, sys
-          for png in sorted(pathlib.Path("Still/Assets.xcassets/AppIcon.appiconset").glob("*.png")):
+          for png in sorted(pathlib.Path("apps/tendr/Still/Assets.xcassets/AppIcon.appiconset").glob("*.png")):
               data = png.read_bytes()
               width, height = struct.unpack(">II", data[16:24])
               print(f"{png.name}: {width}x{height}, colour type {data[25]}")
@@ -40,16 +40,16 @@ jobs:
         with:
           name: icon-assets
           path: |
-            design/icon
-            Still/Assets.xcassets
-            site/assets/*.png
+            apps/tendr/design/icon
+            apps/tendr/Still/Assets.xcassets
+            site/tendr/assets/*.png
       - name: Committed assets match scripts/render-icon.swift
         run: |
           git status --porcelain
-          test -z "$(git status --porcelain)" || { echo "::error::Run 'swift scripts/render-icon.swift' and commit the result"; exit 1; }
+          test -z "$(git status --porcelain)" || { echo "::error::Run 'swift apps/tendr/scripts/render-icon.swift' and commit the result"; exit 1; }
 
   launch-screen:
-    runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-15' }}
+    runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
     timeout-minutes: 30
     env:
       DEVELOPER_DIR: ${{ vars.DEVELOPER_DIR || '/Applications/Xcode_26.2.app/Contents/Developer' }}
@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build for the simulator
         run: |
-          xcodebuild build -project Still.xcodeproj -scheme Still -sdk iphonesimulator -configuration Debug \
+          xcodebuild build -project apps/tendr/Still.xcodeproj -scheme Still -sdk iphonesimulator -configuration Debug \
             -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO -quiet
           app=build/DerivedData/Build/Products/Debug-iphonesimulator/Tendr.app
           [[ -d "$app" ]] || app=$(find build/DerivedData/Build/Products/Debug-iphonesimulator -maxdepth 1 -name '*.app' | head -1)

@@ -1,9 +1,14 @@
 name: In-app purchases
 
 # Creates or updates the consumable tips in App Store Connect. Never submits anything.
-# Run it from the Actions tab, or push a tag such as iap/tips-1.
+# Run it from the Actions tab, or push a tag iap/<app>/<anything> (for example iap/tendr/tips-3).
 on:
   workflow_dispatch:
+    inputs:
+      app:
+        description: 'App folder under apps/ (for example tendr)'
+        type: string
+        default: tendr
   push:
     tags: ['iap/**']
 
@@ -12,7 +17,7 @@ permissions:
 
 jobs:
   tips:
-    runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-15' }}
+    runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
     timeout-minutes: 20
     env:
       FASTLANE_SKIP_UPDATE_CHECK: '1'
@@ -42,4 +47,11 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
           ASC_BETA_FEEDBACK_EMAIL: ${{ secrets.ASC_BETA_FEEDBACK_EMAIL }}
-        run: bundle exec fastlane ios tip_iaps
+          INPUT_APP: ${{ inputs.app }}
+        run: |
+          app=$INPUT_APP
+          if [[ -z "$app" ]]; then
+            candidate=$(cut -d/ -f2 <<< "$GITHUB_REF_NAME")
+            [[ -f "apps/$candidate/app.yml" ]] && app=$candidate || app=tendr
+          fi
+          bundle exec fastlane ios tip_iaps app:"$app"

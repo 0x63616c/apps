@@ -1,24 +1,28 @@
 require "digest"
 require "net/http"
 require "shellwords"
+require "yaml"
 
 default_platform(:ios)
 
-APP_IDENTIFIER = "com.calumwebb.still"
-APP_VERSION = "1.0.1"
-INTERNAL_GROUP = "Owner Preview"
-BETA_DESCRIPTION = "Tendr is a private, local-first companion for tracking doses, medication levels, vials, weight, schedules, and progress."
-BETA_FEEDBACK_EMAIL = ENV.fetch("ASC_BETA_FEEDBACK_EMAIL")
-METADATA_PATH = "./fastlane/metadata"
-SCREENSHOTS_PATH = "./fastlane/screenshots"
-# Consumable tips; must match Still/Features/Journal/TipJar.swift and Tendr.storekit.
-TIPS = [
-  { product_id: "com.calumwebb.still.tip.small", reference: "Tip: Coffee", name: "Coffee", description: "A small tip to support Tendr.", price: "0.99" },
-  { product_id: "com.calumwebb.still.tip.medium", reference: "Tip: Croissant", name: "Croissant", description: "A medium tip to support Tendr.", price: "2.99" },
-  { product_id: "com.calumwebb.still.tip.large", reference: "Tip: Gift", name: "Gift", description: "A generous tip to support Tendr.", price: "4.99" }
-].freeze
-TIP_REVIEW_NOTE = "An optional tip from Settings > Support Tendr. It unlocks nothing; the app is fully free."
-TIP_REVIEW_SCREENSHOT = File.expand_path("iap/tip-sheet-review.png", __dir__)
+REPO_ROOT = File.expand_path("..", __dir__)
+BETA_FEEDBACK_EMAIL = ENV["ASC_BETA_FEEDBACK_EMAIL"]
+
+# Every lane takes app:<name> (or APP=<name>) and reads apps/<name>/app.yml.
+def r_app(options)
+  slug = (options[:app] || ENV["APP"]).to_s
+  apps = Dir[File.join(REPO_ROOT, "apps", "*", "app.yml")].map { |path| File.basename(File.dirname(path)) }.sort
+  UI.user_error!("Pass app:<name>, for example `fastlane ios beta app:tendr`. Apps: #{apps.join(', ')}") if slug.empty?
+  UI.user_error!("Unknown app '#{slug}'. Apps: #{apps.join(', ')}") unless apps.include?(slug)
+  dir = File.join(REPO_ROOT, "apps", slug)
+  YAML.safe_load_file(File.join(dir, "app.yml")).merge(
+    "slug" => slug,
+    "dir" => dir,
+    "metadata_path" => File.join(dir, "fastlane", "metadata"),
+    "screenshots_path" => File.join(dir, "fastlane", "screenshots"),
+    "iap_review_screenshot" => File.join(dir, "fastlane", "iap", "tip-sheet-review.png")
+  )
+end
 
 private_lane :connect_api_key do
   key_path = ENV["ASC_KEY_PATH"]
@@ -35,68 +39,98 @@ end
 
 platform :ios do
   desc "Run the fast core test suite"
-  lane :verify do
-    sh("swift", "test")
+  lane :verify do |options|
+    app = r_app(options)
+    sh("swift", "test", "--package-path", app["dir"]) if app["swift_package"]
   end
 
   desc "Run the full end-to-end simulator suite when UI behavior changes"
-  lane :ui do
+  lane :ui do |options|
+    app = r_app(options)
     run_tests(
-      project: "Still.xcodeproj",
-      scheme: "Still",
-      devices: [ENV.fetch("TENDR_SIMULATOR", "Tend iPhone 17 Pro Max")],
+      project: File.join(app["dir"], app["project"]),
+      scheme: app["scheme"],
+      devices: [ENV.fetch("R_SIMULATOR", "iPhone 17 Pro Max")],
       result_bundle: true,
       number_of_retries: 1,
       output_directory: "build/fastlane/tests"
     )
   end
 
-  desc "Assign an already processed build to Owner Preview"
+  desc "Assign an already processed build to the app's TestFlight group"
   lane :distribute_existing do |options|
+    app = r_app(options)
     build_number = options[:build]
     UI.user_error!("Pass a build number, for example: fastlane ios distribute_existing build:12") if build_number.to_s.empty?
 
     upload_to_testflight(
       api_key: connect_api_key,
-      app_identifier: APP_IDENTIFIER,
+      app_identifier: app["bundle_id"],
       app_platform: "ios",
-      app_version: options[:version] || APP_VERSION,
+      app_version: options[:version] || app["version"],
       build_number: build_number.to_s,
       distribute_only: true,
       distribute_external: false,
       submit_beta_review: false,
-      groups: [INTERNAL_GROUP],
+      groups: [app["testflight_group"]],
       skip_waiting_for_build_processing: false,
-      beta_app_description: BETA_DESCRIPTION,
+      beta_app_description: app["beta_description"],
       beta_app_feedback_email: BETA_FEEDBACK_EMAIL
     )
   end
 
   desc "Test, build, upload, wait, and distribute the next internal beta"
   lane :beta do |options|
-    verify unless options[:skip_tests]
+    app = r_app(options)
+    verify(app: app["slug"]) unless options[:skip_tests]
     api_key = connect_api_key
-    version = options[:version] || APP_VERSION
+    version = options[:version] || app["version"]
     build_number = latest_testflight_build_number(
       api_key: api_key,
-      app_identifier: APP_IDENTIFIER,
+      app_identifier: app["bundle_id"],
       version: version,
       initial_build_number: 0
     ) + 1
 
     xcargs = "MARKETING_VERSION=#{version} CURRENT_PROJECT_VERSION=#{build_number}"
     export_options = {}
-    profile_uuid = ENV["TENDR_PROFILE_UUID"]
-    if ENV["GITHUB_ACTIONS"] == "true"
+    profile_uuid = app["signed_targets"] ? nil : ENV["R_PROFILE_UUID"]
+    signing_original = nil
+    signing_project = File.join(app["dir"], app["project"], "project.pbxproj")
+    if ENV["GITHUB_ACTIONS"] == "true" && app["signed_targets"]
+      signing_original = File.binread(signing_project)
+      profiles = {}
+      begin
+        app["signed_targets"].each do |target, info|
+          uuid = get_provisioning_profile(
+            api_key: api_key, app_identifier: info.fetch("bundle_id"),
+            provisioning_name: info.fetch("profile_name"), ignore_profiles_with_different_name: true,
+            output_path: ENV.fetch("RUNNER_TEMP"), filename: "#{app['slug']}-#{target}.mobileprovision"
+          )
+          UI.user_error!("CI provisioning did not return a profile UUID for #{target}") if uuid.to_s.empty?
+          update_code_signing_settings(
+            path: File.join(app["dir"], app["project"]), targets: [target], build_configurations: ["Release"],
+            use_automatic_signing: false, team_id: "X9E4HG27NK", code_sign_identity: "Apple Distribution",
+            profile_uuid: uuid, profile_name: info.fetch("profile_name"), bundle_identifier: info.fetch("bundle_id")
+          )
+          profiles[info.fetch("bundle_id")] = uuid
+        end
+      rescue StandardError
+        File.binwrite(signing_project, signing_original)
+        raise
+      end
+      profile_uuid = nil
+      export_options = { signingStyle: "manual", signingCertificate: "Apple Distribution", provisioningProfiles: profiles }
+    elsif ENV["GITHUB_ACTIONS"] == "true"
       # Xcode-managed profiles cannot be used with manual archive signing.
       # sigh selects an installed certificate and owns this separate profile.
       profile_uuid = get_provisioning_profile(
         api_key: api_key,
-        app_identifier: APP_IDENTIFIER,
-        provisioning_name: "Tendr CI App Store",
+        app_identifier: app["bundle_id"],
+        provisioning_name: app["profile_name"],
         ignore_profiles_with_different_name: true,
         output_path: ENV.fetch("RUNNER_TEMP"),
-        filename: "tendr.mobileprovision"
+        filename: "#{app['slug']}.mobileprovision"
       )
       UI.user_error!("CI provisioning did not return a profile UUID") if profile_uuid.to_s.empty?
     end
@@ -106,32 +140,36 @@ platform :ios do
       export_options = {
         signingStyle: "manual",
         signingCertificate: "Apple Distribution",
-        provisioningProfiles: { APP_IDENTIFIER => profile_uuid }
+        provisioningProfiles: { app["bundle_id"] => profile_uuid }
       }
     end
 
-    build_app(
-      project: "Still.xcodeproj",
-      scheme: "Still",
+    begin
+      build_app(
+      project: File.join(app["dir"], app["project"]),
+      scheme: app["scheme"],
       clean: true,
       export_method: "app-store",
-      output_directory: "build/fastlane",
-      output_name: "Tendr-#{version}-#{build_number}.ipa",
+      output_directory: File.join(REPO_ROOT, "build", "fastlane", app["slug"]),
+      output_name: "#{app['name']}-#{version}-#{build_number}.ipa",
       xcargs: xcargs,
       export_options: export_options,
-      export_xcargs: profile_uuid.to_s.empty? ? "-allowProvisioningUpdates" : ""
-    )
+      export_xcargs: export_options.empty? ? "-allowProvisioningUpdates" : ""
+      )
+    ensure
+      File.binwrite(signing_project, signing_original) if signing_original
+    end
 
     upload_to_testflight(
       api_key: api_key,
-      app_identifier: APP_IDENTIFIER,
+      app_identifier: app["bundle_id"],
       app_version: version,
       build_number: build_number.to_s,
-      groups: [INTERNAL_GROUP],
+      groups: [app["testflight_group"]],
       distribute_external: false,
       submit_beta_review: false,
       skip_waiting_for_build_processing: false,
-      beta_app_description: BETA_DESCRIPTION,
+      beta_app_description: app["beta_description"],
       beta_app_feedback_email: BETA_FEEDBACK_EMAIL,
       changelog: options[:changelog] || "Small interface refinements and reliability improvements."
     )
@@ -139,6 +177,7 @@ platform :ios do
 
   desc "Upload the App Store listing and screenshots. Never uploads a binary or submits for review"
   lane :metadata do |options|
+    app = r_app(options)
     # Contact details that should not live in the repository come from the environment.
     review_contact = {
       phone_number: ENV["ASC_REVIEW_PHONE"],
@@ -148,11 +187,11 @@ platform :ios do
     guard_first_review_detail
     deliver(
       api_key: options[:api_key] || connect_api_key,
-      app_identifier: APP_IDENTIFIER,
-      app_version: options[:version] || APP_VERSION,
+      app_identifier: app["bundle_id"],
+      app_version: options[:version] || app["version"],
       platform: "ios",
-      metadata_path: METADATA_PATH,
-      screenshots_path: SCREENSHOTS_PATH,
+      metadata_path: app["metadata_path"],
+      screenshots_path: app["screenshots_path"],
       skip_screenshots: options[:skip_screenshots].to_s == "true",
       overwrite_screenshots: true,
       app_review_information: review_contact,
@@ -167,8 +206,9 @@ platform :ios do
   desc "Attach the newest processed, unexpired TestFlight build of the version to the App Store version"
   lane :select_build do |options|
     connect_api_key
-    version = options[:version] || APP_VERSION
-    app = app_store_app
+    config = r_app(options)
+    version = options[:version] || config["version"]
+    app = app_store_app(config)
     build = Spaceship::ConnectAPI::Build.all(app_id: app.id, version: version, processing_states: "VALID", sort: "-uploadedDate")
                                         .reject(&:expired)
                                         .max_by { |candidate| candidate.version.to_i }
@@ -184,9 +224,9 @@ platform :ios do
   end
 
   desc "Make the app free in every territory if it has no price yet. An existing price is left alone"
-  lane :ensure_free_pricing do
+  lane :ensure_free_pricing do |options|
     connect_api_key
-    app = app_store_app
+    app = app_store_app(r_app(options))
     asc = Spaceship::ConnectAPI.client.tunes_request_client
     schedule = begin
       asc.get("v1/apps/#{app.id}/appPriceSchedule").body["data"]
@@ -230,9 +270,9 @@ platform :ios do
   end
 
   desc "Print what App Store Connect currently has for the editable version"
-  lane :review_status do
+  lane :review_status do |options|
     connect_api_key
-    app = app_store_app
+    app = app_store_app(r_app(options))
     app_store_version = editable_app_store_version(app)
     localization = app_store_version.get_app_store_version_localizations.find { |item| item.locale == "en-US" }
     sets = localization ? localization.get_app_screenshot_sets : []
@@ -262,10 +302,11 @@ platform :ios do
     end
   end
 
-  desc "Answer the age rating questionnaire: nothing applies except infrequent/mild medical information"
-  lane :age_rating do
+  desc "Answer the age rating questionnaire: nothing applies except the app's age_rating overrides in app.yml"
+  lane :age_rating do |options|
     connect_api_key
-    app = app_store_app
+    config = r_app(options)
+    app = app_store_app(config)
     info = app.fetch_edit_app_info || app.fetch_latest_app_info
     asc = Spaceship::ConnectAPI.client.tunes_request_client
     declaration = asc.get("v1/appInfos/#{info.id}/ageRatingDeclaration").body["data"]
@@ -279,7 +320,8 @@ platform :ios do
     wanted = {}
     none.each { |key| wanted[key] = "NONE" if current.key?(key) }
     no.each { |key| wanted[key] = false if current.key?(key) }
-    wanted["medicalOrTreatmentInformation"] = "INFREQUENT_OR_MILD"
+    # Per-app answers that differ from "none" (apps/<app>/app.yml age_rating).
+    (config["age_rating"] || {}).each { |key, value| wanted[key] = value }
     UI.message("Setting age rating answers: #{wanted.to_json}")
     updated = asc.patch("v1/ageRatingDeclarations/#{declaration['id']}", {
       data: { type: "ageRatingDeclarations", id: declaration["id"], attributes: wanted }
@@ -288,9 +330,9 @@ platform :ios do
   end
 
   desc "Make sure App Review does not expect a demo account"
-  lane :review_detail_check do
+  lane :review_detail_check do |options|
     connect_api_key
-    version = editable_app_store_version(app_store_app)
+    version = editable_app_store_version(app_store_app(r_app(options)))
     detail = version.fetch_app_store_review_detail
     UI.user_error!("No App Review details yet") unless detail
     if detail.demo_account_required
@@ -303,22 +345,23 @@ platform :ios do
     UI.message("Review details: #{detail.contact_first_name} #{detail.contact_last_name}, email #{detail.contact_email.to_s.empty? ? 'missing' : 'set'}, phone #{detail.contact_phone.to_s.empty? ? 'missing' : 'set'}, demo account required #{detail.demo_account_required.inspect}, notes #{detail.notes.to_s.length} chars")
   end
 
-  desc "Upload the listing and screenshots, set Free pricing and attach the latest build. Stops before Submit for Review"
-  desc "Create or update the three consumable tips (name, price, availability, review screenshot). Never submits"
-  lane :tip_iaps do
+  desc "Create or update the app's consumable tips (name, price, availability, review screenshot). Never submits"
+  lane :tip_iaps do |options|
     connect_api_key
-    app = app_store_app
+    config = r_app(options)
+    UI.user_error!("#{config['name']} has no tips in apps/#{config['slug']}/app.yml") if config["tips"].to_a.empty?
+    app = app_store_app(config)
     asc = Spaceship::ConnectAPI.client.tunes_request_client
     territories = asc_all(asc, "v1/territories", { "limit" => 200 }).map { |territory| territory["id"] }
     existing = asc_all(asc, "v1/apps/#{app.id}/inAppPurchasesV2", { "limit" => 200 })
-    TIPS.each do |tip|
+    config["tips"].map { |tip| tip.transform_keys(&:to_sym) }.each do |tip|
       iap = existing.find { |item| item.dig("attributes", "productId") == tip[:product_id] }
       if iap
         UI.message("#{tip[:product_id]} exists (#{iap.dig('attributes', 'state')})")
       else
         iap = asc.post("v2/inAppPurchases", { data: {
           type: "inAppPurchases",
-          attributes: { name: tip[:reference], productId: tip[:product_id], inAppPurchaseType: "CONSUMABLE", reviewNote: TIP_REVIEW_NOTE, familySharable: false },
+          attributes: { name: tip[:reference], productId: tip[:product_id], inAppPurchaseType: "CONSUMABLE", reviewNote: config["tip_review_note"], familySharable: false },
           relationships: { app: { data: { type: "apps", id: app.id } } }
         } }).body["data"]
         UI.success("Created #{tip[:product_id]}")
@@ -327,24 +370,26 @@ platform :ios do
       tip_localization(asc, id, tip)
       tip_price(asc, id, tip)
       tip_availability(asc, id, territories)
-      tip_review_screenshot(asc, id)
+      tip_review_screenshot(asc, id, config["iap_review_screenshot"])
       state = asc.get("v2/inAppPurchases/#{id}").body.dig("data", "attributes", "state")
       UI.success("#{tip[:product_id]}: #{tip[:name]} $#{tip[:price]}, state #{state}")
     end
   end
 
+  desc "Upload the listing and screenshots, set Free pricing and attach the latest build. Stops before Submit for Review"
   lane :prepare_review do |options|
+    app = r_app(options)["slug"]
     api_key = connect_api_key
-    metadata(api_key: api_key, version: options[:version], skip_screenshots: options[:skip_screenshots])
+    metadata(app: app, api_key: api_key, version: options[:version], skip_screenshots: options[:skip_screenshots])
     begin
-      ensure_free_pricing
+      ensure_free_pricing(app: app)
     rescue StandardError => error
       UI.important("Could not set Free pricing (#{error.message}). Set it under Pricing and Availability in App Store Connect.")
     end
-    select_build(version: options[:version])
-    age_rating
-    review_detail_check
-    review_status
+    select_build(app: app, version: options[:version])
+    age_rating(app: app)
+    review_detail_check(app: app)
+    review_status(app: app)
   end
 end
 
@@ -379,8 +424,8 @@ rescue LoadError
   nil
 end
 
-def app_store_app
-  Spaceship::ConnectAPI::App.find(APP_IDENTIFIER) || UI.user_error!("#{APP_IDENTIFIER} is not in App Store Connect")
+def app_store_app(config)
+  Spaceship::ConnectAPI::App.find(config["bundle_id"]) || UI.user_error!("#{config['bundle_id']} is not in App Store Connect. Create the app record there first (New App needs a web sign-in)")
 end
 
 def editable_app_store_version(app)
@@ -447,7 +492,7 @@ rescue StandardError
   } })
 end
 
-def tip_review_screenshot(asc, id)
+def tip_review_screenshot(asc, id, path)
   existing = begin
     asc.get("v2/inAppPurchases/#{id}/appStoreReviewScreenshot").body["data"]
   rescue StandardError
@@ -455,10 +500,10 @@ def tip_review_screenshot(asc, id)
   end
   return if existing && existing.dig("attributes", "assetDeliveryState", "state") == "COMPLETE"
 
-  bytes = File.binread(TIP_REVIEW_SCREENSHOT)
+  bytes = File.binread(path)
   shot = asc.post("v1/inAppPurchaseAppStoreReviewScreenshots", { data: {
     type: "inAppPurchaseAppStoreReviewScreenshots",
-    attributes: { fileName: File.basename(TIP_REVIEW_SCREENSHOT), fileSize: bytes.bytesize },
+    attributes: { fileName: File.basename(path), fileSize: bytes.bytesize },
     relationships: { inAppPurchaseV2: { data: { type: "inAppPurchases", id: id } } }
   } }).body["data"]
   shot.dig("attributes", "uploadOperations").each do |operation|

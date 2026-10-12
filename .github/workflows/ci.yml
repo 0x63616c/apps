@@ -1,0 +1,148 @@
+name: CI
+
+# Builds and tests only what changed: each affected app (apps/<app>/), RDesign when packages/
+# changes, and the new-app template when it or its script changes. macOS jobs run on GitHub-hosted
+# macos-latest unless the MACOS_RUNNER variable selects the self-hosted Mac (README, "CI on a self-hosted Mac").
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      apps: ${{ steps.detect.outputs.apps }}
+      rdesign: ${{ steps.detect.outputs.rdesign }}
+      template: ${{ steps.detect.outputs.template }}
+      web: ${{ steps.detect.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: detect
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          echo "apps=$(scripts/changed-apps.sh "$BASE")" >> "$GITHUB_OUTPUT"
+          changed() { [[ -z "$BASE" || "$BASE" =~ ^0+$ ]] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null || git diff --name-only "$BASE" HEAD | grep -E "$1" >/dev/null; }
+          changed '^(packages/RDesign/|\.github/workflows/ci\.yml)' && echo "rdesign=true" >> "$GITHUB_OUTPUT" || echo "rdesign=false" >> "$GITHUB_OUTPUT"
+          changed '^(templates/|scripts/new-app\.sh|packages/RDesign/|\.github/workflows/ci\.yml)' && echo "template=true" >> "$GITHUB_OUTPUT" || echo "template=false" >> "$GITHUB_OUTPUT"
+          changed '^(web/festr-admin/|apps/festr/Festr/Resources/|.github/workflows/ci.yml)' && echo "web=true" >> "$GITHUB_OUTPUT" || echo "web=false" >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+
+  tooling:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Release lane checks (no Apple access)
+        run: ruby scripts/check-release.rb
+      - name: Path filter regression checks
+        run: python3 scripts/test-changed-apps.py
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - name: Actionlint
+        run: |
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+          "$(go env GOPATH)/bin/actionlint"
+      - name: Shell scripts
+        run: shellcheck scripts/*.sh apps/*/scripts/*.sh
+
+  rdesign:
+    needs: changes
+    if: needs.changes.outputs.rdesign == 'true'
+    runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: ${{ vars.DEVELOPER_DIR || '/Applications/Xcode_26.2.app/Contents/Developer' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: RDesign tests (macOS)
+        run: swift test --package-path packages/RDesign
+      - name: rframe builds
+        run: swift build --package-path packages/RDesign -c release --product rframe
+
+  app:
+    needs: changes
+    if: needs.changes.outputs.apps != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.changes.outputs.apps) }}
+    runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: ${{ vars.DEVELOPER_DIR || '/Applications/Xcode_26.2.app/Contents/Developer' }}
+      APP: ${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Core tests
+        run: |
+          if [[ "$(ruby scripts/app-config.rb "$APP" swift_package 2>/dev/null)" == "true" ]]; then
+            swift test --package-path "apps/$APP"
+          else
+            echo "$APP has no Swift package tests"
+          fi
+      - name: App-specific portable checks
+        run: |
+          if [[ "$APP" == festr ]]; then python3 apps/festr/scripts/make-seed-feed.py --check; fi
+          if [[ "$APP" == shotr ]]; then python3 -m unittest discover -s apps/shotr/scripts/tests; fi
+      - name: Project is generated from project.yml
+        run: |
+          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+          if [[ -f "apps/$APP/project.yml" ]]; then (cd "apps/$APP" && xcodegen generate --quiet); fi
+          if ! git diff --quiet -- "apps/$APP"; then
+            git diff --stat -- "apps/$APP"
+            echo "::warning::apps/$APP's Xcode project differs from project.yml; run 'xcodegen generate' in apps/$APP and commit"
+          fi
+      - name: Build for the simulator
+        timeout-minutes: 20
+        run: |
+          xcodebuild -project "$(ruby scripts/app-config.rb "$APP" project_path)" -scheme "$(ruby scripts/app-config.rb "$APP" scheme)" \
+            -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build -quiet
+
+  template:
+    needs: changes
+    if: needs.changes.outputs.template == 'true'
+    runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: ${{ vars.DEVELOPER_DIR || '/Applications/Xcode_26.2.app/Contents/Developer' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scaffold a throwaway app from templates/new-app
+        run: |
+          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+          scripts/new-app.sh Samplr samplr
+      - name: Build it for the simulator
+        timeout-minutes: 20
+        run: xcodebuild -project apps/samplr/Samplr.xcodeproj -scheme Samplr -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build -quiet
+
+  web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web/festr-admin
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run test
+      - run: bun run build

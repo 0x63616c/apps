@@ -1,76 +1,29 @@
-# Tendr
+# Calum’s apps
 
-A native, local-first iPhone journal for GLP-1 treatment. Built with SwiftUI and Swift Charts, with no sign-in, tracking SDKs or runtime dependencies.
+Native iPhone apps, shared design, and their websites. This repository is still named `tendr`; the planned rename to `apps` is documented in [docs/RENAME.md](docs/RENAME.md).
 
-Available as a private TestFlight beta.
+| App | Source | Bundle ID | Core tests |
+| --- | --- | --- | --- |
+| Tendr | [apps/tendr](apps/tendr) | `com.calumwebb.still` | `swift test --package-path apps/tendr` |
+| Shotr | [apps/shotr](apps/shotr) | `com.calum.shots` | `swift test --package-path apps/shotr` |
+| Festr | [apps/festr](apps/festr) | `com.calumwebb.festr` | `swift test --package-path apps/festr` |
 
-Track doses in mg, mL or explicitly confirmed U-100 syringe units; keep vial records; log weight and notes; import body weight read-only from Apple Health; review progress and estimated medication decay, including what your schedule implies; and schedule weekly, every-few-days or hand-picked dose dates, with reminders. A schedule can be cleared at any time. You can edit past records and optionally keep Tendr's weight history anchored to your first dose.
+[packages/RDesign](packages/RDesign) provides the black, white and graphite palette, type, spacing, cards, rows, info popovers, settings links, splash and optional StoreKit tip jar. Its `rframe` executable renders App Store screenshot frames on macOS. `swift test --package-path packages/RDesign` also runs its portable tests on Linux.
 
-Medication curves are simplified half-life estimates, not measured body or blood levels or dosing advice. Historical records retain their medication and concentration. Follow the instructions from your prescriber.
+[web/festr-admin](web/festr-admin) is the festival editor. From that directory run `bun install --frozen-lockfile`, `bun run build`, `bun run lint`, and `bun run test`. Database commands need its documented local environment; the build does not. Its seed script reads the bundled feed in `apps/festr`.
 
-## Screenshots
+Native builds require macOS and Xcode 26.2 or later. Tendr and Festr use XcodeGen 2.44.1: run `xcodegen generate` inside the app directory after changing `project.yml`. Shotr’s checked-in project is maintained directly. Open the app’s `.xcodeproj`; schemes remain `Still`, `Shots`, and `Festr` respectively. Simulator builds use `CODE_SIGNING_ALLOWED=NO`.
 
-Actual iPhone 17 Pro Max simulator captures using synthetic data.
-
-<img src="docs/screenshots/home-dark.png" width="260" alt="Home in dark mode">
-
-## Run
-
-Requires macOS, Xcode 26.2 or later and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+Shared release commands run from the repository root with `app:<slug>`; see [docs/RELEASE.md](docs/RELEASE.md). CI selects changed apps using `scripts/changed-apps.sh`. `MACOS_RUNNER` may be a runner label or a JSON label array; the default is `macos-latest`. `DEVELOPER_DIR` defaults to `/Applications/Xcode_26.2.app/Contents/Developer`. Override it when the selected runner installs a newer supported Xcode elsewhere.
 
 ```sh
-xcodegen generate
-open Still.xcodeproj
+ruby scripts/check-release.rb
+python3 scripts/test-changed-apps.py
+shellcheck scripts/*.sh apps/*/scripts/*.sh
+actionlint
+scripts/new-app.sh Samplr samplr
 ```
 
-Choose the Still scheme and an iPhone simulator. The internal target and bundle identifier still use the earlier project name. For a device build, select your own development team.
+[scripts/new-app.sh](scripts/new-app.sh) creates a native app and Pages skeleton from [templates/new-app](templates/new-app). [docs/IMPORT.md](docs/IMPORT.md) describes history-preserving imports. [site/README.md](site/README.md) covers Pages previews and publication.
 
-Launch with `--demo` for synthetic, in-memory sample data. Demo mode never writes to your health journal or schedules reminders. `--uitest` selects a separate test journal when used without demo mode.
-
-## Tests
-
-```sh
-swift test
-xcodebuild -project Still.xcodeproj -scheme Still \
-  -destination 'platform=iOS Simulator,name=Tend QA Pro Max' test \
-  CODE_SIGNING_ALLOWED=NO
-```
-
-The Swift package tests cover calculations, validation, local calendar scheduling and file compatibility. UI tests exercise real simulator screens. See [architecture](docs/ARCHITECTURE.md), [user journeys](docs/USER-JOURNEYS.md) and [verification notes](docs/TESTING.md). Passing tests do not imply clinical validation or TestFlight publication.
-
-## CI on a self-hosted Mac
-
-Every macOS job runs on GitHub-hosted `macos-15` unless the repository variable `MACOS_RUNNER` says otherwise. To use a Mac of your own (for example a Mac mini), sign in to the GitHub CLI on that Mac and run:
-
-```sh
-scripts/setup-mac-runner.sh --use 0x63616c/tendr 0x63616c/shots 0x63616c/festr
-```
-
-Repositories on a personal account can't share a runner, so the script registers one runner per repository. Each lives in `~/actions-runners/OWNER-REPO`, runs as its own launchd service and has the labels `self-hosted, macOS, ARM64, xcode`. The script also:
-
-- checks for Xcode, accepts the licence and runs `xcodebuild -runFirstLaunch`
-- checks for an iOS simulator runtime; pass `--install-ios-runtime` to download one
-- prepares `/Users/runner/hostedtoolcache`, which `ruby/setup-ruby` needs on self-hosted Macs
-- with `--use`, sets `MACOS_RUNNER` to `["self-hosted","macOS","ARM64","xcode"]` and `DEVELOPER_DIR` to the Mac's Xcode
-
-To go back to GitHub-hosted runners, delete the `MACOS_RUNNER` and `DEVELOPER_DIR` variables. Workflows select the runner with:
-
-```yaml
-runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-15' }}
-env:
-  DEVELOPER_DIR: ${{ vars.DEVELOPER_DIR || '/Applications/Xcode_26.2.app/Contents/Developer' }}
-```
-
-`MACOS_RUNNER` can be one label or a JSON list of labels. Copy the same two lines into shots and festr. The services run while the Mac's user is logged in, so turn on automatic login and keep the Mac awake. Every job has a `timeout-minutes` limit, so a hung build stops on its own.
-
-## Privacy and storage
-
-The health journal is stored in the app's Application Support directory using atomic file writes. Apple Health access is read-only. No backend or telemetry is included. Device backups follow iOS settings.
-
-## Contributing
-
-Keep changes focused on a user journey. Add a failing regression test before changing calculation or persistence behaviour, and include actual simulator screenshots for UI changes. Never commit personal health data, signing credentials or provisioning profiles. Use synthetic fixtures in screenshots.
-
-## License
-
-MIT. See [LICENSE](LICENSE).
+Keep changes focused. Use synthetic screenshot fixtures. Never commit signing assets, credentials, or personal health data. Core or Linux checks do not prove native UI correctness, signing, or TestFlight availability. See [AGENTS.md](AGENTS.md) for working rules and [docs/VERIFICATION.md](docs/VERIFICATION.md) for migration evidence.

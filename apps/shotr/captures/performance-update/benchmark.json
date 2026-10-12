@@ -1,0 +1,10 @@
+{
+  "elapsed": 36.38740287499968,
+  "taggingSeconds": 22.18110258318484,
+  "aiAvailable": true,
+  "imageSeconds": 0.08247970824595541,
+  "failed": 0,
+  "analysisSeconds": 27.065252083237283,
+  "completed": 15,
+  "scope": "iOS 27 simulator; 15 synthetic 600x1000 images; no PhotoKit or iCloud; AI availability recorded; no artificial delay"
+}
