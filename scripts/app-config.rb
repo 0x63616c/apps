@@ -11,14 +11,14 @@ apps = Dir[File.join(root, "apps", "*", "app.yml")].map { |path| File.basename(F
 
 if ARGV.first == "--list"
   key = ARGV[1]
-  puts(apps.select { |app| key.nil? || YAML.safe_load_file(File.join(root, "apps", app, "app.yml"))[key] })
+  puts(apps.select { |app| key.nil? || YAML.safe_load(File.read(File.join(root, "apps", app, "app.yml")))[key] })
   exit
 end
 
 app, key = ARGV
 abort("usage: app-config.rb <app> <key> | --list [key]\napps: #{apps.join(', ')}") unless app && key
 abort("Unknown app '#{app}'. Apps: #{apps.join(', ')}") unless apps.include?(app)
-config = YAML.safe_load_file(File.join(root, "apps", app, "app.yml"))
+config = YAML.safe_load(File.read(File.join(root, "apps", app, "app.yml")))
 value = case key
         when "dir" then "apps/#{app}"
         when "project_path" then "apps/#{app}/#{config.fetch('project')}"

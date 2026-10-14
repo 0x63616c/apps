@@ -4,6 +4,8 @@
 The source file uses local wall-clock times in each festival's IANA time zone. An end earlier
 than the start means the set runs past midnight; a null end is an open-ended closer.
 """
+from __future__ import annotations
+
 import json
 import pathlib
 import re
