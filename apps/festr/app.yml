@@ -16,5 +16,7 @@ signed_targets:
     profile_name: Festr Widgets CI App Store
 beta_description: Festival set times and your schedule.
 swift_package: true
+# Festr uses iOS 27 APIs, so its TestFlight build uses Xcode 27.
+developer_dir: /Applications/Xcode-27.0.app/Contents/Developer
 site: festr
 tips: []

@@ -83,7 +83,13 @@ jobs:
           done
           exit "$missing"
       - name: Select release toolchain
-        run: xcodebuild -version
+        run: |
+          # An app.yml developer_dir overrides the runner default for this job only.
+          if dir=$(ruby scripts/app-config.rb "$APP" developer_dir 2>/dev/null); then
+            echo "DEVELOPER_DIR=$dir" >> "$GITHUB_ENV"
+            export DEVELOPER_DIR="$dir"
+          fi
+          xcodebuild -version
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.4'
