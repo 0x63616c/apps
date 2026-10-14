@@ -83,7 +83,9 @@ final class LocalTagger {
 
     var canDescribeImages: Bool {
         if #available(iOS 27, *) {
+            #if compiler(>=6.4) // iOS 27 SDK (Xcode 27+)
             return SystemLanguageModel.default.capabilities.contains(.vision)
+            #endif
         }
         return false
     }
@@ -116,12 +118,7 @@ final class LocalTagger {
         let usedImage: Bool
         if #available(iOS 27, *), canDescribeImages, let imageData, let image = UIImage(data: imageData) {
             do {
-                let response = try await session.respond(generating: GeneratedDescription.self, options: options) {
-                    "Describe this screenshot using its visible contents and the following supplementary evidence."
-                    Attachment(image)
-                    evidence
-                }
-                result = response.content
+                result = try await respondWithImage(session: session, options: options, image: image, evidence: evidence)
                 usedImage = true
             } catch {
                 try Task.checkCancellation()
@@ -289,13 +286,29 @@ final class LocalTagger {
         return TagSuggestion(title: title, tagIDs: TagRules.suggestedIDs(indices: response.content.tagIndices, tags: tags))
     }
 
+    @available(iOS 27, *)
+    private func respondWithImage(session: LanguageModelSession, options: GenerationOptions, image: UIImage, evidence: String) async throws -> GeneratedDescription {
+        #if compiler(>=6.4) // iOS 27 SDK (Xcode 27+)
+        let response = try await session.respond(generating: GeneratedDescription.self, options: options) {
+            "Describe this screenshot using its visible contents and the following supplementary evidence."
+            Attachment(image)
+            evidence
+        }
+        return response.content
+        #else
+        throw LocalTaggerError.unavailable("Image descriptions need the iOS 27 SDK.")
+        #endif
+    }
+
     private func isContentRefusal(_ error: Error) -> Bool {
+        #if compiler(>=6.4) // iOS 27 SDK (Xcode 27+)
         if #available(iOS 27, *), let error = error as? LanguageModelError {
             switch error {
             case .guardrailViolation, .refusal: return true
             default: return false
             }
         }
+        #endif
         if let error = error as? LanguageModelSession.GenerationError {
             switch error {
             case .guardrailViolation, .refusal: return true
@@ -306,6 +319,7 @@ final class LocalTagger {
     }
 
     private func canReduceSample(after error: Error) -> Bool {
+        #if compiler(>=6.4) // iOS 27 SDK (Xcode 27+)
         if #available(iOS 27, *), error is GeneratedContent.ParsingError { return true }
         if #available(iOS 27, *), let error = error as? LanguageModelError {
             switch error {
@@ -313,6 +327,7 @@ final class LocalTagger {
             default: return false
             }
         }
+        #endif
         if let error = error as? LanguageModelSession.GenerationError {
             switch error {
             case .exceededContextWindowSize, .guardrailViolation, .refusal, .decodingFailure, .unsupportedLanguageOrLocale: return true
