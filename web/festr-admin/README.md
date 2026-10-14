@@ -51,7 +51,7 @@ A single admin: email + bcrypt hash from the environment, compared in constant w
 
 ## Deploy to Vercel
 
-1. Import the repository in Vercel and set **Root Directory** to `admin` (Next.js is detected; `vercel.json` sets the install and build commands).
+1. Import the repository in Vercel and set **Root Directory** to `web/festr-admin` (Next.js is detected; `vercel.json` sets the install and build commands).
 2. **Storage → Marketplace → Neon → Connect** to the project. This adds `DATABASE_URL` and `DATABASE_URL_UNPOOLED`.
 3. Add environment variables: `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH` (raw hash, no escaping), `SESSION_SECRET`, and optionally `AI_GATEWAY_API_KEY` (or enable AI Gateway on the project, which uses the deployment's OIDC token).
 4. Deploy. The build runs `bun db:migrate` (Drizzle migrations from `drizzle/`, using the unpooled URL), then `next build`.
