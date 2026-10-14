@@ -121,11 +121,15 @@ final class BackgroundScanCoordinator {
     /// The iOS 27 submission API must not execute on the main thread. The generic
     /// executor also keeps the synchronous iOS 26 submission off the UI thread.
     private nonisolated static func submit(_ request: BGContinuedProcessingTaskRequest) async throws {
+        #if compiler(>=6.4) // iOS 27 SDK (Xcode 27+)
         if #available(iOS 27.0, *) {
             try await BGTaskScheduler.shared.submitTaskRequest(request)
         } else {
             try BGTaskScheduler.shared.submit(request)
         }
+        #else
+        try BGTaskScheduler.shared.submit(request)
+        #endif
     }
 
     private func begin(_ continued: BGContinuedProcessingTask) {
