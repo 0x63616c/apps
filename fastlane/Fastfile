@@ -24,6 +24,19 @@ def r_app(options)
   )
 end
 
+# Internal groups set to receive every build reject manual assignment, so skip those.
+def assignable_groups(app)
+  name = app["testflight_group"]
+  return [name] unless defined?(Spaceship::ConnectAPI)
+  record = Spaceship::ConnectAPI::App.find(app["bundle_id"])
+  group = record&.get_beta_groups&.find { |g| g.name == name }
+  if group&.has_access_to_all_builds
+    UI.message("TestFlight group '#{name}' already gets every build automatically")
+    return nil
+  end
+  [name]
+end
+
 private_lane :connect_api_key do
   key_path = ENV["ASC_KEY_PATH"]
   key_content = ENV["ASC_KEY_CONTENT"]
@@ -100,7 +113,7 @@ platform :ios do
       distribute_only: true,
       distribute_external: false,
       submit_beta_review: false,
-      groups: [app["testflight_group"]],
+      groups: assignable_groups(app),
       skip_waiting_for_build_processing: false,
       beta_app_description: app["beta_description"],
       beta_app_feedback_email: BETA_FEEDBACK_EMAIL
@@ -193,7 +206,7 @@ platform :ios do
       app_identifier: app["bundle_id"],
       app_version: version,
       build_number: build_number.to_s,
-      groups: [app["testflight_group"]],
+      groups: assignable_groups(app),
       distribute_external: false,
       submit_beta_review: false,
       skip_waiting_for_build_processing: false,
