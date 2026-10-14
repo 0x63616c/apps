@@ -62,6 +62,9 @@ platform :ios do
     end
     record = Spaceship::ConnectAPI::App.find(app["bundle_id"])
     UI.message(record ? "App record exists: #{record.name} (#{record.id})" : "No App Store Connect app record for #{app['bundle_id']} yet")
+    record&.get_beta_groups&.each do |group|
+      UI.message("Beta group '#{group.name}': internal=#{group.is_internal_group} access_to_all_builds=#{group.has_access_to_all_builds}")
+    end
   end
   desc "Run the fast core test suite"
   lane :verify do |options|
