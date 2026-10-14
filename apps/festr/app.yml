@@ -4,7 +4,7 @@ scheme: Festr
 bundle_id: com.calumwebb.festr
 version: 1.0.0
 # Enable only after verifying the app record, signing and internal group.
-testflight: false
+testflight: true
 testflight_group: Owner Preview
 profile_name: Festr CI App Store
 signed_targets:
