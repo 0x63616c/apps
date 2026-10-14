@@ -38,6 +38,31 @@ private_lane :connect_api_key do
 end
 
 platform :ios do
+  desc "Register an app's bundle IDs with App Groups via the API key and report its app record (app groups themselves need the developer website)"
+  lane :register_ids do |options|
+    app = r_app(options)
+    connect_api_key
+    targets = app["signed_targets"] || { app["scheme"] => { "bundle_id" => app["bundle_id"] } }
+    targets.each do |target, info|
+      identifier = info.fetch("bundle_id")
+      bundle = Spaceship::ConnectAPI::BundleId.find(identifier)
+      if bundle
+        UI.message("Bundle ID #{identifier} already registered")
+      else
+        bundle = Spaceship::ConnectAPI::BundleId.create(name: "#{app['name']} #{target}", platform: "IOS", identifier: identifier)
+        UI.success("Registered bundle ID #{identifier}")
+      end
+      types = bundle.get_capabilities.map(&:capability_type)
+      if types.include?("APP_GROUPS")
+        UI.message("#{identifier} already has APP_GROUPS")
+      else
+        bundle.create_capability("APP_GROUPS")
+        UI.success("Enabled APP_GROUPS on #{identifier}")
+      end
+    end
+    record = Spaceship::ConnectAPI::App.find(app["bundle_id"])
+    UI.message(record ? "App record exists: #{record.name} (#{record.id})" : "No App Store Connect app record for #{app['bundle_id']} yet")
+  end
   desc "Run the fast core test suite"
   lane :verify do |options|
     app = r_app(options)
