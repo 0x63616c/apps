@@ -26,11 +26,7 @@ jobs:
       - name: Build for testing
         timeout-minutes: 15
         run: |
-          # Newest iOS runtime not newer than the active SDK: a newer runtime's storekitd ignores
-          # SKTestSession.disableDialogs and asks for an Apple Account, so purchases never finish.
-          sdk=$(xcrun --sdk iphonesimulator --show-sdk-version)
-          runtime=$(xcrun simctl list runtimes --json | SDK="$sdk" python3 -c 'import json,os,sys; v=lambda s: tuple(int(p) for p in s.split(".")[:2]); sdk=v(os.environ["SDK"]); r=[x for x in json.load(sys.stdin)["runtimes"] if x["platform"]=="iOS" and x["isAvailable"]]; ok=[x for x in r if v(x["version"])<=sdk] or r; print(max(ok, key=lambda x: v(x["version"]))["identifier"])')
-          echo "SDK $sdk, runtime $runtime"
+          runtime=$(xcrun simctl list runtimes --json | python3 -c 'import json,sys; r=[x for x in json.load(sys.stdin)["runtimes"] if x["platform"]=="iOS" and x["isAvailable"]]; print(r[-1]["identifier"])')
           udid=$(xcrun simctl create "Tip Jar" com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max "$runtime")
           echo "UDID=$udid" >> "$GITHUB_ENV"
           scripts/boot-simulator.sh "$udid" 300
