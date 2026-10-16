@@ -91,8 +91,12 @@ final class TipJarTests: XCTestCase {
     @MainActor private func openTipJar(_ app: XCUIApplication, capture: Bool = false) {
         app.tabBars.buttons["Settings"].tap()
         let row = app.buttons["supportTendr"]
-        for _ in 0..<3 where !(row.exists && row.isHittable) { app.swipeUp() }
-        XCTAssertTrue(row.waitForExistence(timeout: 15), "The row appears once the StoreKit products load")
+        // Products can take a while on a freshly booted simulator; keep scrolling until the row shows.
+        let deadline = Date().addingTimeInterval(30)
+        while !(row.exists && row.isHittable), Date() < deadline {
+            if !row.waitForExistence(timeout: 3) || !row.isHittable { app.swipeUp() }
+        }
+        XCTAssertTrue(row.exists, "The row appears once the StoreKit products load")
         if capture { snap("settings-support-row", after: 0.5) }
         row.tap()
         XCTAssertTrue(app.buttons["tip-small"].waitForExistence(timeout: 5))
