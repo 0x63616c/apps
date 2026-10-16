@@ -1,4 +1,4 @@
-name: Shots
+name: Shotr
 options:
   deploymentTarget:
     iOS: '26.0'
@@ -11,40 +11,40 @@ settings:
     CODE_SIGNING_ALLOWED: NO
     SWIFT_STRICT_CONCURRENCY: targeted
 targets:
-  Shots:
+  Shotr:
     type: application
     platform: iOS
-    sources: [Shots]
+    sources: [Shotr]
     dependencies:
       - package: RDesign
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.calum.shots
         PRODUCT_NAME: Shotr
-        PRODUCT_MODULE_NAME: Shots
+        PRODUCT_MODULE_NAME: Shotr
         INFOPLIST_KEY_CFBundleDisplayName: Shotr
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_FILE: Shots/Info.plist
+        INFOPLIST_FILE: Shotr/Info.plist
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: Screenshot library
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
         TARGETED_DEVICE_FAMILY: '1'
-  ShotsUITests:
+  ShotrUITests:
     type: bundle.ui-testing
     platform: iOS
     sources: [UITests]
     dependencies:
-      - target: Shots
+      - target: Shotr
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.calum.shots.uitests
         GENERATE_INFOPLIST_FILE: YES
 schemes:
-  Shots:
+  Shotr:
     build:
       targets:
-        Shots: all
-        ShotsUITests: [test]
+        Shotr: all
+        ShotrUITests: [test]
     test:
-      targets: [ShotsUITests]
+      targets: [ShotrUITests]

@@ -4,7 +4,7 @@ Shared Swift package for Calum’s apps. Import `RDesign` from an iOS 17+ or mac
 
 - `RPalette`, `RFont`, `RSpacing`, `RRadius`: black/white/graphite, type and layout tokens.
 - `.card()`, `.rRow()`, `PageHeader`, `FilterBar`: common layouts.
-- `InfoButton`, `RHelpLinks`, `RLinkRow`, `RVersionFooter`: settings and explanations.
+- `InfoButton`, `RHelpLinks`, `RLinkRow`, `AppVersionFooter`, `RVersionFooter`: settings and explanations.
 - `RMark`, `RSplash`: the app’s own `LaunchGlyph` asset on a neutral surface.
 - `RTipJar`, `RSupportRow`, `RTipJarSheet`, `RTipThanks`: optional consumable tips, with app-supplied product IDs. Hide the support row unless the store is ready.
 

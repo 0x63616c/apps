@@ -1,4 +1,5 @@
 import SwiftUI
+import RDesign
 
 struct DiscoverView: View {
     @Environment(AppModel.self) private var model
@@ -168,6 +169,7 @@ struct AboutView: View {
                     Text("No account, no tracking. Your favourites and schedule stay on this iPhone.")
                         .font(.callout)
                 }
+                Section {} footer: { AppVersionFooter() }
             }
             .navigationTitle("About Festr")
             .navigationBarTitleDisplayMode(.inline)

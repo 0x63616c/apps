@@ -171,7 +171,7 @@ struct SettingsView: View {
                     }
                     Section {
                         NavigationLink { PrivacyView() } label: { Label("Privacy & About", systemImage: "lock.shield") }
-                    } footer: { RVersionFooter("Tendr") }
+                    } footer: { AppVersionFooter() }
                 }.scrollContentBackground(.hidden)
             }.background(Theme.background).toolbar(.hidden, for: .navigationBar)
                 .task {

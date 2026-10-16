@@ -4,8 +4,8 @@ A small native iPhone screenshot organizer. SwiftUI, local AI, search, editable 
 
 ## Run on your iPhone
 
-1. Open **Shots.xcodeproj** in **Xcode 26 or later** on your Mac.
-2. Select the **Shots** target → **Signing & Capabilities** → choose your Apple development team. Keep the existing `com.calum.shots` bundle identifier. The installed app is named **Shotr**; the internal target and scheme remain **Shots**.
+1. Open **Shotr.xcodeproj** in **Xcode 26 or later** on your Mac.
+2. Select the **Shotr** target → **Signing & Capabilities** → choose your Apple development team. Keep the existing `com.calum.shots` bundle identifier. The installed app is named **Shotr**; the target and scheme are **Shotr**.
 3. Choose your connected iPhone running **iOS 26 or later**, enable Developer Mode if prompted, and press **Run**.
 4. Allow Photos access. Automatic tags require an Apple Intelligence-compatible iPhone, with Apple Intelligence enabled and its model downloaded.
 
@@ -29,7 +29,7 @@ bundle exec fastlane ios beta app:shotr
 
 See [shared release instructions](../../docs/RELEASE.md). Automatic TestFlight delivery is disabled in `app.yml` until native compilation, UI tests, and signing are verified for the monorepo. The existing bundle ID, Apple app record, profile **Shots App Store**, and internal group **Calum** are retained. The display and product name are **Shotr**.
 
-`just verify` requires Xcode, XcodeGen, Python 3, and a dedicated iOS 26+ simulator named **Shots** (or `SHOTS_SIMULATOR_UDID`). The generated fixture copies RDesign and uses synthetic data, never personal Photos. The legacy `scripts/release.py` uploader is retained for recovery and is not the normal release entrypoint. Its credential wrapper must be configured explicitly outside the monorepo; never commit credentials.
+`just verify` requires Xcode, XcodeGen, Python 3, and a dedicated iOS 26+ simulator named **Shotr** (or `SHOTS_SIMULATOR_UDID`). The generated fixture copies RDesign and uses synthetic data, never personal Photos. The legacy `scripts/release.py` uploader is retained for recovery and is not the normal release entrypoint. Its credential wrapper must be configured explicitly outside the monorepo; never commit credentials.
 
 ## Use
 
@@ -77,11 +77,11 @@ Normally scanning pauses when you leave Shotr. While work remains, tap **Setting
 | Path | Purpose |
 | --- | --- |
 | `SPEC.md` | Governing goal and acceptance checklist |
-| `Shots/Core` | Portable models, tag rules, search |
-| `Shots/Services` | Photos access, Vision, Foundation Models, protected persistence |
-| `Shots/LibraryStore.swift` | Index/scan coordination, manual edits, lifecycle |
-| `Shots/Views` | Minimal SwiftUI screens and zoom viewer |
-| `Shots/Assets.xcassets` | Black-and-white app icon |
+| `Shotr/Core` | Portable models, tag rules, search |
+| `Shotr/Services` | Photos access, Vision, Foundation Models, protected persistence |
+| `Shotr/LibraryStore.swift` | Index/scan coordination, manual edits, lifecycle |
+| `Shotr/Views` | Minimal SwiftUI screens and zoom viewer |
+| `Shotr/Assets.xcassets` | Black-and-white app icon |
 | `Tests` | Executable core tests |
 | `REVIEW.md` | Spec review, checks performed, device checks remaining |
 
@@ -89,7 +89,7 @@ Normally scanning pauses when you leave Shotr. While work remains, tap **Setting
 
 ```sh
 swift test
-xcodebuild -project Shots.xcodeproj -scheme Shots \
+xcodebuild -project Shotr.xcodeproj -scheme Shotr \
   -configuration Debug -sdk iphonesimulator \
   -destination 'generic/platform=iOS Simulator' \
   CODE_SIGNING_ALLOWED=NO build
@@ -104,7 +104,7 @@ See `captures/followup-20261004/` for verified date-header handoffs and uninterr
 Reproduce interaction tests with Xcode 27, XcodeGen, and a booted iOS 27 simulator:
 
 ```sh
-bash scripts/run-ui-tests.sh SIMULATOR_UDID /private/tmp/shots-ui-check
+bash scripts/run-ui-tests.sh SIMULATOR_UDID /private/tmp/shotr-ui-check
 ```
 
 The output directory must not already exist. The script makes an isolated fixture project, checks every catalog symbol at launch, and runs `UITests/RedesignUITests.swift`. Production sources and your Photos library are untouched. Screenshot attachments live in the resulting `UITests.xcresult`.
@@ -112,7 +112,7 @@ The output directory must not already exist. The script makes an isolated fixtur
 After installing the sample app with the UI test script, measure an unthrottled scan:
 
 ```sh
-bash scripts/benchmark-simulator.sh SIMULATOR_UDID /private/tmp/shots-benchmark.json
+bash scripts/benchmark-simulator.sh SIMULATOR_UDID /private/tmp/shotr-benchmark.json
 ```
 
 This times 15 generated 600×1000 images in the simulator. It bypasses PhotoKit, iCloud, and index writes. AI availability is recorded in the report; simulator timings are not iPhone performance guarantees. The pause/resume UI test uses a deliberate 700ms sample-fetch delay for repeatability and is not used as the speed benchmark.
