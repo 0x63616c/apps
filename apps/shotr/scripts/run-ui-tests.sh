@@ -5,13 +5,13 @@ if [ "$#" -ne 2 ]; then
   echo 'Usage: run-ui-tests.sh SIMULATOR_UDID NEW_OUTPUT_DIRECTORY' >&2
   exit 2
 fi
-shots_root="$(cd "$(dirname "$0")/.." && pwd)"
-shots_output="$2"
-python3 "$shots_root/scripts/make-capture-project.py" --destination "$shots_output"
-cp "$shots_root/scripts/ui-project.yml" "$shots_output/project.yml"
-xcodegen generate --spec "$shots_output/project.yml" --project "$shots_output"
-xcodebuild -project "$shots_output/Shots.xcodeproj" -scheme Shots \
+shotr_root="$(cd "$(dirname "$0")/.." && pwd)"
+shotr_output="$2"
+python3 "$shotr_root/scripts/make-capture-project.py" --destination "$shotr_output"
+cp "$shotr_root/scripts/ui-project.yml" "$shotr_output/project.yml"
+xcodegen generate --spec "$shotr_output/project.yml" --project "$shotr_output"
+xcodebuild -project "$shotr_output/Shotr.xcodeproj" -scheme Shotr \
   -destination "platform=iOS Simulator,id=$1" \
-  -derivedDataPath "$shots_output/DerivedData" \
-  -resultBundlePath "$shots_output/UITests.xcresult" \
+  -derivedDataPath "$shotr_output/DerivedData" \
+  -resultBundlePath "$shotr_output/UITests.xcresult" \
   -parallel-testing-enabled NO -collect-test-diagnostics never test

@@ -1,6 +1,6 @@
 import Foundation
 import XCTest
-@testable import ShotsCore
+@testable import ShotrCore
 
 final class DescriptionPipelineTests: XCTestCase {
     private let date = Date(timeIntervalSince1970: 1_700_000_000)

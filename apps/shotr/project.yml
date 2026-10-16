@@ -1,0 +1,47 @@
+name: Shotr
+options:
+  deploymentTarget:
+    iOS: "26.0"
+  developmentLanguage: en
+packages:
+  RDesign:
+    path: ../../packages/RDesign
+targets:
+  Shotr:
+    type: application
+    platform: iOS
+    sources:
+      - path: Shotr
+        excludes: ["Info.plist"]
+    dependencies:
+      - package: RDesign
+    settings:
+      base:
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: X9E4HG27NK
+        CURRENT_PROJECT_VERSION: "2"
+        MARKETING_VERSION: "1.0"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Shotr/Info.plist
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_CFBundleDisplayName: Shotr
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: Shotr reads your screenshots to organize and search them on this iPhone.
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: Shotr changes your Photos library only when you explicitly delete a screenshot.
+        INFOPLIST_KEY_PHPhotoLibraryPreventAutomaticLimitedAccessAlert: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        PRODUCT_BUNDLE_IDENTIFIER: com.calum.shots
+        PRODUCT_NAME: Shotr
+        SWIFT_VERSION: "5.0"
+        SWIFT_STRICT_CONCURRENCY: targeted
+        TARGETED_DEVICE_FAMILY: "1"
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+schemes:
+  Shotr:
+    build:
+      targets:
+        Shotr: all

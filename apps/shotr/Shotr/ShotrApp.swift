@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 @MainActor
-final class ShotsAppDelegate: NSObject, UIApplicationDelegate {
+final class ShotrAppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         BackgroundScanCoordinator.shared.register()
@@ -11,8 +11,8 @@ final class ShotsAppDelegate: NSObject, UIApplicationDelegate {
 }
 
 @main
-struct ShotsApp: App {
-    @UIApplicationDelegateAdaptor(ShotsAppDelegate.self) private var appDelegate
+struct ShotrApp: App {
+    @UIApplicationDelegateAdaptor(ShotrAppDelegate.self) private var appDelegate
     @State private var store = LibraryStore()
     @Environment(\.scenePhase) private var scenePhase
 

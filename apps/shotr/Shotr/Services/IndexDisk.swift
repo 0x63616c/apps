@@ -34,6 +34,6 @@ actor IndexDisk {
 
     enum IndexError: LocalizedError {
         case newerVersion
-        var errorDescription: String? { "This index needs a newer version of Shots." }
+        var errorDescription: String? { "This index needs a newer version of Shotr." }
     }
 }

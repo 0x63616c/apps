@@ -45,6 +45,20 @@ public struct RHelpLinks: View {
     }
 }
 
+/// The installed app version and build number for the bottom of settings.
+public struct AppVersionFooter: View {
+    public init() {}
+    public var body: some View {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
+        Text("Version \(version) (\(build))")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity)
+            .padding(.top, RSpacing.s)
+    }
+}
+
 /// "<App> · <version>" under the last settings section, read from the bundle.
 public struct RVersionFooter: View {
     let appName: String

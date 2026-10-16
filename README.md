@@ -12,7 +12,7 @@ Native iPhone apps, shared design, and their websites. This repository is still 
 
 [web/festr-admin](web/festr-admin) is the festival editor. From that directory run `bun install --frozen-lockfile`, `bun run build`, `bun run lint`, and `bun run test`. Database commands need its documented local environment; the build does not. Its seed script reads the bundled feed in `apps/festr`.
 
-Native builds require macOS and Xcode 26.2 or later. Tendr and Festr use XcodeGen 2.44.1: run `xcodegen generate` inside the app directory after changing `project.yml`. Shotr’s checked-in project is maintained directly. Open the app’s `.xcodeproj`; schemes remain `Still`, `Shots`, and `Festr` respectively. Simulator builds use `CODE_SIGNING_ALLOWED=NO`.
+Native builds require macOS and Xcode 26.2 or later. Tendr and Festr use XcodeGen 2.44.1: run `xcodegen generate` inside the app directory after changing `project.yml`. Shotr’s checked-in project is maintained directly. Open the app’s `.xcodeproj`; schemes remain `Still`, `Shotr`, and `Festr` respectively. Simulator builds use `CODE_SIGNING_ALLOWED=NO`.
 
 Shared release commands run from the repository root with `app:<slug>`; see [docs/RELEASE.md](docs/RELEASE.md). CI selects changed apps using `scripts/changed-apps.sh`. `MACOS_RUNNER` may be a runner label or a JSON label array; the default is `macos-latest`. `DEVELOPER_DIR` defaults to `/Applications/Xcode_26.2.app/Contents/Developer`. Override it when the selected runner installs a newer supported Xcode elsewhere.
 

@@ -152,7 +152,7 @@ def record_status(number, result):
 
 def settings():
     project = json.loads(run(["plutil", "-convert", "json", "-o", "-",
-                              ROOT / "Shots.xcodeproj/project.pbxproj"], capture=True))
+                              ROOT / "Shotr.xcodeproj/project.pbxproj"], capture=True))
     configs = [obj["buildSettings"] for obj in project["objects"].values()
                if obj.get("isa") == "XCBuildConfiguration"
                and obj.get("buildSettings", {}).get("PRODUCT_BUNDLE_IDENTIFIER") == BUNDLE]
@@ -168,9 +168,9 @@ def simulator():
     matches = [device for runtime, group in devices["devices"].items()
                if ".iOS-" in runtime and int(runtime.split(".iOS-")[1].split("-")[0]) >= 26
                for device in group if device.get("isAvailable")
-               and (device["udid"] == override if override else device["name"].startswith("Shots"))]
+               and (device["udid"] == override if override else device["name"].startswith("Shotr"))]
     if not matches:
-        raise RuntimeError("Create a dedicated iOS 26+ simulator named Shots, or set SHOTS_SIMULATOR_UDID.")
+        raise RuntimeError("Create a dedicated iOS 26+ simulator named Shotr, or set SHOTS_SIMULATOR_UDID.")
     device = next((item for item in matches if item["state"] == "Booted"), matches[0])
     if device["state"] != "Booted":
         run(["xcrun", "simctl", "boot", device["udid"]])
@@ -185,7 +185,7 @@ def verify(output):
     run(["swift", "test"])
     run([sys.executable, "-m", "unittest", "discover", "-s", "scripts/tests", "-v"])
     run(["bash", "scripts/run-ui-tests.sh", simulator(), output / "ui"])
-    run(["xcodebuild", "-quiet", "-project", "Shots.xcodeproj", "-scheme", "Shots",
+    run(["xcodebuild", "-quiet", "-project", "Shotr.xcodeproj", "-scheme", "Shotr",
          "-configuration", "Release", "-destination", "generic/platform=iOS",
          "-derivedDataPath", output / "unsigned", "CODE_SIGNING_ALLOWED=NO", "build"])
 
@@ -312,8 +312,8 @@ def main():
         if run(["git", "status", "--porcelain"], capture=True) or run(["git", "rev-parse", "HEAD"], capture=True) != revision:
             raise RuntimeError("Git source changed during validation; release stopped.")
         ensure_newer(number, builds())
-        archive = output / "Shots.xcarchive"
-        run(["xcodebuild", "-quiet", "-project", "Shots.xcodeproj", "-scheme", "Shots",
+        archive = output / "Shotr.xcarchive"
+        run(["xcodebuild", "-quiet", "-project", "Shotr.xcodeproj", "-scheme", "Shotr",
              "-configuration", "Release", "-destination", "generic/platform=iOS",
              "-derivedDataPath", output / "signed", "-archivePath", archive,
              f"CURRENT_PROJECT_VERSION={number}", "archive"])
@@ -333,12 +333,12 @@ def main():
                     "ipa": str(ipa.relative_to(ROOT)), "uploadAttempted": True, "uploadResolved": False}
         report = output / "release.json"
         report.write_text(json.dumps(evidence, indent=2) + "\n")
-        print(f"Uploading Shots {version} ({number}); SHA256 {digest}", flush=True)
+        print(f"Uploading Shotr {version} ({number}); SHA256 {digest}", flush=True)
         upload(ipa, state)
         evidence["testflight"] = wait_ready(number)
         evidence["uploadResolved"] = True
         report.write_text(json.dumps(evidence, indent=2) + "\n")
-        print(f"Shots {version} ({number}) is available to Calum in TestFlight. Evidence: {report}")
+        print(f"Shotr {version} ({number}) is available to Calum in TestFlight. Evidence: {report}")
         return 0
 
 

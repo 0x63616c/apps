@@ -26,7 +26,7 @@ Verified on Linux on 2026-10-10. All changes remain local on branch `monorepo`; 
 | Live Tendr pages | Read-only HTTP checks returned 200 for existing `/tendr/privacy/` and `/tendr/support/` URLs |
 | `git diff --check` | Passed |
 
-Source tips: Shots `75d0bdcdda8c5df53f90e6db757ee4e37b55d0e5`; Festr `b38b3129f904946c504146488d2b4ddc6cf08c2e`. Imports used complete temporary GitHub clones because the workspace source clones were shallow. The source repositories were only read.
+Source tips: Shotr `75d0bdcdda8c5df53f90e6db757ee4e37b55d0e5`; Festr `b38b3129f904946c504146488d2b4ddc6cf08c2e`. Imports used complete temporary GitHub clones because the workspace source clones were shallow. The source repositories were only read.
 
 Swift and actionlint were installed under `/tmp`; Ruby and ShellCheck were installed for these checks. Swift caches were redirected into `/tmp`. The Linux-built XcodeGen binary was invoked directly from the repository root with `--spec`; invoking it through PATH from a temporary scaffold directory hit a Linux Foundation bundle lookup crash. The successful direct invocation generated all three projects. A sandboxed Next.js rebuild initially failed to open its worker port; clearing generated `.next` output and rerunning with permitted execution completed successfully.
 

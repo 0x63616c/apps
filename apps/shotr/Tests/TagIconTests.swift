@@ -1,6 +1,6 @@
 import Foundation
 import XCTest
-@testable import ShotsCore
+@testable import ShotrCore
 
 final class TagIconTests: XCTestCase {
     func testLegacyTagDecodesWithoutLosingIDOrName() throws {

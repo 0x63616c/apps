@@ -133,7 +133,7 @@ class ReleaseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder, patch.object(release, "ROOT", Path(folder)), \
                 patch.object(release.sys, "argv", ["release.py"]), \
                 patch.object(release, "credentials"), \
-                patch.object(release, "run", return_value=" M Shots/LibraryStore.swift"), \
+                patch.object(release, "run", return_value=" M Shotr/LibraryStore.swift"), \
                 patch.object(release, "verify") as verify, \
                 patch.object(release, "upload") as upload:
             with self.assertRaisesRegex(RuntimeError, "Commit all changes"):
@@ -170,9 +170,9 @@ class ReleaseTests(unittest.TestCase):
             if args[:3] == ["git", "status", "--porcelain"]:
                 status_calls += 1
                 if failure == "source_during_validation" and status_calls == 2:
-                    return " M Shots/LibraryStore.swift"
+                    return " M Shotr/LibraryStore.swift"
                 if failure == "source_during_signing" and status_calls == 3:
-                    return " M Shots/LibraryStore.swift"
+                    return " M Shotr/LibraryStore.swift"
                 return ""
             if args[:3] == ["git", "rev-parse", "HEAD"]:
                 return "abc123"

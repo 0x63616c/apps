@@ -1,6 +1,6 @@
 # Monorepo migration — October 10, 2026
 
-Shotr now lives at `apps/shotr`, with display/product name Shotr and shared RDesign UI tokens. Bundle ID `com.calum.shots`, scheme/module `Shots`, signing profile, and stored index path are preserved. Run portable checks here with `just test`; run native checks on macOS with `just verify`. Distribution uses `bundle exec fastlane ios beta app:shotr` at the repository root; automatic TestFlight is disabled pending native/signing validation. See [release instructions](../../docs/RELEASE.md).
+Shotr uses the Shotr scheme/module and shared RDesign UI. Bundle ID `com.calum.shots`, signing profile, preferences and stored index path remain unchanged. Run `just test` for portable checks and `just verify` on macOS. Distribution uses `bundle exec fastlane ios beta app:shotr` from the repository root; automatic TestFlight is disabled pending native/signing validation. See [release instructions](../../docs/RELEASE.md).
 
 Linux validation for this migration: 46 Swift core tests and 15 Python release-tool tests pass; shellcheck and synthetic capture generation pass. Native Xcode builds, simulator tests, signing, and TestFlight remain unverified.
 

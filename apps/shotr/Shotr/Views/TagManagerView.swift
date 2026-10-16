@@ -29,7 +29,7 @@ struct TagManagerView: View {
                     }
                 }
             }
-            .scrollContentBackground(.hidden).background(Color.shotsBackground)
+            .scrollContentBackground(.hidden).background(Color.shotrBackground)
             .navigationTitle("Tags").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("Done") { dismiss() } }
@@ -85,7 +85,7 @@ struct TagEditorView: View {
                     .accessibilityIdentifier("chooseTagIcon")
                 }
             }
-            .scrollContentBackground(.hidden).background(Color.shotsBackground)
+            .scrollContentBackground(.hidden).background(Color.shotrBackground)
             .navigationTitle(existing ? "Edit tag" : "New tag")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -155,7 +155,7 @@ struct TagIconPicker: View {
                 }.padding(20)
             }
         }
-        .background(Color.shotsBackground)
+        .background(Color.shotrBackground)
         .navigationTitle("Icons").navigationBarTitleDisplayMode(.inline)
         .searchable(text: $query, prompt: "Search icons")
     }
@@ -193,7 +193,7 @@ struct TagAssignmentView: View {
                     .accessibilityValue(all ? "Selected" : some ? "Some selected" : "Not selected")
                 }
             }
-            .scrollContentBackground(.hidden).background(Color.shotsBackground)
+            .scrollContentBackground(.hidden).background(Color.shotrBackground)
             .navigationTitle("Tags").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
