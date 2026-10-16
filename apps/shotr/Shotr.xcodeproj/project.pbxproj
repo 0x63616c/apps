@@ -2,7 +2,7 @@
 {
 	archiveVersion = 1;
 	classes = {};
-	objectVersion = 56;
+	objectVersion = 77;
 	objects = {
 		A034BABCECC6129F1D895B00 = { isa = PBXBuildFile; productRef = A034BABCECC6129F1D895B01; };
 		A034BABCECC6129F1D895B01 = { isa = XCSwiftPackageProductDependency; package = A034BABCECC6129F1D895B02; productName = RDesign; };
@@ -57,7 +57,7 @@
 		862894B703A6DEDF96A9DD6C = { isa = XCConfigurationList; buildConfigurations = (89E1FD6268CC0F221A2BE178, E6DE6C99132752C914FEF632,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 		C57128001CE614BF8549D6BB = { isa = XCConfigurationList; buildConfigurations = (7082CC0B6FC1282FCEABD07A, 639A7CA24D39909E713B47F7,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 		0E8A3AD980EC179856012B7E = { isa = PBXNativeTarget; buildConfigurationList = C57128001CE614BF8549D6BB; buildPhases = (BCE16DD0260827ECF338C787, 7561BFB015D8F536760CB671, 0189424A5A60FED329FA868E,); buildRules = (); dependencies = (); packageProductDependencies = (A034BABCECC6129F1D895B01,); name = Shotr; productName = Shotr; productReference = 38A007151ABE87CC01A5B6E9; productType = "com.apple.product-type.application"; };
-		98F54143AB4E86B28C3AFEE0 = { isa = PBXProject; attributes = { BuildIndependentTargetsInParallel = YES; LastUpgradeCheck = 2600; TargetAttributes = { 0E8A3AD980EC179856012B7E = { CreatedOnToolsVersion = 26.0; }; }; }; buildConfigurationList = 862894B703A6DEDF96A9DD6C; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base,); mainGroup = EDA6D6223944636B9C5B54AA; productRefGroup = 1EE63A94BAD0DF0FCB0E7B8C; packageReferences = (A034BABCECC6129F1D895B02,); projectDirPath = ""; projectRoot = ""; targets = (0E8A3AD980EC179856012B7E,); };
+		98F54143AB4E86B28C3AFEE0 = { isa = PBXProject; attributes = { BuildIndependentTargetsInParallel = YES; LastUpgradeCheck = 2600; TargetAttributes = { 0E8A3AD980EC179856012B7E = { CreatedOnToolsVersion = 26.0; }; }; }; buildConfigurationList = 862894B703A6DEDF96A9DD6C; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base,); mainGroup = EDA6D6223944636B9C5B54AA; productRefGroup = 1EE63A94BAD0DF0FCB0E7B8C; packageReferences = (A034BABCECC6129F1D895B02,); projectDirPath = ""; projectRoot = ""; targets = (0E8A3AD980EC179856012B7E,); };
 	};
 	rootObject = 98F54143AB4E86B28C3AFEE0;
 }
