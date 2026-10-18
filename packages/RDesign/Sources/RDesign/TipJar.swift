@@ -25,6 +25,10 @@ import SwiftUI
     public var notice: String?
     /// Set when a purchase completes; the sheet closes and the app shows `RTipThanks`.
     public var completed: Tip?
+    /// UI tests only: finish purchases with this outcome instead of asking the App Store. The
+    /// simulator's StoreKit daemon can ignore SKTestSession and demand an Apple Account sign-in.
+    public enum SimulatedOutcome: String, Sendable { case success, failure, pending }
+    public var simulatedOutcome: SimulatedOutcome?
     private var updates: Task<Void, Never>?
 
     public init(tips: [Tip]) { self.tips = tips }
@@ -49,6 +53,15 @@ import SwiftUI
         purchasing = tip
         notice = nil
         defer { purchasing = nil }
+        if let outcome = simulatedOutcome {
+            try? await Task.sleep(for: .milliseconds(300))
+            switch outcome {
+            case .success: completed = tip
+            case .failure: notice = "That tip didn't go through. Please try again later."
+            case .pending: notice = "Your tip is waiting for approval. Thank you for the thought."
+            }
+            return
+        }
         do {
             switch try await product.purchase() {
             case .success(.verified(let transaction)):

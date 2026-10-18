@@ -2,8 +2,8 @@ import StoreKitTest
 import XCTest
 
 /// The optional tip jar, against Tendr.storekit through an SKTestSession (xcodebuild ignores the
-/// scheme's StoreKit configuration for UI tests). Dialogs are disabled, so purchases complete
-/// without the system sheet. With `TEST_RUNNER_SCREENSHOT_DIR` set, key states are written as PNGs.
+/// scheme's StoreKit configuration for UI tests). Products load from the session; purchases use
+/// `--tip-outcome`, because the simulator can ignore the session and ask for an Apple Account. With `TEST_RUNNER_SCREENSHOT_DIR` set, key states are written as PNGs.
 final class TipJarTests: XCTestCase {
     private var session: SKTestSession?
 
@@ -27,7 +27,7 @@ final class TipJarTests: XCTestCase {
     }
 
     @MainActor func testTipPurchaseCelebratesThenCloses() throws {
-        let app = launch()
+        let app = launch(extra: ["--tip-outcome", "success"])
         openTipJar(app)
         app.buttons["tip-small"].tap()
         let thanks = app.staticTexts["tipThanks"]
@@ -41,7 +41,7 @@ final class TipJarTests: XCTestCase {
     }
 
     @MainActor func testFailedTipExplainsCalmly() throws {
-        let app = launch { $0.failTransactionsEnabled = true }
+        let app = launch(extra: ["--tip-outcome", "failure"])
         openTipJar(app)
         app.buttons["tip-medium"].tap()
         XCTAssertTrue(app.staticTexts["tipNotice"].waitForExistence(timeout: 15))
@@ -51,7 +51,7 @@ final class TipJarTests: XCTestCase {
     }
 
     @MainActor func testPendingTipWaitsQuietly() throws {
-        let app = launch { $0.askToBuyEnabled = true }
+        let app = launch(extra: ["--tip-outcome", "pending"])
         openTipJar(app)
         app.buttons["tip-large"].tap()
         let notice = app.staticTexts["tipNotice"]
@@ -91,8 +91,12 @@ final class TipJarTests: XCTestCase {
     @MainActor private func openTipJar(_ app: XCUIApplication, capture: Bool = false) {
         app.tabBars.buttons["Settings"].tap()
         let row = app.buttons["supportTendr"]
-        for _ in 0..<3 where !(row.exists && row.isHittable) { app.swipeUp() }
-        XCTAssertTrue(row.waitForExistence(timeout: 15), "The row appears once the StoreKit products load")
+        // Products can take a while on a freshly booted simulator; keep scrolling until the row shows.
+        let deadline = Date().addingTimeInterval(30)
+        while !(row.exists && row.isHittable), Date() < deadline {
+            if !row.waitForExistence(timeout: 3) || !row.isHittable { app.swipeUp() }
+        }
+        XCTAssertTrue(row.exists, "The row appears once the StoreKit products load")
         if capture { snap("settings-support-row", after: 0.5) }
         row.tap()
         XCTAssertTrue(app.buttons["tip-small"].waitForExistence(timeout: 5))
