@@ -6,12 +6,12 @@ if [ "$#" -ne 2 ]; then
   echo 'Usage: benchmark-simulator.sh SIMULATOR_UDID OUTPUT_JSON' >&2
   exit 2
 fi
-shots_container="$(xcrun simctl get_app_container "$1" com.calum.shots data)"
-shots_report="$shots_container/Documents/scan-benchmark.json"
+shotr_container="$(xcrun simctl get_app_container "$1" com.calum.shots data)"
+shotr_report="$shotr_container/Documents/scan-benchmark.json"
 # This file is generated only by the sample app's explicit benchmark launch route.
-if [ -f "$shots_report" ]; then rm "$shots_report"; fi
+if [ -f "$shotr_report" ]; then rm "$shotr_report"; fi
 xcrun simctl launch --terminate-running-process "$1" com.calum.shots --benchmark-scan
-python3 - "$shots_report" "$2" <<'PY'
+python3 - "$shotr_report" "$2" <<'PY'
 import json, pathlib, sys, time
 source, output = map(pathlib.Path, sys.argv[1:])
 deadline = time.monotonic() + 240

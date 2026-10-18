@@ -15,9 +15,14 @@ struct SettingsView: View {
                     }
                 }
                 Section {
-                    Toggle("Download from iCloud", isOn: $store.downloadFromICloud)
-                } footer: {
-                    Text("Retrieve screenshots stored in iCloud Photos. Analysis stays on your iPhone.")
+                    Toggle(isOn: $store.downloadFromICloud) {
+                        HStack(spacing: 4) {
+                            Text("Download from iCloud")
+                            InfoButton("Download screenshots from iCloud Photos. Analysis stays on your iPhone.")
+                        }
+                    }
+                    .toggleStyle(.switch)
+                    .tint(RPalette.graphite)
                 }
                 Section {
                     if backgroundScan.hasRequest {
@@ -60,8 +65,9 @@ struct SettingsView: View {
                         Text(message).font(.subheadline).foregroundStyle(.secondary)
                     }
                 }
+                Section {} footer: { AppVersionFooter() }
             }
-            .scrollContentBackground(.hidden).background(Color.shotsBackground)
+            .scrollContentBackground(.hidden).background(Color.shotrBackground)
             .navigationTitle("Settings").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
         }

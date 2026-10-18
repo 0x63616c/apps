@@ -4,7 +4,7 @@ import shutil
 import argparse
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--destination", type=Path, default=Path("/private/tmp/shots-supported-source"))
+parser.add_argument("--destination", type=Path, default=Path("/private/tmp/shotr-supported-source"))
 parser.add_argument("--large-library", action="store_true", help="Default to 15,000 synthetic records. The generated app also accepts --large-library at launch.")
 args = parser.parse_args()
 
@@ -24,7 +24,7 @@ def edit(path, before, after):
     assert before in source, (path, before)
     file.write_text(source.replace(before, after, 1))
 
-edit('Shots/LibraryStore.swift', 'guard !isReady, !isStarting else { return }', '''guard !isReady, !isStarting else { return }
+edit('Shotr/LibraryStore.swift', 'guard !isReady, !isStarting else { return }', '''guard !isReady, !isStarting else { return }
         if !ProcessInfo.processInfo.arguments.contains("--test-refresh-scan") {
         lastScan = nil
         tags = IndexSnapshot.defaultTags
@@ -38,14 +38,14 @@ edit('Shots/LibraryStore.swift', 'guard !isReady, !isStarting else { return }', 
         return ()
         }
         ''')
-edit('Shots/LibraryStore.swift', 'try await disk.load() ?? IndexSnapshot()',
+edit('Shotr/LibraryStore.swift', 'try await disk.load() ?? IndexSnapshot()',
      'IndexSnapshot(tags: IndexSnapshot.defaultTags, screenshots: CaptureSamples.records)')
-edit('Shots/LibraryStore.swift', 'guard isReady, isActive else { return }', '''if !ProcessInfo.processInfo.arguments.contains("--test-refresh-scan") {
+edit('Shotr/LibraryStore.swift', 'guard isReady, isActive else { return }', '''if !ProcessInfo.processInfo.arguments.contains("--test-refresh-scan") {
             return // Only the refresh regression fixture runs the real reconciliation path.
         }
         guard isReady, isActive else { return }''')
-edit('Shots/LibraryStore.swift', 'private func persist() async throws {', 'private func persist() async throws {\n        return // Capture data never writes a Photos index.')
-edit('Shots/Views/LibraryView.swift', '.tint(Color.primary)\n    }', '''.tint(Color.primary)
+edit('Shotr/LibraryStore.swift', 'private func persist() async throws {', 'private func persist() async throws {\n        return // Capture data never writes a Photos index.')
+edit('Shotr/Views/LibraryView.swift', '.tint(Color.primary)\n    }', '''.tint(Color.primary)
         .task {
             let args = ProcessInfo.processInfo.arguments
             if args.contains("--header-transitions") {
@@ -77,7 +77,7 @@ edit('Shots/Views/LibraryView.swift', '.tint(Color.primary)\n    }', '''.tint(Co
     }''')
 
 # Synthetic source screenshots. These are fixture contents, never app-screen mockups.
-with (dest/'Shots/Services/PhotosClient.swift').open('a') as file:
+with (dest/'Shotr/Services/PhotosClient.swift').open('a') as file:
     file.write('''
 @MainActor private enum CaptureSamples {
     static let entries: [(String, String, String, String, Int)] = [
@@ -177,12 +177,12 @@ with (dest/'Shots/Services/PhotosClient.swift').open('a') as file:
 }
 ''')
 # The store needs the fixture type; internal scope keeps it shared only within the capture target.
-p = dest/'Shots/Services/PhotosClient.swift'
+p = dest/'Shotr/Services/PhotosClient.swift'
 p.write_text(p.read_text().replace('@MainActor private enum CaptureSamples', '@MainActor enum CaptureSamples'))
 print(dest)
 
 # Fully disconnect the fixture build from the system Photos library.
-p = dest/'Shots/Services/PhotosClient.swift'
+p = dest/'Shotr/Services/PhotosClient.swift'
 source = p.read_text()
 p.write_text('''import Photos
 import UIKit
@@ -244,16 +244,16 @@ private actor CaptureImageEncoder {
 }
 ''' + source[source.index('@MainActor enum CaptureSamples'):])
 if args.large_library:
-    edit('Shots/Services/PhotosClient.swift', 'static let defaultCount = 15', 'static let defaultCount = 15_000')
-edit('Shots/LibraryStore.swift', 'PHPhotoLibrary.authorizationStatus(for: .readWrite)', 'PHAuthorizationStatus.authorized')
+    edit('Shotr/Services/PhotosClient.swift', 'static let defaultCount = 15', 'static let defaultCount = 15_000')
+edit('Shotr/LibraryStore.swift', 'PHPhotoLibrary.authorizationStatus(for: .readWrite)', 'PHAuthorizationStatus.authorized')
 
-edit("Shots/Views/LibraryView.swift", "import Photos", "import UIKit\nimport Photos")
+edit("Shotr/Views/LibraryView.swift", "import Photos", "import UIKit\nimport Photos")
 
 # Native-only transition controls: sample real collection layout offsets without
 # relying on swipe inertia. Never included in the production app/project.
-edit('Shots/Views/LibraryView.swift', 'let view = UICollectionView(frame: .zero, collectionViewLayout: Self.layout',
+edit('Shotr/Views/LibraryView.swift', 'let view = UICollectionView(frame: .zero, collectionViewLayout: Self.layout',
      'let view = HeaderProbeCollectionView(frame: .zero, collectionViewLayout: Self.layout')
-edit('Shots/Views/LibraryView.swift', 'private final class DayGridLayout: UICollectionViewLayout {', '''private final class HeaderProbeCollectionView: UICollectionView {
+edit('Shotr/Views/LibraryView.swift', 'private final class DayGridLayout: UICollectionViewLayout {', '''private final class HeaderProbeCollectionView: UICollectionView {
         override func didMoveToWindow() {
             super.didMoveToWindow()
             if window != nil { collectionViewLayout.invalidateLayout(); setNeedsLayout() }
@@ -261,7 +261,7 @@ edit('Shots/Views/LibraryView.swift', 'private final class DayGridLayout: UIColl
     }
 
     private final class DayGridLayout: UICollectionViewLayout {''')
-edit('Shots/Views/LibraryView.swift', 'private var contentSizeCategory: UIContentSizeCategory?', '''private var contentSizeCategory: UIContentSizeCategory?
+edit('Shotr/Views/LibraryView.swift', 'private var contentSizeCategory: UIContentSizeCategory?', '''private var contentSizeCategory: UIContentSizeCategory?
         private var probeIndex = -1
         private var probeButtons: [UIButton] = []
 
@@ -301,7 +301,7 @@ edit('Shots/Views/LibraryView.swift', 'private var contentSizeCategory: UIConten
             view.setContentOffset(CGPoint(x: 0, y: offsets[probeIndex]), animated: false)
             view.layoutIfNeeded()
         }''')
-edit('Shots/Views/LibraryView.swift', 'let top = view.bounds.minY + view.adjustedContentInset.top\n            if let section',
+edit('Shotr/Views/LibraryView.swift', 'let top = view.bounds.minY + view.adjustedContentInset.top\n            if let section',
      'installProbe(view)\n            let top = view.bounds.minY + view.adjustedContentInset.top\n            if let section')
-edit('Shots/Views/LibraryView.swift', 'accessibilityValue = "offset=\\(top);',
+edit('Shotr/Views/LibraryView.swift', 'accessibilityValue = "offset=\\(top);',
      'accessibilityValue = "style=\\(view.traitCollection.userInterfaceStyle.rawValue); offset=\\(top);')

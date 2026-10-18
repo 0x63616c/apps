@@ -163,7 +163,11 @@ struct Overview: View {
         }
         if let overview {
             try files.createDirectory(at: overview.deletingLastPathComponent(), withIntermediateDirectories: true)
-            let size = CGSize(width: 80 * 2 + 440 * CGFloat(framed.count) + 48 * CGFloat(framed.count - 1), height: 80 * 2 + 956)
+            let count = CGFloat(framed.count)
+            let margin: CGFloat = 80 * 2
+            let frameWidth: CGFloat = 440 * count
+            let gaps: CGFloat = 48 * (count - 1)
+            let size = CGSize(width: margin + frameWidth + gaps, height: margin + 956)
             try render(Overview(frames: framed), size: size, to: overview)
             print("Overview \(overview.path)")
         }

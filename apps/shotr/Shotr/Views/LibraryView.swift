@@ -52,7 +52,7 @@ struct LibraryView: View {
                     permissionView
                 }
             }
-            .background(Color.shotsBackground)
+            .background(Color.shotrBackground)
             .navigationTitle(selecting ? "\(selection.count) selected" : (showingHidden ? "Hidden" : "Shotr"))
             .navigationSubtitle(authorized && store.isReady ? resultCount : "")
             .toolbarTitleDisplayMode(.inlineLarge)
@@ -700,7 +700,7 @@ private struct ScreenshotSearch: ViewModifier {
 }
 
 extension Color {
-    static var shotsBackground: Color {
+    static var shotrBackground: Color {
         Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? .black : .systemBackground })
     }
 }

@@ -1,6 +1,6 @@
 name: Shotr
-project: Shots.xcodeproj
-scheme: Shots
+project: Shotr.xcodeproj
+scheme: Shotr
 bundle_id: com.calum.shots
 apple_id: "6818884320"
 version: "1.0"

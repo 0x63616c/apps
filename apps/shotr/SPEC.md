@@ -1,4 +1,4 @@
-# Shots — goal and acceptance spec
+# Shotr — goal and acceptance spec
 
 ## Goal
 Build the simplest useful native iPhone screenshot organizer: open it, see existing screenshots, find one by searching or tapping a tag. All image analysis runs on the iPhone. No account, server, ads, subscriptions, or premium features.

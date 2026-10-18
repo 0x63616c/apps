@@ -2,10 +2,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "ShotsCore",
-    products: [.library(name: "ShotsCore", targets: ["ShotsCore"])],
+    name: "ShotrCore",
+    products: [.library(name: "ShotrCore", targets: ["ShotrCore"])],
     targets: [
-        .target(name: "ShotsCore", path: "Shots/Core"),
-        .testTarget(name: "ShotsCoreTests", dependencies: ["ShotsCore"], path: "Tests")
+        .target(name: "ShotrCore", path: "Shotr/Core"),
+        .testTarget(name: "ShotrCoreTests", dependencies: ["ShotrCore"], path: "Tests")
     ]
 )
