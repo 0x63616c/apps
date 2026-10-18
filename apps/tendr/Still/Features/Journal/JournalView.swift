@@ -178,6 +178,9 @@ struct SettingsView: View {
                     await tipJar.load()
                     let arguments = ProcessInfo.processInfo.arguments
                     if arguments.contains("--uitest"), arguments.contains("--tip-thanks") { thanks = tipJar.tips[1] }
+                    if arguments.contains("--uitest"), let flag = arguments.firstIndex(of: "--tip-outcome"), flag + 1 < arguments.count {
+                        tipJar.simulatedOutcome = RTipJar.SimulatedOutcome(rawValue: arguments[flag + 1])
+                    }
                 }
                 .sheet(isPresented: $tipping, onDismiss: {
                     thanks = tipJar.completed
