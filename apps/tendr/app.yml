@@ -15,6 +15,7 @@ profile_name: Tendr CI App Store
 # swift test runs here when present (fast core tests).
 swift_package: true
 screenshot_test: StillUITests/ScreenshotTests
+duo_screenshot_test: StillUITests/DuoScreenshotTests
 site: tendr
 age_rating:
   medicalOrTreatmentInformation: INFREQUENT_OR_MILD

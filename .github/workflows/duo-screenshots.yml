@@ -1,0 +1,79 @@
+name: Duo screenshots
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'App folder under apps/'
+        type: string
+        default: tendr
+        required: true
+      developer_dir:
+        description: 'Xcode developer directory containing the Duo simulator'
+        type: string
+        default: '/Applications/Xcode_27.1.app/Contents/Developer'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  screenshots:
+    runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
+    timeout-minutes: 60
+    env:
+      APP: ${{ inputs.app }}
+      REQUESTED_DEVELOPER_DIR: ${{ inputs.developer_dir }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: |
+          selected="$REQUESTED_DEVELOPER_DIR"
+          if [[ ! -x "$selected/usr/bin/xcodebuild" ]]; then
+            selected=$(python3 - <<'PY'
+          import pathlib, plistlib, re
+          candidates = list(pathlib.Path('/Applications').glob('Xcode*.app'))
+          def version(app):
+              try:
+                  with (app / 'Contents/version.plist').open('rb') as file:
+                      value = plistlib.load(file).get('CFBundleShortVersionString', '')
+                  return tuple(int(n) for n in re.findall(r'\d+', value))
+              except (OSError, ValueError):
+                  return ()
+          candidates = [p for p in candidates if (p / 'Contents/Developer/usr/bin/xcodebuild').is_file()]
+          candidates.sort(key=version)
+          print(candidates[-1] / 'Contents/Developer' if candidates else '')
+          PY
+            )
+          fi
+          [[ -n "$selected" ]] || { echo 'No usable /Applications/Xcode*.app installation found.' >&2; exit 1; }
+          echo "DEVELOPER_DIR=$selected" >> "$GITHUB_ENV"
+          echo "Using $selected"
+      - name: List simulator device types and runtimes
+        run: |
+          xcodebuild -version
+          xcrun simctl list devicetypes
+          xcrun simctl list runtimes
+      - name: Capture raw Duo screens (light and dark)
+        timeout-minutes: 50
+        run: scripts/capture-duo-screenshots.sh "$APP" "build/duo-screenshots/$APP/raw" light dark
+      - name: Record display support
+        if: always()
+        run: |
+          notes="build/duo-screenshots/$APP/raw/capture-notes.txt"
+          if [[ -f "$notes" ]]; then cat "$notes" >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: duo-screenshots-${{ inputs.app }}
+          path: build/duo-screenshots/${{ inputs.app }}/raw
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: duo-screenshot-test-results-${{ inputs.app }}
+          path: |
+            build/duo-screenshots/${{ inputs.app }}/run.*/*.xcresult
+            build/duo-screenshots/${{ inputs.app }}/run.*/*/*.png
+            build/duo-screenshots/${{ inputs.app }}/run.*/*.txt
+          if-no-files-found: ignore
