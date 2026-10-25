@@ -132,7 +132,8 @@ raise "metadata lane must never submit or upload a binary" unless listing[:submi
 raise "metadata lane must run unattended" unless listing[:force] && listing[:run_precheck_before_submit] == false
 tendr = File.expand_path("../apps/tendr", __dir__)
 raise "metadata paths" unless listing[:metadata_path] == "#{tendr}/fastlane/metadata" && listing[:screenshots_path] == "#{tendr}/fastlane/screenshots" && listing[:overwrite_screenshots]
-raise "metadata app" unless listing[:app_identifier] == "com.calumwebb.still" && listing[:app_version] == "1.0.1"
+tendr_version = YAML.safe_load_file(File.join(tendr, "app.yml")).fetch("version")
+raise "metadata app" unless listing[:app_identifier] == "com.calumwebb.still" && listing[:app_version] == tendr_version
 raise "review phone from environment" unless listing[:app_review_information] == { phone_number: "+1 555 0100" }
 check.calls.clear
 check.metadata({ app: "tendr", skip_screenshots: "true" })
