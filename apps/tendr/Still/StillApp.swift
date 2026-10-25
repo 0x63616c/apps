@@ -51,10 +51,10 @@ extension View {
         if #available(iOS 18.0, *) {
             if page {
                 self.presentationSizing(.page)
-                    .presentationCompactAdaptation(horizontal: .automatic, vertical: .fullScreen)
+                    .presentationCompactAdaptation(horizontal: .automatic, vertical: .fullScreenCover)
             } else {
                 self.presentationSizing(.form)
-                    .presentationCompactAdaptation(horizontal: .automatic, vertical: .fullScreen)
+                    .presentationCompactAdaptation(horizontal: .automatic, vertical: .fullScreenCover)
             }
         } else {
             self.presentationDetents([.large])
