@@ -5,16 +5,32 @@ import Charts
 struct RootView: View {
     @Environment(Store.self) private var store
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @State private var columns = NavigationSplitViewVisibility.all
     @State private var selected = 0
     @State private var journalFilter = "All"
     var body: some View {
-        @Bindable var store = store
-        TabView(selection: $selected) {
-            TodayView(tab: $selected).tag(0).tabItem { Label("Home", systemImage: "square.grid.2x2.fill").accessibilityIdentifier("navHome") }
-            TreatmentView(tab: $selected, journalFilter: $journalFilter).tag(1).tabItem { Label("Treatment", systemImage: "syringe.fill").accessibilityIdentifier("navTreatment") }
-            ProgressViewScreen().tag(2).tabItem { Label("Progress", systemImage: "chart.xyaxis.line").accessibilityIdentifier("navProgress") }
-            JournalView(filter: $journalFilter).tag(3).tabItem { Label("Journal", systemImage: "book.closed").accessibilityIdentifier("navJournal") }
-            SettingsView().tag(4).tabItem { Label("Settings", systemImage: "gearshape").accessibilityIdentifier("navSettings") }
+        // Keep the split view, tabs and every section's NavigationStack at the same
+        // structural identity. Replacing TabView with a separate detail tree on resize
+        // would discard destinations, scroll positions, editor drafts and filters.
+        NavigationSplitView(columnVisibility: $columns, preferredCompactColumn: .constant(.detail)) {
+            List {
+                sidebarSection("Home", symbol: "square.grid.2x2.fill", tag: 0)
+                sidebarSection("Treatment", symbol: "syringe.fill", tag: 1)
+                sidebarSection("Progress", symbol: "chart.xyaxis.line", tag: 2)
+                sidebarSection("Journal", symbol: "book.closed", tag: 3)
+                sidebarSection("Settings", symbol: "gearshape", tag: 4)
+            }
+            .listStyle(.sidebar)
+            .navigationTitle("Tendr")
+            .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 240)
+            .accessibilityIdentifier("sectionSidebar")
+        } detail: {
+            sectionTabs.toolbar(.hidden, for: .navigationBar)
+        }
+        .navigationSplitViewStyle(.balanced)
+        .onChange(of: horizontalSizeClass, initial: true) { _, _ in
+            columns = usesSidebar ? .all : .detailOnly
         }
         .alert("Something needs attention", isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) {
             Button("OK") { store.error = nil }
@@ -23,6 +39,31 @@ struct RootView: View {
         .task { await store.syncReminders() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await store.refreshHealthKit() } }
+        }
+    }
+
+    private var usesSidebar: Bool {
+        TendrLayout(horizontal: horizontalSizeClass.map(TendrLayout.SizeClass.init), vertical: nil).navigation == .sidebar
+    }
+
+    private func sidebarSection(_ title: String, symbol: String, tag: Int) -> some View {
+        Button { selected = tag } label: {
+            Label(title, systemImage: symbol).frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(selected == tag ? Theme.sage : Color.clear)
+        .accessibilityIdentifier("nav\(title)")
+        .accessibilityAddTraits(selected == tag ? .isSelected : [])
+    }
+
+    private var sectionTabs: some View {
+        TabView(selection: $selected) {
+            TodayView(tab: $selected).toolbar(usesSidebar ? .hidden : .visible, for: .tabBar).tag(0).tabItem { Label("Home", systemImage: "square.grid.2x2.fill").accessibilityIdentifier("navHome") }
+            TreatmentView(tab: $selected, journalFilter: $journalFilter).toolbar(usesSidebar ? .hidden : .visible, for: .tabBar).tag(1).tabItem { Label("Treatment", systemImage: "syringe.fill").accessibilityIdentifier("navTreatment") }
+            ProgressViewScreen().toolbar(usesSidebar ? .hidden : .visible, for: .tabBar).tag(2).tabItem { Label("Progress", systemImage: "chart.xyaxis.line").accessibilityIdentifier("navProgress") }
+            JournalView(filter: $journalFilter).toolbar(usesSidebar ? .hidden : .visible, for: .tabBar).tag(3).tabItem { Label("Journal", systemImage: "book.closed").accessibilityIdentifier("navJournal") }
+            SettingsView().toolbar(usesSidebar ? .hidden : .visible, for: .tabBar).tag(4).tabItem { Label("Settings", systemImage: "gearshape").accessibilityIdentifier("navSettings") }
         }
     }
 }
@@ -57,7 +98,7 @@ struct TodayView: View {
                                 }.frame(minHeight: 54)
                             } else { Button("Set your schedule") { scheduleSheet = true }.font(.headline) }
                             Button { doseSheet = true } label: { Label("Log dose", systemImage: "plus").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).padding(.vertical, 3) }.buttonStyle(.borderedProminent).buttonBorderShape(.capsule).accessibilityIdentifier("logDose")
-                        }.frame(maxWidth: .infinity, alignment: .leading).frame(height: 128).card()
+                        }.frame(maxWidth: .infinity, alignment: .leading).frame(minHeight: 128).card()
                         // Vials are optional; without one, adding a vial lives in Treatment.
                         if let vial = store.journal.vials.sorted(by: { $0.received > $1.received }).first {
                             Button { vialSheet = true } label: { VialMini(vial: vial) }
@@ -102,12 +143,12 @@ struct TodayView: View {
                                 .accessibilityLabel("Add Weight").accessibilityIdentifier("logWeight")
                         }
 
-                }.padding(.horizontal, 16).padding(.bottom, 24)
+                }.padding(.horizontal, 16).padding(.bottom, 24).tendrReadableWidth()
             }.background(Theme.background).toolbar(.hidden, for: .navigationBar)
-                .sheet(isPresented: $weightSheet) { WeightEditor() }
-                .sheet(isPresented: $doseSheet) { DoseEditor(scheduledDate: nextDate) }
-                .sheet(isPresented: $scheduleSheet) { ScheduleEditor() }
-                .sheet(isPresented: $vialSheet) { VialEditor(vial: store.journal.vials.sorted { $0.received > $1.received }.first) }
+                .sheet(isPresented: $weightSheet) { WeightEditor().tendrSheet() }
+                .sheet(isPresented: $doseSheet) { DoseEditor(scheduledDate: nextDate).tendrSheet() }
+                .sheet(isPresented: $scheduleSheet) { ScheduleEditor().tendrSheet() }
+                .sheet(isPresented: $vialSheet) { VialEditor(vial: store.journal.vials.sorted { $0.received > $1.received }.first).tendrSheet() }
         }
     }
     func stat(title: String, value: String?, suffix: String, alignment: HorizontalAlignment = .leading) -> some View {
@@ -158,6 +199,8 @@ struct WeightChart: View {
 }
 
 struct ProgressViewScreen: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(Store.self) private var store
     @State private var range = 90
     @State private var adding = false
@@ -197,7 +240,8 @@ struct ProgressViewScreen: View {
                             Text(store.journal.weightTrend.title).font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("weightTrendCaption")
                         }
                         if summary.latest != nil {
-                            WeightChart(entries: entries, unit: store.journal.unit, mode: store.journal.weightTrend).frame(height: 220)
+                            WeightChart(entries: entries, unit: store.journal.unit, mode: store.journal.weightTrend)
+                                .frame(height: CGFloat(TendrLayout(horizontal: horizontalSizeClass.map(TendrLayout.SizeClass.init), vertical: verticalSizeClass.map(TendrLayout.SizeClass.init)).weightChartHeight))
                         } else { ContentUnavailableView("Your story starts here", systemImage: "chart.xyaxis.line", description: Text("Add a weight entry to see your history.")) }
                     }.card()
                     HStack(spacing: 14) {
@@ -205,13 +249,13 @@ struct ProgressViewScreen: View {
                         metric(title: "Weekly change", value: summary.weeklyChange.map { ($0 > 0 ? "+" : "") + number(store.journal.unit.display($0)) }, foot: "\(store.journal.unit.symbol) / week", icon: "waveform.path")
                     }
                     if let first = entries.first, let lost = summary.lost {
-                        HStack { Image(systemName: "circle.lefthalf.filled").foregroundStyle(Theme.pine); Text("\(number(abs(lost) / first.kilograms * 100))% \(lost >= 0 ? "decrease" : "increase") over this period").font(.subheadline) }.padding(18).frame(maxWidth: .infinity, alignment: .leading).background(Theme.sage, in: RoundedRectangle(cornerRadius: 20))
+                        HStack { Image(systemName: "circle.lefthalf.filled").foregroundStyle(Theme.pine); Text("\(number(abs(lost) / first.kilograms * 100))% \(lost >= 0 ? "decrease" : "increase") over this period").font(.subheadline) }.padding(18).frame(maxWidth: .infinity, alignment: .leading).rSurface(Theme.sage, cornerRadius: 20)
                     }
                     Text("Based on recorded weights in this period. Weekly change is the average from first to latest entry, not a prediction. Future entries are excluded.").font(.caption).foregroundStyle(.secondary)
-                }.padding(.horizontal, 16).padding(.bottom, 24)
+                }.padding(.horizontal, 16).padding(.bottom, 24).tendrReadableWidth()
             }.background(Theme.background)
                 .toolbar(.hidden, for: .navigationBar)
-                .sheet(isPresented: $adding) { WeightEditor() }
+                .sheet(isPresented: $adding) { WeightEditor().tendrSheet() }
         }
     }
     func metric(title: String, value: String?, foot: String, icon: String) -> some View {

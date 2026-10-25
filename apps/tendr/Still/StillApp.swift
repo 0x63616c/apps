@@ -27,23 +27,66 @@ enum FeatureFlags {
 }
 func number(_ value: Double, digits: Int = 1) -> String { value.formatted(.number.precision(.fractionLength(0...digits))) }
 
+extension TendrLayout.SizeClass {
+    init(_ sizeClass: UserInterfaceSizeClass) {
+        self = sizeClass == .regular ? .regular : .compact
+    }
+}
+
+private struct ReadableWidth: ViewModifier {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    func body(content: Content) -> some View {
+        let layout = TendrLayout(horizontal: horizontalSizeClass.map(TendrLayout.SizeClass.init), vertical: nil)
+        content.frame(maxWidth: layout.maximumContentWidth.map { CGFloat($0) } ?? .infinity)
+            .frame(maxWidth: .infinity)
+    }
+}
+
+extension View {
+    func tendrReadableWidth() -> some View { modifier(ReadableWidth()) }
+
+    /// System sizing follows the presenting window. No size-class branch around
+    /// the editor, so folding with a draft or keyboard open keeps its identity.
+    @ViewBuilder func tendrSheet(page: Bool = false) -> some View {
+        if #available(iOS 18.0, *) {
+            if page {
+                self.presentationSizing(.page)
+                    .presentationCompactAdaptation(horizontal: .automatic, vertical: .fullScreen)
+            } else {
+                self.presentationSizing(.form)
+                    .presentationCompactAdaptation(horizontal: .automatic, vertical: .fullScreen)
+            }
+        } else {
+            self.presentationDetents([.large])
+        }
+    }
+}
+
 /// Shows a one-time "journal, not medical advice" notice on first launch.
 struct MedicalDisclaimerGate: ViewModifier {
     @AppStorage("acknowledgedMedicalDisclaimer") private var acknowledged = false
     private var skip: Bool { ProcessInfo.processInfo.arguments.contains("--uitest") || ProcessInfo.processInfo.arguments.contains("--demo") }
     func body(content: Content) -> some View {
         content.sheet(isPresented: Binding(get: { !acknowledged && !skip }, set: { if !$0 { acknowledged = true } })) {
-            MedicalDisclaimerView { acknowledged = true }.interactiveDismissDisabled()
+            MedicalDisclaimerView { acknowledged = true }.interactiveDismissDisabled().tendrSheet()
         }
     }
 }
 struct MedicalDisclaimerView: View {
     var onContinue: () -> Void
     var body: some View {
+        GeometryReader { geometry in
+            ScrollView {
+                disclaimer.frame(minHeight: geometry.size.height)
+            }
+        }.background(Theme.background.ignoresSafeArea())
+    }
+
+    private var disclaimer: some View {
         VStack(alignment: .leading, spacing: 22) {
             Spacer(minLength: 12)
             Image(systemName: "book.closed.fill").font(.system(size: 34, weight: .medium)).foregroundStyle(Theme.pine)
-                .frame(width: 72, height: 72).background(Theme.sage, in: RoundedRectangle(cornerRadius: 22))
+                .frame(width: 72, height: 72).rSurface(Theme.sage, cornerRadius: 22)
             Text("A journal, not medical advice").font(.largeTitle.bold())
             VStack(alignment: .leading, spacing: 14) {
                 Label("Tendr helps you record doses and weight. It does not tell you what or how much to take.", systemImage: "pencil.and.list.clipboard")
@@ -54,6 +97,6 @@ struct MedicalDisclaimerView: View {
             Spacer()
             Button(action: onContinue) { Text("I understand").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 10) }
                 .buttonStyle(.borderedProminent).accessibilityIdentifier("acknowledgeDisclaimer")
-        }.padding(28).background(Theme.background.ignoresSafeArea())
+        }.padding(28).tendrReadableWidth()
     }
 }

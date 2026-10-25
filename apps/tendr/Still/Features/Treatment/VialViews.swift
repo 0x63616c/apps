@@ -21,6 +21,7 @@ struct VialSummary: View {
     }
 }
 struct VialEditor: View {
+    @State private var initialized = false
     @Environment(Store.self) private var store
     @Environment(\.dismiss) private var dismiss
     var vial: Vial?
@@ -55,7 +56,7 @@ struct VialEditor: View {
                         if store.commit(journal) { dismiss() }
                     }.disabled(!valid) }
                 }
-                .onAppear { medication = vial?.medication ?? store.journal.medication; if let vial { received = vial.received; concentration = number(vial.concentration, digits: 4); volume = number(vial.volumeML, digits: 3); note = vial.note } }
+                .onAppear { guard !initialized else { return }; initialized = true; medication = vial?.medication ?? store.journal.medication; if let vial { received = vial.received; concentration = number(vial.concentration, digits: 4); volume = number(vial.volumeML, digits: 3); note = vial.note } }
         }
     }
 }

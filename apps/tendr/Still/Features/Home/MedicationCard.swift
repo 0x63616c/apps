@@ -61,8 +61,7 @@ struct MedicationCard: View {
         .accessibilityAction(named: "View details") { if !expanded { detail = true } }
         .accessibilityIdentifier(expanded ? "medicationDetailCard" : "medicationCard")
         .onAppear {
-            // Every visit starts live at now, rather than where the graph was last scrubbed.
-            selected = nil
+            // Refresh the estimate without clearing a selection when the window adapts.
             now = Date()
             if cachedPlot == nil { cachedPlot = plot }
         }
@@ -74,7 +73,7 @@ struct MedicationCard: View {
                 VStack(spacing: 16) {
                     MedicationCard(expanded: true)
                     MedicationAnalytics()
-                }.padding(16)
+                }.padding(16).tendrReadableWidth()
             }.background(Theme.background)
                 .navigationTitle("Medication").navigationBarTitleDisplayMode(.inline)
                 .toolbar(.visible, for: .navigationBar)
@@ -95,7 +94,7 @@ struct MedicationCard: View {
                         Link("Tirzepatide model · Schneck 2024", destination: URL(string: "https://doi.org/10.1002/psp4.13099")!)
                     }
                 }.navigationTitle("About this graph").navigationBarTitleDisplayMode(.inline).toolbar { Button("Done") { info = false } }
-            }
+            }.tendrSheet(page: true)
         }
     }
     @ViewBuilder private func graph(_ plot: MedicationPlot) -> some View {
@@ -226,7 +225,7 @@ struct MedicationAnalytics: View {
             }.frame(maxWidth: .infinity).card()
         }
         .onChange(of: days) { _, _ in selected = nil }
-        .onAppear { selected = nil; now = Date() }
+        .onAppear { now = Date() }
         .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { now = $0 }
     }
     func value(_ title: String, _ amount: Double, unit: String) -> some View {

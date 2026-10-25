@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D00100000000000000000001 /* TendrLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00100000000000000000002 /* TendrLayout.swift */; };
 		01A20BFD238D2EFD9811910E /* Journal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033134A7B3BB4B6F478EA308 /* Journal.swift */; };
 		0CEEFB81B4E1D90DA1ED2720 /* Tips.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9F64851BA5A10FBA84AE70F /* Tips.swift */; };
 		1878A28B539F99DD562844CC /* StillUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76AB8C929B38B5C4144D9B93 /* StillUITests.swift */; };
@@ -49,6 +50,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		D00100000000000000000002 /* TendrLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TendrLayout.swift; sourceTree = "<group>"; };
 		033134A7B3BB4B6F478EA308 /* Journal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Journal.swift; sourceTree = "<group>"; };
 		03E0EFE505FE380DEF4BEB01 /* HealthKitWeightStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitWeightStore.swift; sourceTree = "<group>"; };
 		10EC54E3428164F625D487CB /* WeightTrend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrend.swift; sourceTree = "<group>"; };
@@ -146,6 +148,7 @@
 				66C02DC719DFE58F082CE559 /* EntryValidation.swift */,
 				033134A7B3BB4B6F478EA308 /* Journal.swift */,
 				25CCB5F8523EE87381CD1978 /* MedicationLevel.swift */,
+				D00100000000000000000002 /* TendrLayout.swift */,
 				70A255FAD4D2F211E5EA8D78 /* Tracking.swift */,
 				F91707FF75831793AF9F34D2 /* Vial.swift */,
 				B716B1A6D87CF82AF4D5C204 /* WeightGoal.swift */,
@@ -346,6 +349,7 @@
 				ADC60342778EA19EB546C959 /* StillApp.swift in Sources */,
 				8977D2CCBBFBC92F397AFA6C /* Store.swift in Sources */,
 				0CEEFB81B4E1D90DA1ED2720 /* Tips.swift in Sources */,
+				D00100000000000000000001 /* TendrLayout.swift in Sources */,
 				C58F3B5984579587CA3819F3 /* Tracking.swift in Sources */,
 				974312F3351A76E7FC00B72C /* TreatmentView.swift in Sources */,
 				590788E6635BD9FD18FF2A88 /* Vial.swift in Sources */,
@@ -475,7 +479,7 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Tendr reads your body weight so your progress stays up to date.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Tendr does not write data to Apple Health. Body weight access is read-only.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -577,7 +581,7 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Tendr reads your body weight so your progress stays up to date.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Tendr does not write data to Apple Health. Body weight access is read-only.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

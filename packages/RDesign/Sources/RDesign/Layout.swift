@@ -13,11 +13,25 @@ public extension View {
     /// The tracked uppercase label used above card titles.
     func rEyebrow() -> some View { font(RFont.eyebrow).tracking(1.6).textCase(.uppercase) }
 
-    /// The standard card: 20 pt padding, 24 pt continuous corners and a hairline edge.
+    /// The standard card, with concentric corners on systems that support them.
     func card() -> some View {
-        padding(RSpacing.l)
-            .background(RPalette.card, in: RoundedRectangle(cornerRadius: RRadius.card))
-            .overlay(RoundedRectangle(cornerRadius: RRadius.card).stroke(RPalette.hairline, lineWidth: 1))
+        padding(RSpacing.l).rSurface(RPalette.card, cornerRadius: RRadius.card, border: RPalette.hairline)
+    }
+
+    /// Retain the family radius away from edges, and follow a containing card, sheet
+    /// or window near its corners. Expose the same shape to nested surfaces.
+    @ViewBuilder func rSurface<S: ShapeStyle>(_ style: S, cornerRadius: CGFloat, border: Color = .clear) -> some View {
+        if #available(iOS 26.0, macOS 26.0, *) {
+            let shape = ConcentricRectangle(corners: .concentric(minimum: cornerRadius))
+            self.containerShape(shape)
+                .background(style, in: shape)
+                .clipShape(shape)
+                .overlay(shape.stroke(border, lineWidth: 1))
+        } else {
+            let shape = RoundedRectangle(cornerRadius: cornerRadius)
+            self.background(style, in: shape)
+                .overlay(shape.stroke(border, lineWidth: 1))
+        }
     }
 
     /// A tappable row inside a card or list: comfortable height and a full-width hit area.

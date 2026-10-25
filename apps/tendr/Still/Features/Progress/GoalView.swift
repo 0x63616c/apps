@@ -29,7 +29,7 @@ struct GoalCard: View {
                     }
                 } else { Text("Set a weight goal").font(.headline) }
             }.card()
-        }.buttonStyle(.plain).sheet(isPresented: $editing) { GoalEditor() }
+        }.buttonStyle(.plain).sheet(isPresented: $editing) { GoalEditor().tendrSheet() }
     }
     func goalValue(_ label: String, kilograms: Double, alignment: HorizontalAlignment) -> some View {
         VStack(alignment: alignment, spacing: 4) {
@@ -42,6 +42,7 @@ struct GoalCard: View {
     }
 }
 struct GoalEditor: View {
+    @State private var initialized = false
     @Environment(Store.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var amount = ""
@@ -73,7 +74,7 @@ struct GoalEditor: View {
                 }
             }.navigationTitle("Weight Goal").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }; ToolbarItem(placement: .confirmationAction) { Button("Save") { guard let goal else { return }; var next = store.journal; next.goal = goal; if store.commit(next) { dismiss() } }.disabled(goal == nil) } }
-                .onAppear { if let goal = store.journal.goal { amount = number(store.journal.unit.display(goal.kilograms), digits: 2); hasDate = goal.date != nil; if let goalDate = goal.date { date = max(Date(), goalDate) } } }
+                .onAppear { guard !initialized else { return }; initialized = true; if let goal = store.journal.goal { amount = number(store.journal.unit.display(goal.kilograms), digits: 2); hasDate = goal.date != nil; if let goalDate = goal.date { date = max(Date(), goalDate) } } }
         }
     }
 }

@@ -38,7 +38,7 @@ struct JournalView: View {
                                 Button { edit(entry) } label: { row(entry) }.buttonStyle(.plain)
                                     .disabled(entry.isHealthKitWeight)
                                     .swipeActions(allowsFullSwipe: false) {
-                                        if !entry.isHealthKitWeight { Button("Delete", role: .destructive) { deleting = entry }.tint(.red) }
+                                        if !entry.isHealthKitWeight { Button("Delete", role: .destructive) { deleting = entry }.tint(Theme.pine) }
                                     }
                                 }
                             }
@@ -46,12 +46,12 @@ struct JournalView: View {
                     if entries.isEmpty { ContentUnavailableView("No entries yet", systemImage: "book.closed", description: Text("Your doses and weights appear here.")) }
                 }
                 .scrollContentBackground(.hidden)
-            }.background(Theme.background).toolbar(.hidden, for: .navigationBar)
+            }.tendrReadableWidth().background(Theme.background).toolbar(.hidden, for: .navigationBar)
                 .sheet(isPresented: Binding(get: { adding != nil }, set: { if !$0 { adding = nil } })) {
-                    if adding == "Weight" { WeightEditor() } else { DoseEditor() }
+                    if adding == "Weight" { WeightEditor().tendrSheet() } else { DoseEditor().tendrSheet() }
                 }
-                .sheet(item: $weight) { WeightEditor(entry: $0) }
-                .sheet(item: $dose) { DoseEditor(entry: $0) }
+                .sheet(item: $weight) { WeightEditor(entry: $0).tendrSheet() }
+                .sheet(item: $dose) { DoseEditor(entry: $0).tendrSheet() }
                 .alert("Delete this entry?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
                     Button("Delete entry", role: .destructive) {
                         guard let deleting else { return }
@@ -173,7 +173,7 @@ struct SettingsView: View {
                         NavigationLink { PrivacyView() } label: { Label("Privacy & About", systemImage: "lock.shield") }
                     } footer: { RVersionFooter("Tendr") }
                 }.scrollContentBackground(.hidden)
-            }.background(Theme.background).toolbar(.hidden, for: .navigationBar)
+            }.tendrReadableWidth().background(Theme.background).toolbar(.hidden, for: .navigationBar)
                 .task {
                     await tipJar.load()
                     let arguments = ProcessInfo.processInfo.arguments
@@ -185,16 +185,17 @@ struct SettingsView: View {
                 .sheet(isPresented: $tipping, onDismiss: {
                     thanks = tipJar.completed
                     tipJar.completed = nil
-                }) { RTipJarSheet(jar: tipJar, title: "Support Tendr", prompt: "Enjoying Tendr? Leave a tip.") }
+                }) { RTipJarSheet(jar: tipJar, title: "Support Tendr", prompt: "Enjoying Tendr? Leave a tip.").tendrSheet() }
                 .fullScreenCover(item: $thanks) { RTipThanks(tip: $0) }
-                .sheet(isPresented: $schedule) { ScheduleEditor() }
-                .sheet(isPresented: $treatment) { DosePreferencesEditor() }
-                .sheet(isPresented: $addingVial) { VialEditor() }
-                .sheet(item: $editingVial) { VialEditor(vial: $0) }
+                .sheet(isPresented: $schedule) { ScheduleEditor().tendrSheet() }
+                .sheet(isPresented: $treatment) { DosePreferencesEditor().tendrSheet() }
+                .sheet(isPresented: $addingVial) { VialEditor().tendrSheet() }
+                .sheet(item: $editingVial) { VialEditor(vial: $0).tendrSheet() }
         }
     }
 }
 struct TreatmentEditor: View {
+    @State private var initialized = false
     @Environment(Store.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var medication = ""
@@ -213,7 +214,7 @@ struct TreatmentEditor: View {
                 if FeatureFlags.syringeUnits { Section { Toggle("I use a U-100 syringe", isOn: $u100) } header: { Text("Dose entry") } footer: { Text("U-100 means 100 units per mL. Check the marking on your syringe.") } }
             }.navigationTitle("Treatment").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }; ToolbarItem(placement: .confirmationAction) { Button("Save") { var next = store.journal; next.medication = medication.trimmingCharacters(in: .whitespacesAndNewlines); next.halfLifeDays = halfLife; next.medicationModel = model; if FeatureFlags.syringeUnits { next.syringeUnitsPerML = u100 ? 100 : nil }; if store.commit(next) { dismiss() } }.disabled(medication.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) } }
-                .onAppear { medication = store.journal.medication; halfLife = store.journal.halfLifeDays; model = store.journal.resolvedMedicationModel; u100 = store.journal.syringeUnitsPerML == 100 }
+                .onAppear { guard !initialized else { return }; initialized = true; medication = store.journal.medication; halfLife = store.journal.halfLifeDays; model = store.journal.resolvedMedicationModel; u100 = store.journal.syringeUnitsPerML == 100 }
         }
     }
 }
