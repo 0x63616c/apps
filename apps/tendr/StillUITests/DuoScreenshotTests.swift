@@ -81,12 +81,17 @@ final class DuoScreenshotTests: XCTestCase {
         card.tap()
         let detail = app.descendants(matching: .any)["medicationDetailChart"].firstMatch
         XCTAssertTrue(detail.waitForExistence(timeout: 5))
+        detail.coordinate(withNormalizedOffset: CGVector(dx: 0.72, dy: 0.5))
+            .press(forDuration: 0.2, thenDragTo: detail.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5)))
+        XCTAssertTrue(app.buttons["Live"].waitForExistence(timeout: 3), "Scrubbing selects a past time")
         try request("pose", name: "outer")
         assertNavigation(for: "outer", in: app)
         XCTAssertTrue(detail.waitForExistence(timeout: 5), "Folding keeps the pushed destination")
+        XCTAssertTrue(app.buttons["Live"].exists, "Folding keeps the chart selection")
         select("Progress", in: app)
         select("Home", in: app)
         XCTAssertTrue(detail.waitForExistence(timeout: 5), "Each section keeps its own stack")
+        waitUntil("Returning to Home explicitly restores the live chart") { !app.buttons["Live"].exists }
         try request("pose", name: "inner")
         assertNavigation(for: "inner", in: app)
         XCTAssertTrue(detail.waitForExistence(timeout: 5))

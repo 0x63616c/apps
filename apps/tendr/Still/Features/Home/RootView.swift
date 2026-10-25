@@ -9,6 +9,7 @@ struct RootView: View {
     @State private var columns = NavigationSplitViewVisibility.all
     @State private var compactColumn = NavigationSplitViewColumn.detail
     @State private var selected = 0
+    @State private var medicationVisit = 0
     @State private var journalFilter = "All"
     var body: some View {
         // Keep the split view, tabs and every section's NavigationStack at the same
@@ -57,6 +58,10 @@ struct RootView: View {
             columns = usesSidebar ? .all : .detailOnly
             compactColumn = .detail
         }
+        .onChange(of: selected) { _, section in
+            // Returning to Home starts its charts live; folding is not a new visit.
+            if section == 0 { medicationVisit += 1 }
+        }
         .alert("Something needs attention", isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) {
             Button("OK") { store.error = nil }
         } message: { Text(store.error ?? "") }
@@ -84,7 +89,7 @@ struct RootView: View {
 
     private var sectionTabs: some View {
         TabView(selection: $selected) {
-            TodayView(tab: $selected).toolbar(usesSidebar ? .hidden : .visible, for: .tabBar).tag(0).tabItem { Label("Home", systemImage: "square.grid.2x2.fill").accessibilityIdentifier("navHome") }
+            TodayView(tab: $selected).environment(\.medicationVisit, medicationVisit).toolbar(usesSidebar ? .hidden : .visible, for: .tabBar).tag(0).tabItem { Label("Home", systemImage: "square.grid.2x2.fill").accessibilityIdentifier("navHome") }
             TreatmentView(tab: $selected, journalFilter: $journalFilter).toolbar(usesSidebar ? .hidden : .visible, for: .tabBar).tag(1).tabItem { Label("Treatment", systemImage: "syringe.fill").accessibilityIdentifier("navTreatment") }
             ProgressViewScreen().toolbar(usesSidebar ? .hidden : .visible, for: .tabBar).tag(2).tabItem { Label("Progress", systemImage: "chart.xyaxis.line").accessibilityIdentifier("navProgress") }
             JournalView(filter: $journalFilter).toolbar(usesSidebar ? .hidden : .visible, for: .tabBar).tag(3).tabItem { Label("Journal", systemImage: "book.closed").accessibilityIdentifier("navJournal") }

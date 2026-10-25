@@ -2,8 +2,21 @@ import RDesign
 import SwiftUI
 import Charts
 
+private struct MedicationVisitKey: EnvironmentKey {
+    static let defaultValue = 0
+}
+
+extension EnvironmentValues {
+    /// Changes only on an explicit return to Home, not a window/presentation resize.
+    var medicationVisit: Int {
+        get { self[MedicationVisitKey.self] }
+        set { self[MedicationVisitKey.self] = newValue }
+    }
+}
+
 struct MedicationCard: View {
     @Environment(Store.self) private var store
+    @Environment(\.medicationVisit) private var medicationVisit
     var expanded = false
     @State private var detail = false
     @State private var selected: Date?
@@ -66,6 +79,7 @@ struct MedicationCard: View {
             if cachedPlot == nil { cachedPlot = plot }
         }
         .onChange(of: now) { _, _ in cachedPlot = makePlot() }
+        .onChange(of: medicationVisit) { _, _ in selected = nil }
         .onChange(of: store.journal) { _, _ in cachedPlot = makePlot() }
         .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { now = $0 }
         .navigationDestination(isPresented: $detail) {
@@ -182,6 +196,7 @@ private struct MedicationPlot {
 
 struct MedicationAnalytics: View {
     @Environment(Store.self) private var store
+    @Environment(\.medicationVisit) private var medicationVisit
     @State private var days = 7
     @State private var now = Date()
     @State private var selected: Date?
@@ -225,6 +240,7 @@ struct MedicationAnalytics: View {
             }.frame(maxWidth: .infinity).card()
         }
         .onChange(of: days) { _, _ in selected = nil }
+        .onChange(of: medicationVisit) { _, _ in selected = nil }
         .onAppear { now = Date() }
         .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { now = $0 }
     }
