@@ -60,7 +60,25 @@ print(runtimes[-1]["identifier"] if runtimes else "")
 ')}
 [[ -n "$runtime" ]] || { echo "No available iOS simulator runtime is installed." >&2; exit 1; }
 echo "Using $device_type on $runtime"
-udid=$(xcrun simctl create "$name Duo Screenshots" "$device_type" "$runtime")
+simulator_name="$name Duo Screenshots"
+# Interrupted runs can leave simulators consuming resources on a persistent runner.
+# Match only our name prefix, including devices from older/unavailable runtimes.
+xcrun simctl list devices --json > "$work/devices.json"
+python3 - "$work/devices.json" "$simulator_name" > "$work/stale-simulators.txt" <<'PY'
+import json, sys
+with open(sys.argv[1]) as file:
+    runtimes = json.load(file)["devices"]
+for devices in runtimes.values():
+    for device in devices:
+        if device["name"].startswith(sys.argv[2]):
+            print(device["udid"])
+PY
+while IFS= read -r stale_udid; do
+  echo "Removing stale Duo screenshot simulator: $stale_udid"
+  xcrun simctl shutdown "$stale_udid" >/dev/null 2>&1 || true
+  xcrun simctl delete "$stale_udid"
+done < "$work/stale-simulators.txt"
+udid=$(xcrun simctl create "$simulator_name" "$device_type" "$runtime")
 scripts/boot-simulator.sh "$udid" 300
 python3 scripts/duo-simulator.py probe "$udid" "$work"
 cp "$work/capture-notes.txt" "$work/simctl-capabilities.txt" "$work/plan.json" "$out/"

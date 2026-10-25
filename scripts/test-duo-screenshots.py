@@ -30,10 +30,16 @@ if name == "ruby":
     print({"project_path":"apps/tendr/Still.xcodeproj", "scheme":"Still", "duo_screenshot_test":"StillUITests/DuoScreenshotTests", "name":"Tendr"}[args[-1]])
 elif name == "xcrun":
     args = args[1:]
+    with open(os.environ["MOCK_SIMCTL_LOG"], "a") as log:
+        log.write(json.dumps(args) + "\n")
     if args[:2] == ["list", "devicetypes"]:
         print(json.dumps({"devicetypes": [] if mode == "missing" else [{"name":"iPhone Duo", "identifier":"mock.duo"}]}))
     elif args[:2] == ["list", "runtimes"]:
         print(json.dumps({"runtimes":[{"platform":"iOS", "isAvailable":True,"version":"27.1","identifier":"mock.ios27"}]}))
+    elif args[:2] == ["list", "devices"]:
+        print(os.environ["MOCK_SIMULATORS"])
+    elif args == ["shutdown", "stale-shutdown"]:
+        sys.exit("Device is already shut down")
     elif args[0] == "create":
         pathlib.Path(os.environ["MOCK_CREATED_DEVICE"]).write_text(args[2])
         print("mock-udid")
@@ -141,7 +147,7 @@ class DuoCapabilitiesTests(unittest.TestCase):
         commands = duo.fold_candidates("test", {"ui":"fold <state>: folded unfolded"})
         self.assertEqual(commands, [{"outer":["ui","test","fold","folded"],"inner":["ui","test","fold","unfolded"]}])
 
-    def capture(self, mode, override=None):
+    def capture(self, mode, override=None, devices=None):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             scripts = root / "scripts"
@@ -156,7 +162,9 @@ class DuoCapabilitiesTests(unittest.TestCase):
             for name in ["ruby", "xcrun", "xcodebuild"]:
                 (commands / name).symlink_to(tool)
             env = dict(os.environ, PATH=f"{commands}:{os.environ['PATH']}", MOCK_DUO_MODE=mode,
-                       MOCK_CREATED_DEVICE=str(root / "created-device"))
+                       MOCK_CREATED_DEVICE=str(root / "created-device"),
+                       MOCK_SIMCTL_LOG=str(root / "simctl.jsonl"),
+                       MOCK_SIMULATORS=json.dumps({"devices": devices or {}}))
             env.pop("R_SIM_DEVICE_TYPE", None)
             env.pop("R_SIM_RUNTIME", None)
             if override:
@@ -195,6 +203,31 @@ class DuoCapabilitiesTests(unittest.TestCase):
             self.assertEqual((root / "created-device").read_text(), override or "mock.duo")
             if expected_mode == "default":
                 self.assertIn("default only", (output / "capture-notes.txt").read_text())
+            return [json.loads(line) for line in (root / "simctl.jsonl").read_text().splitlines()]
+
+    def test_stale_simulators_are_removed_before_creation_and_boot(self):
+        commands = self.capture("default", devices={
+            "mock.ios27": [
+                {"name": "Tendr Duo Screenshots", "udid": "stale-booted", "state": "Booted", "isAvailable": True},
+                {"name": "Tendr Screenshots", "udid": "other-capture", "state": "Booted", "isAvailable": True},
+                {"name": "Personal Tendr Duo Screenshots", "udid": "personal", "state": "Booted", "isAvailable": True},
+                {"name": "Festr Duo Screenshots", "udid": "other-app", "state": "Booted", "isAvailable": True},
+            ],
+            "mock.ios26": [
+                {"name": "Tendr Duo Screenshots old-run", "udid": "stale-shutdown", "state": "Shutdown", "isAvailable": False},
+            ],
+        })
+        lifecycle = [command for command in commands if command[0] in ("shutdown", "delete", "create", "boot")]
+        self.assertEqual(lifecycle, [
+            ["shutdown", "stale-booted"],
+            ["delete", "stale-booted"],
+            ["shutdown", "stale-shutdown"],
+            ["delete", "stale-shutdown"],
+            ["create", "Tendr Duo Screenshots", "mock.duo", "mock.ios27"],
+            ["boot", "mock-udid"],
+            ["shutdown", "mock-udid"],
+            ["delete", "mock-udid"],
+        ])
 
     def test_fold_capture(self): self.capture("fold")
     def test_named_displays_capture(self): self.capture("displays")

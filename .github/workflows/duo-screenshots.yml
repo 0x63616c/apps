@@ -1,6 +1,14 @@
 name: Duo screenshots
 
 on:
+  pull_request:
+    paths:
+      - .github/workflows/duo-screenshots.yml
+      - scripts/capture-duo-screenshots.sh
+      - scripts/duo-simulator.py
+      - scripts/select-duo-xcode.py
+      - apps/tendr/**
+      - packages/RDesign/**
   workflow_dispatch:
     inputs:
       app:
@@ -11,19 +19,23 @@ on:
       developer_dir:
         description: 'Xcode developer directory containing the Duo simulator'
         type: string
-        default: '/Applications/Xcode_27.1.app/Contents/Developer'
+        default: '/Applications/Xcode-27.1.app/Contents/Developer'
         required: true
 
 permissions:
   contents: read
+
+concurrency:
+  group: duo-screenshots-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   screenshots:
     runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
     timeout-minutes: 60
     env:
-      APP: ${{ inputs.app }}
-      REQUESTED_DEVELOPER_DIR: ${{ inputs.developer_dir }}
+      APP: ${{ inputs.app || 'tendr' }}
+      REQUESTED_DEVELOPER_DIR: ${{ inputs.developer_dir || '/Applications/Xcode-27.1.app/Contents/Developer' }}
     steps:
       - uses: actions/checkout@v4
       - name: Select Xcode
@@ -55,15 +67,15 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: duo-screenshots-${{ inputs.app }}
-          path: build/duo-screenshots/${{ inputs.app }}/raw
+          name: duo-screenshots-${{ env.APP }}
+          path: build/duo-screenshots/${{ env.APP }}/raw
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: duo-screenshot-test-results-${{ inputs.app }}
+          name: duo-screenshot-test-results-${{ env.APP }}
           path: |
-            build/duo-screenshots/${{ inputs.app }}/run.*/*.xcresult
-            build/duo-screenshots/${{ inputs.app }}/run.*/*/*.png
-            build/duo-screenshots/${{ inputs.app }}/run.*/*.txt
+            build/duo-screenshots/${{ env.APP }}/run.*/*.xcresult
+            build/duo-screenshots/${{ env.APP }}/run.*/*/*.png
+            build/duo-screenshots/${{ env.APP }}/run.*/*.txt
           if-no-files-found: ignore
