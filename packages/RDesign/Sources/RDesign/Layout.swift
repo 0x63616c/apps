@@ -19,11 +19,13 @@ public extension View {
     }
 
     /// Retain the family radius away from edges, and follow a containing card, sheet
-    /// or window near its corners. Expose the same shape to nested surfaces.
+    /// or window near its corners. Give nested surfaces the family's container radius.
     @ViewBuilder func rSurface<S: ShapeStyle>(_ style: S, cornerRadius: CGFloat, border: Color = .clear) -> some View {
         if #available(iOS 26.0, macOS 26.0, *) {
             let shape = ConcentricRectangle(corners: .concentric(minimum: cornerRadius))
-            self.containerShape(shape)
+            // ConcentricRectangle is a Shape, not an InsettableShape or
+            // RoundedRectangularShape accepted by containerShape(_:).
+            self.containerShape(RoundedRectangle(cornerRadius: cornerRadius))
                 .background(style, in: shape)
                 .clipShape(shape)
                 .overlay(shape.stroke(border, lineWidth: 1))
