@@ -16,6 +16,7 @@ final class DuoScreenshotTests: XCTestCase {
             if canFold { try request("pose", name: pose) }
             XCUIDevice.shared.orientation = .portrait
             let app = launchFixture()
+            if canFold { assertNavigation(for: pose, in: app) }
             try snap("home")
 
             select("Treatment", in: app)
@@ -41,7 +42,10 @@ final class DuoScreenshotTests: XCTestCase {
             amount.typeText("7.5")
             try snap("log-dose")
             XCUIDevice.shared.orientation = .landscapeLeft
-            Thread.sleep(forTimeInterval: 1.5)
+            waitUntil("The app must actually rotate into landscape") {
+                let frame = app.windows.firstMatch.frame
+                return frame.width > frame.height
+            }
             XCTAssertEqual(amount.value as? String, "7.5", "Rotation must preserve an unsaved dose")
             XCTAssertTrue(app.buttons["saveDose"].isHittable, "Save stays above the keyboard")
             try snap("landscape-log-dose")
@@ -61,6 +65,14 @@ final class DuoScreenshotTests: XCTestCase {
         try request("pose", name: "inner")
         XCUIDevice.shared.orientation = .portrait
         let app = launchFixture()
+        assertNavigation(for: "inner", in: app)
+        // Section navigation must remain recoverable after hiding the sidebar.
+        let toggle = app.buttons["toggleSidebar"]
+        toggle.tap()
+        waitUntil("Sidebar can be hidden") { toggle.label == "Show sidebar" }
+        XCTAssertTrue(toggle.isHittable)
+        toggle.tap()
+        assertNavigation(for: "inner", in: app)
         select("Journal", in: app)
         app.buttons["Doses"].tap()
         select("Home", in: app)
@@ -70,28 +82,38 @@ final class DuoScreenshotTests: XCTestCase {
         let detail = app.descendants(matching: .any)["medicationDetailChart"].firstMatch
         XCTAssertTrue(detail.waitForExistence(timeout: 5))
         try request("pose", name: "outer")
+        assertNavigation(for: "outer", in: app)
         XCTAssertTrue(detail.waitForExistence(timeout: 5), "Folding keeps the pushed destination")
         select("Progress", in: app)
         select("Home", in: app)
         XCTAssertTrue(detail.waitForExistence(timeout: 5), "Each section keeps its own stack")
         try request("pose", name: "inner")
+        assertNavigation(for: "inner", in: app)
         XCTAssertTrue(detail.waitForExistence(timeout: 5))
         select("Journal", in: app)
         XCTAssertTrue(app.buttons["Doses"].isSelected, "Journal filter survives folding and section changes")
         select("Home", in: app)
-        app.navigationBars["Medication"].buttons.element(boundBy: 0).tap()
+        let back = app.navigationBars["Medication"].buttons["Back"]
+        XCTAssertTrue(back.waitForExistence(timeout: 5))
+        back.tap()
+        XCTAssertTrue(app.buttons["logDose"].waitForExistence(timeout: 5))
         app.buttons["logDose"].tap()
         let amount = app.textFields["doseAmount"]
         XCTAssertTrue(amount.waitForExistence(timeout: 5))
         amount.tap()
         amount.typeText("7.5")
         for pose in ["outer", "inner", "outer"] {
+            let previousSize = app.windows.firstMatch.frame.size
             try request("pose", name: pose)
+            waitUntil("A fold must resize the app window while the sheet is open") {
+                app.windows.firstMatch.frame.size != previousSize
+            }
             XCTAssertTrue(amount.waitForExistence(timeout: 5), "The sheet stays presented")
             XCTAssertEqual(amount.value as? String, "7.5", "Folding keeps the unsaved draft")
             XCTAssertTrue(app.buttons["saveDose"].isHittable)
         }
         app.buttons["Cancel"].tap()
+        assertNavigation(for: "outer", in: app)
     }
 
     @MainActor private func launchFixture() -> XCUIApplication {
@@ -111,6 +133,24 @@ final class DuoScreenshotTests: XCTestCase {
             XCTAssertTrue(tab.waitForExistence(timeout: 5), "Section must be reachable in either layout")
             tab.tap()
         }
+    }
+
+    @MainActor private func assertNavigation(for pose: String, in app: XCUIApplication) {
+        let tab = app.tabBars.buttons["Home"]
+        let sidebarHome = app.descendants(matching: .any)["sectionSidebar"].buttons["navHome"]
+        if pose == "inner" {
+            waitUntil("Inner display must expose the regular-width sidebar") { sidebarHome.isHittable }
+            XCTAssertFalse(tab.isHittable, "Regular width must hide the compact tab bar")
+        } else {
+            waitUntil("Outer display must expose the compact tab bar") { tab.isHittable }
+            XCTAssertFalse(sidebarHome.isHittable, "Compact width must stay in the detail column")
+        }
+    }
+
+    @MainActor private func waitUntil(_ message: String, timeout: TimeInterval = 10, _ condition: () -> Bool) {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition() && Date() < deadline { Thread.sleep(forTimeInterval: 0.1) }
+        XCTAssertTrue(condition(), message)
     }
 
     @MainActor private func snap(_ name: String) throws {

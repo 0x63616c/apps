@@ -7,13 +7,14 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var columns = NavigationSplitViewVisibility.all
+    @State private var compactColumn = NavigationSplitViewColumn.detail
     @State private var selected = 0
     @State private var journalFilter = "All"
     var body: some View {
         // Keep the split view, tabs and every section's NavigationStack at the same
         // structural identity. Replacing TabView with a separate detail tree on resize
         // would discard destinations, scroll positions, editor drafts and filters.
-        NavigationSplitView(columnVisibility: $columns, preferredCompactColumn: .constant(.detail)) {
+        NavigationSplitView(columnVisibility: $columns, preferredCompactColumn: $compactColumn) {
             List {
                 sidebarSection("Home", symbol: "square.grid.2x2.fill", tag: 0)
                 sidebarSection("Treatment", symbol: "syringe.fill", tag: 1)
@@ -24,13 +25,37 @@ struct RootView: View {
             .listStyle(.sidebar)
             .navigationTitle("Tendr")
             .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 240)
+            .toolbar(removing: .sidebarToggle)
             .accessibilityIdentifier("sectionSidebar")
         } detail: {
-            sectionTabs.toolbar(.hidden, for: .navigationBar)
+            sectionTabs
+                // This is the split view's back button, outside the section stacks.
+                // Compact navigation belongs to the tabs and their own destinations.
+                .navigationBarBackButtonHidden()
+                .toolbar(.hidden, for: .navigationBar)
+                .toolbar(removing: .sidebarToggle)
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    if usesSidebar {
+                        HStack {
+                            Button {
+                                withAnimation { columns = columns == .detailOnly ? .all : .detailOnly }
+                            } label: {
+                                Label("Sidebar", systemImage: "sidebar.left")
+                                    .frame(minHeight: 44)
+                            }
+                            .accessibilityLabel(columns == .detailOnly ? "Show sidebar" : "Hide sidebar")
+                            .accessibilityIdentifier("toggleSidebar")
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .background(Theme.background)
+                    }
+                }
         }
         .navigationSplitViewStyle(.balanced)
         .onChange(of: horizontalSizeClass, initial: true) { _, _ in
             columns = usesSidebar ? .all : .detailOnly
+            compactColumn = .detail
         }
         .alert("Something needs attention", isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) {
             Button("OK") { store.error = nil }
@@ -47,7 +72,7 @@ struct RootView: View {
     }
 
     private func sidebarSection(_ title: String, symbol: String, tag: Int) -> some View {
-        Button { selected = tag } label: {
+        Button { selected = tag; compactColumn = .detail } label: {
             Label(title, systemImage: symbol).frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
         }
