@@ -22,7 +22,7 @@ public extension View {
     /// or window near its corners. Give nested surfaces the family's container radius.
     @ViewBuilder func rSurface<S: ShapeStyle>(_ style: S, cornerRadius: CGFloat, border: Color = .clear) -> some View {
         if #available(iOS 26.0, macOS 26.0, *) {
-            let shape = ConcentricRectangle(corners: .concentric(minimum: cornerRadius))
+            let shape = ConcentricRectangle(corners: .concentric(minimum: .fixed(cornerRadius)))
             // ConcentricRectangle is a Shape, not an InsettableShape or
             // RoundedRectangularShape accepted by containerShape(_:).
             self.containerShape(RoundedRectangle(cornerRadius: cornerRadius))
