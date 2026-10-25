@@ -22,6 +22,14 @@ for appearance in "${appearances[@]}"; do
 done
 out=$(python3 -c 'import pathlib,sys; print(pathlib.Path(sys.argv[1]).resolve())' "$out")
 mkdir -p "$out" "build/duo-screenshots/$app"
+# A reused output directory must describe only this run, including after failure.
+# Remove our capture names, preserving unrelated files in a caller-supplied folder.
+for pose in inner outer default; do
+  for appearance in light dark; do
+    rm -f "$out/$pose-$appearance-"*.png
+  done
+done
+rm -f "$out/capture-notes.txt" "$out/simctl-capabilities.txt" "$out/plan.json"
 work=$(mktemp -d "build/duo-screenshots/$app/run.XXXXXX")
 work="$PWD/$work"
 derived="$work/DerivedData"

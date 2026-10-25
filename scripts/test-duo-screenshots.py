@@ -4,6 +4,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import plistlib
 import shutil
 import subprocess
 import sys
@@ -16,6 +17,9 @@ ROOT = Path(__file__).resolve().parent.parent
 spec = importlib.util.spec_from_file_location("duo_simulator", ROOT / "scripts/duo-simulator.py")
 duo = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(duo)
+xcode_spec = importlib.util.spec_from_file_location("select_duo_xcode", ROOT / "scripts/select-duo-xcode.py")
+xcode = importlib.util.module_from_spec(xcode_spec)
+xcode_spec.loader.exec_module(xcode)
 
 MOCK_TOOL = r'''#!/usr/bin/env python3
 import base64, json, os, pathlib, sys, time
@@ -47,6 +51,7 @@ elif name == "xcrun":
     elif args[0] == "io" and args[2] == "screenshot":
         pathlib.Path(args[-1]).write_bytes(base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="))
 elif name == "xcodebuild" and args[0] == "test-without-building":
+    if mode == "test-failure": sys.exit("Mock test failure")
     folder = pathlib.Path(os.environ["TEST_RUNNER_DUO_CONTROL_DIR"])
     def request(action, value):
         identifier = str(time.time_ns())
@@ -69,6 +74,58 @@ elif name == "xcodebuild" and args[0] == "test-without-building":
         for screen in ["home","treatment","progress","journal","settings","log-dose","landscape-home","landscape-progress","landscape-log-dose"]:
             request("capture", screen)
 '''
+
+
+class XcodeSelectionTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.applications = Path(self.temporary.name) / "Applications with spaces"
+        self.applications.mkdir()
+
+    def install(self, name, version, executable=True):
+        app = self.applications / name
+        developer = app / "Contents/Developer"
+        binary = developer / "usr/bin/xcodebuild"
+        binary.parent.mkdir(parents=True)
+        binary.write_text("#!/bin/sh\nexit 0\n")
+        binary.chmod(0o755 if executable else 0o644)
+        with (app / "Contents/version.plist").open("wb") as file:
+            plistlib.dump({"CFBundleShortVersionString": version}, file)
+        return developer
+
+    def test_explicit_usable_path_wins(self):
+        requested = self.install("Xcode custom.app", "27.2")
+        self.install("Xcode-27.1.app", "27.1")
+        self.assertEqual(xcode.select_xcode(str(requested), self.applications), requested)
+
+    def test_hyphenated_27_1_precedes_newest_fallback(self):
+        expected = self.install("Xcode-27.1.app", "27.1")
+        self.install("Xcode-27.0.app", "27.0")
+        self.install("Xcode_28.0.app", "28.0")
+        missing_request = self.applications / "Xcode_27.1.app/Contents/Developer"
+        self.assertEqual(xcode.select_xcode(str(missing_request), self.applications), expected)
+
+    def test_underscored_27_1_precedes_newest_fallback(self):
+        expected = self.install("Xcode_27.1.app", "27.1")
+        self.install("Xcode-28.0.app", "28.0")
+        missing_request = self.applications / "Xcode-27.1.app/Contents/Developer"
+        self.assertEqual(xcode.select_xcode(str(missing_request), self.applications), expected)
+
+    def test_newest_version_is_numeric_and_ignores_bundle_spelling(self):
+        self.install("Xcode-27.9.app", "27.9")
+        expected = self.install("Xcode.app", "27.10")
+        self.install("Xcode_26.2.app", "26.2")
+        self.assertEqual(xcode.select_xcode("/missing", self.applications), expected)
+
+    def test_unusable_bundles_are_skipped(self):
+        requested = self.install("Xcode-27.1.app", "27.1", executable=False)
+        expected = self.install("Xcode_27.1.app", "27.1")
+        self.assertEqual(xcode.select_xcode(str(requested), self.applications), expected)
+
+    def test_missing_xcode_fails_clearly(self):
+        with self.assertRaisesRegex(ValueError, "No usable .*Xcode.*install Xcode 27.1"):
+            xcode.select_xcode("/missing", self.applications)
 
 
 class DuoCapabilitiesTests(unittest.TestCase):
@@ -105,11 +162,26 @@ class DuoCapabilitiesTests(unittest.TestCase):
             if override:
                 env["R_SIM_DEVICE_TYPE"] = override
             output = root / "output with spaces"
+            output.mkdir()
+            for pose in ["inner", "outer", "default"]:
+                for appearance in ["light", "dark"]:
+                    (output / f"{pose}-{appearance}-obsolete.png").write_bytes(b"stale")
+            for filename in ["plan.json", "capture-notes.txt", "simctl-capabilities.txt"]:
+                (output / filename).write_text("stale")
+            (output / "keep.txt").write_text("unrelated user file")
             result = subprocess.run(["bash", str(scripts / "capture-duo-screenshots.sh"), "tendr", str(output)],
                                     text=True, capture_output=True, env=env, timeout=55)
+            self.assertFalse(list(output.glob("*-obsolete.png")))
+            self.assertEqual((output / "keep.txt").read_text(), "unrelated user file")
             if mode == "missing" and override is None:
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn("No iPhone Duo simulator device type found", result.stderr)
+                self.assertFalse((output / "plan.json").exists())
+                return
+            if mode == "test-failure":
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("Mock test failure", result.stderr)
+                self.assertFalse(list(output.glob("*.png")))
                 return
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             plan = json.loads((output / "plan.json").read_text())
@@ -130,6 +202,7 @@ class DuoCapabilitiesTests(unittest.TestCase):
     def test_rejected_fold_falls_back(self): self.capture("rejected")
     def test_missing_device_fails_clearly(self): self.capture("missing")
     def test_explicit_device_override(self): self.capture("missing", override="custom.duo")
+    def test_failed_run_removes_stale_captures(self): self.capture("test-failure")
 
 
 if __name__ == "__main__":

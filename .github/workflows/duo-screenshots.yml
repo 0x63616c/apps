@@ -28,25 +28,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Select Xcode
         run: |
-          selected="$REQUESTED_DEVELOPER_DIR"
-          if [[ ! -x "$selected/usr/bin/xcodebuild" ]]; then
-            selected=$(python3 - <<'PY'
-          import pathlib, plistlib, re
-          candidates = list(pathlib.Path('/Applications').glob('Xcode*.app'))
-          def version(app):
-              try:
-                  with (app / 'Contents/version.plist').open('rb') as file:
-                      value = plistlib.load(file).get('CFBundleShortVersionString', '')
-                  return tuple(int(n) for n in re.findall(r'\d+', value))
-              except (OSError, ValueError):
-                  return ()
-          candidates = [p for p in candidates if (p / 'Contents/Developer/usr/bin/xcodebuild').is_file()]
-          candidates.sort(key=version)
-          print(candidates[-1] / 'Contents/Developer' if candidates else '')
-          PY
-            )
-          fi
-          [[ -n "$selected" ]] || { echo 'No usable /Applications/Xcode*.app installation found.' >&2; exit 1; }
+          selected=$(python3 scripts/select-duo-xcode.py "$REQUESTED_DEVELOPER_DIR")
           echo "DEVELOPER_DIR=$selected" >> "$GITHUB_ENV"
           echo "Using $selected"
       - name: List simulator device types and runtimes
@@ -54,6 +36,14 @@ jobs:
           xcodebuild -version
           xcrun simctl list devicetypes
           xcrun simctl list runtimes
+          xcrun simctl list devicetypes --json > "$RUNNER_TEMP/duo-devicetypes.json"
+          python3 - "$RUNNER_TEMP/duo-devicetypes.json" <<'PY'
+          import json, os, sys
+          with open(sys.argv[1]) as file:
+              devices = json.load(file)["devicetypes"]
+          if not any("iphone duo" in device["name"].lower() for device in devices):
+              sys.exit(f"No iPhone Duo simulator device type found in {os.environ['DEVELOPER_DIR']}. Install Xcode 27.1+ with Duo support, then select it with developer_dir.")
+          PY
       - name: Capture raw Duo screens (light and dark)
         timeout-minutes: 50
         run: scripts/capture-duo-screenshots.sh "$APP" "build/duo-screenshots/$APP/raw" light dark
