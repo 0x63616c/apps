@@ -2,6 +2,7 @@ import RDesign
 import SwiftUI
 
 struct WeightEditor: View {
+    @State private var initialized = false
     @Environment(Store.self) private var store
     @Environment(\.dismiss) private var dismiss
     var entry: WeightEntry?
@@ -37,12 +38,12 @@ struct WeightEditor: View {
                         if store.save(weight: updated) { dismiss() } else { localError = store.error; store.error = nil }
                     } label: { Text("Save Weight").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 10) }.buttonStyle(.borderedProminent).disabled(!valid).accessibilityIdentifier("saveWeight")
                 }.padding(20)
-            }.background(Theme.background).navigationTitle(entry == nil ? "Add Weight" : "Edit Weight").navigationBarTitleDisplayMode(.inline)
+            }.scrollDismissesKeyboard(.interactively).background(Theme.background).navigationTitle(entry == nil ? "Add Weight" : "Edit Weight").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                     if let entry { ToolbarItem(placement: .topBarTrailing) { DeleteEntryButton { store.delete(weight: entry) } } }
                 }
-                .onAppear { unit = store.journal.unit; if let entry { amount = unit.display(entry.kilograms).formatted(.number.grouping(.never).precision(.fractionLength(0...8))); date = entry.date; note = entry.note }; noteExpanded = !note.isEmpty }
+                .onAppear { guard !initialized else { return }; initialized = true; unit = store.journal.unit; if let entry { amount = unit.display(entry.kilograms).formatted(.number.grouping(.never).precision(.fractionLength(0...8))); date = entry.date; note = entry.note }; noteExpanded = !note.isEmpty }
         }
     }
 }
@@ -128,12 +129,12 @@ struct DoseEditor: View {
                 }.padding(20)
             }.safeAreaInset(edge: .bottom) {
                 Button { save() } label: { Text(entry == nil ? "Save Dose" : status == .skipped ? "Save" : status == .planned ? "Save" : "Save Dose").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 9) }.buttonStyle(.borderedProminent).disabled(milligrams == nil).accessibilityIdentifier("saveDose").padding(.horizontal, 20).padding(.vertical, 10).background(.bar)
-            }.background(Theme.background).navigationTitle(entry == nil ? "Log Dose" : "Edit Dose").navigationBarTitleDisplayMode(.inline)
+            }.scrollDismissesKeyboard(.interactively).background(Theme.background).navigationTitle(entry == nil ? "Log Dose" : "Edit Dose").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                     if let entry { ToolbarItem(placement: .topBarTrailing) { DeleteEntryButton { store.delete(dose: entry) } } }
                 }
-                .sheet(isPresented: $preferences, onDismiss: { confirmedU100 = store.journal.syringeUnitsPerML == 100 }) { DosePreferencesEditor() }
+                .sheet(isPresented: $preferences, onDismiss: { confirmedU100 = store.journal.syringeUnitsPerML == 100 }) { DosePreferencesEditor().tendrSheet() }
                 .onAppear {
                     guard !initialized else { return }; initialized = true
                     confirmedU100 = store.journal.syringeUnitsPerML == 100
@@ -180,6 +181,7 @@ struct DoseEditor: View {
     }
 }
 struct ScheduleEditor: View {
+    @State private var initialized = false
     @Environment(Store.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var days: Set<Int> = []
@@ -281,6 +283,7 @@ struct ScheduleEditor: View {
     }
 
     private func load() {
+        guard !initialized else { return }; initialized = true
         let schedule = store.journal.schedule
         days = schedule.weekdays
         reminders = schedule.enabled
@@ -320,6 +323,7 @@ struct DeleteEntryButton: View {
 }
 
 struct DosePreferencesEditor: View {
+    @State private var initialized = false
     @Environment(Store.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var unit = "mg"
@@ -341,7 +345,7 @@ struct DosePreferencesEditor: View {
                         if store.commit(next) { dismiss() }
                     } }
                 }
-                .onAppear { u100 = store.journal.syringeUnitsPerML == 100; unit = store.journal.doseInputUnit ?? (u100 ? "units" : "mg") }
+                .onAppear { guard !initialized else { return }; initialized = true; u100 = store.journal.syringeUnitsPerML == 100; unit = store.journal.doseInputUnit ?? (u100 ? "units" : "mg") }
         }
     }
 }

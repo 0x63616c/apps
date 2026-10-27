@@ -48,6 +48,8 @@ jobs:
         run: ruby scripts/check-release.rb
       - name: Path filter regression checks
         run: python3 scripts/test-changed-apps.py
+      - name: Duo capture and Xcode selection checks
+        run: python3 scripts/test-duo-screenshots.py
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24'

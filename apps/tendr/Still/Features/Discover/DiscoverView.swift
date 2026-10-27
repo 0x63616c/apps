@@ -62,7 +62,7 @@ struct DiscoverView: View {
                                     }
                                 }
                             }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Theme.card, in: RoundedRectangle(cornerRadius: 18))
+                                .rSurface(Theme.card, cornerRadius: 18)
                         }.buttonStyle(.plain)
                     }
                     if FeatureFlags.assistantPreview { NavigationLink { AssistantPreview() } label: {
@@ -71,7 +71,7 @@ struct DiscoverView: View {
                             Spacer(); Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
                         }.card()
                     }.buttonStyle(.plain) }
-                }.padding(16).padding(.bottom, 16)
+                }.padding(16).padding(.bottom, 16).tendrReadableWidth()
             }.background(Theme.background).navigationTitle("Discover")
         }
     }
@@ -93,7 +93,7 @@ private struct ArticleView: View {
                         Text(article.sections[index].1).font(.body).lineSpacing(6).foregroundStyle(.secondary)
                     }
                 }
-            }.padding(20).padding(.bottom, 24)
+            }.padding(20).padding(.bottom, 24).tendrReadableWidth()
         }.background(Theme.background).navigationBarTitleDisplayMode(.inline)
     }
 }

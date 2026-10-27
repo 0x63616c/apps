@@ -32,7 +32,7 @@ struct TreatmentView: View {
                     PageHeader("Treatment").padding(.horizontal, 8)
                     Button { editing = true } label: {
                         HStack(spacing: 15) {
-                            Image(systemName: "syringe.fill").font(.title2).foregroundStyle(Theme.pine).frame(width: 48, height: 48).background(Theme.sage, in: RoundedRectangle(cornerRadius: 14))
+                            Image(systemName: "syringe.fill").font(.title2).foregroundStyle(Theme.pine).frame(width: 48, height: 48).rSurface(Theme.sage, cornerRadius: 14)
                             VStack(alignment: .leading, spacing: 5) { Text(store.journal.medication).font(.title3.bold()); Text("Treatment details").font(.caption).foregroundStyle(.secondary) }
                             Spacer(); Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
                         }.card()
@@ -90,12 +90,12 @@ struct TreatmentView: View {
                         }.buttonStyle(.plain).accessibilityIdentifier("doseHistoryCard")
                             .accessibilityHint("Opens Journal with Doses selected")
                     }
-                }.padding(.horizontal, 16).padding(.bottom, 24)
+                }.padding(.horizontal, 16).padding(.bottom, 24).tendrReadableWidth()
             }.background(Theme.background).toolbar(.hidden, for: .navigationBar)
-                .sheet(isPresented: $editing) { TreatmentEditor() }
-                .sheet(isPresented: $schedule) { ScheduleEditor() }
-                .sheet(isPresented: $addVial) { VialEditor() }
-                .sheet(item: $selectedVial) { VialEditor(vial: $0) }
+                .sheet(isPresented: $editing) { TreatmentEditor().tendrSheet() }
+                .sheet(isPresented: $schedule) { ScheduleEditor().tendrSheet() }
+                .sheet(isPresented: $addVial) { VialEditor().tendrSheet() }
+                .sheet(item: $selectedVial) { VialEditor(vial: $0).tendrSheet() }
         }
     }
 }
@@ -112,7 +112,7 @@ struct UpcomingDoseDates: View {
                     VStack(spacing: 4) {
                         Text(date, format: .dateTime.weekday(.narrow)).font(.caption2.weight(.bold)).foregroundStyle(Theme.pine)
                         Text(date, format: .dateTime.day()).font(.subheadline.weight(.semibold))
-                    }.frame(maxWidth: .infinity).padding(.vertical, 8).background(Theme.sage, in: RoundedRectangle(cornerRadius: 12))
+                    }.frame(maxWidth: .infinity).padding(.vertical, 8).rSurface(Theme.sage, cornerRadius: 12)
                 }
             }
         }

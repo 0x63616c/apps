@@ -169,12 +169,14 @@ public struct RTipThanks: View {
     public var body: some View {
         ZStack {
             RPalette.background.ignoresSafeArea()
-            VStack(spacing: 18) {
-                RMark(size: 88)
-                Text("Thank you").font(.largeTitle.bold()).accessibilityIdentifier("tipThanks")
-                Button { dismiss() } label: { Text("Close").font(.headline).foregroundStyle(RPalette.background).frame(maxWidth: 240).padding(.vertical, 6) }
-                    .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).padding(.top, RSpacing.xs)
-            }.padding(RSpacing.xxl)
+            ScrollView {
+                VStack(spacing: 18) {
+                    RMark(size: 88)
+                    Text("Thank you").font(.largeTitle.bold()).accessibilityIdentifier("tipThanks")
+                    Button { dismiss() } label: { Text("Close").font(.headline).foregroundStyle(RPalette.background).frame(maxWidth: 240).padding(.vertical, 6) }
+                        .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).padding(.top, RSpacing.xs)
+                }.padding(RSpacing.xxl).frame(maxWidth: .infinity)
+            }.defaultScrollAnchor(.center)
             RConfettiCannon().ignoresSafeArea().allowsHitTesting(false)
         }
     }

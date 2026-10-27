@@ -2,8 +2,21 @@ import RDesign
 import SwiftUI
 import Charts
 
+private struct MedicationVisitKey: EnvironmentKey {
+    static let defaultValue = 0
+}
+
+extension EnvironmentValues {
+    /// Changes only on an explicit return to Home, not a window/presentation resize.
+    var medicationVisit: Int {
+        get { self[MedicationVisitKey.self] }
+        set { self[MedicationVisitKey.self] = newValue }
+    }
+}
+
 struct MedicationCard: View {
     @Environment(Store.self) private var store
+    @Environment(\.medicationVisit) private var medicationVisit
     var expanded = false
     @State private var detail = false
     @State private var selected: Date?
@@ -61,12 +74,12 @@ struct MedicationCard: View {
         .accessibilityAction(named: "View details") { if !expanded { detail = true } }
         .accessibilityIdentifier(expanded ? "medicationDetailCard" : "medicationCard")
         .onAppear {
-            // Every visit starts live at now, rather than where the graph was last scrubbed.
-            selected = nil
+            // Refresh the estimate without clearing a selection when the window adapts.
             now = Date()
             if cachedPlot == nil { cachedPlot = plot }
         }
         .onChange(of: now) { _, _ in cachedPlot = makePlot() }
+        .onChange(of: medicationVisit) { _, _ in selected = nil }
         .onChange(of: store.journal) { _, _ in cachedPlot = makePlot() }
         .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { now = $0 }
         .navigationDestination(isPresented: $detail) {
@@ -74,7 +87,7 @@ struct MedicationCard: View {
                 VStack(spacing: 16) {
                     MedicationCard(expanded: true)
                     MedicationAnalytics()
-                }.padding(16)
+                }.padding(16).tendrReadableWidth()
             }.background(Theme.background)
                 .navigationTitle("Medication").navigationBarTitleDisplayMode(.inline)
                 .toolbar(.visible, for: .navigationBar)
@@ -95,7 +108,7 @@ struct MedicationCard: View {
                         Link("Tirzepatide model · Schneck 2024", destination: URL(string: "https://doi.org/10.1002/psp4.13099")!)
                     }
                 }.navigationTitle("About this graph").navigationBarTitleDisplayMode(.inline).toolbar { Button("Done") { info = false } }
-            }
+            }.tendrSheet(page: true)
         }
     }
     @ViewBuilder private func graph(_ plot: MedicationPlot) -> some View {
@@ -183,6 +196,7 @@ private struct MedicationPlot {
 
 struct MedicationAnalytics: View {
     @Environment(Store.self) private var store
+    @Environment(\.medicationVisit) private var medicationVisit
     @State private var days = 7
     @State private var now = Date()
     @State private var selected: Date?
@@ -226,7 +240,8 @@ struct MedicationAnalytics: View {
             }.frame(maxWidth: .infinity).card()
         }
         .onChange(of: days) { _, _ in selected = nil }
-        .onAppear { selected = nil; now = Date() }
+        .onChange(of: medicationVisit) { _, _ in selected = nil }
+        .onAppear { now = Date() }
         .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { now = $0 }
     }
     func value(_ title: String, _ amount: Double, unit: String) -> some View {

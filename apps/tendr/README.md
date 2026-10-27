@@ -38,6 +38,18 @@ xcodebuild -project Still.xcodeproj -scheme Still \
 
 The Swift package tests cover calculations, validation, local calendar scheduling and file compatibility. UI tests exercise real simulator screens. See [architecture](docs/ARCHITECTURE.md), [user journeys](docs/USER-JOURNEYS.md) and [verification notes](docs/TESTING.md). Passing tests do not imply clinical validation or TestFlight publication.
 
+## Adaptive windows and Duo captures
+
+Compact windows retain the five tabs. Regular-width windows show the same sections in a sidebar; navigation, filters and editor drafts stay in the same view hierarchy during resize. Portrait and landscape are enabled.
+
+From the repository root on macOS with the Duo simulator installed:
+
+```sh
+DEVELOPER_DIR=/Applications/Xcode_27.1.app/Contents/Developer scripts/capture-duo-screenshots.sh tendr
+```
+
+See [Duo validation](docs/DUO.md) for display detection, raw captures and the native resize checklist.
+
 ## Monorepo
 
 Run app-local build/test commands above from `apps/tendr`. Shared release, CI and Pages commands run from the repository root; see [root README](../../README.md) and [release guide](../../docs/RELEASE.md). Shared UI is in `../../packages/RDesign`.

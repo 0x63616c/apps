@@ -15,7 +15,7 @@
 - [x] First-launch disclaimer (`MedicalDisclaimerGate` in `StillApp.swift`). It shows once and is stored in `@AppStorage`; it's skipped for `--demo` and `--uitest`.
 - [x] "Still backup" → "Tendr backup" (`Tracking.swift`).
 - [x] ~~Drop `NSHealthUpdateUsageDescription`~~ **Reverted:** App Store Connect rejects an upload without it (409 "Missing purpose string") because of the HealthKit entitlement, even though the app only reads. Keep it.
-- [x] Build number resynced to 17 in `project.yml` and `Still.xcodeproj`.
+- [x] Source version/build resynced to 1.1.0 (29) in `project.yml`, `Still.xcodeproj` and `app.yml`. Duo native validation remains pending; see [DUO.md](DUO.md).
 - [x] Reviewer notes (`fastlane/metadata/review_information/notes.txt`).
 - [x] **Phase 2:** `--demo --screenshots` fixture (`Still/ScreenshotFixture.swift`), `StillUITests/ScreenshotTests`, `scripts/capture-screenshots.sh` (iPhone 17 Pro Max, 9:41 status bar, light and dark) and SwiftUI marketing frames (`scripts/frame-screenshots.swift`).
 - [x] **Phase 3:** listing as code in `fastlane/metadata`, uploaded by `fastlane ios metadata`.
@@ -34,8 +34,8 @@ Goal: get Tendr through App Store review the first time. That means a profession
 | Bundle ID | `com.calumwebb.still` |
 | Team | `X9E4HG27NK` |
 | App Store Connect app | `6809098849`, **Tendr: Dose & Weight Journal** |
-| Version | 1.0.0 (`MARKETING_VERSION` in `project.yml`) |
-| Platform | iOS 17+, iPhone only, portrait only |
+| Version | 1.1.0, build 29 (source settings in `project.yml` and `Still.xcodeproj`) |
+| Platform | iOS 17+, iPhone, portrait and landscape; adaptive tabs/sidebar ([Duo validation](DUO.md)) |
 | Data storage | Local JSON store on the device (`Still/Store.swift`). No server and no account. |
 | HealthKit | Reads body weight only (`Still/HealthKitWeightStore.swift`) |
 | Notifications | Local reminders only |
@@ -101,7 +101,7 @@ The Settings footer says "Tendr stays up to date in the background when Apple He
 - **Better icon.** A flattened version plus dark and tinted variants for iOS 18+, generated from `scripts/render-icon.swift`.
 - **Wording fix.** "This file is not a valid Still backup" should say Tendr (`Still/Core/Tracking.swift` ~98).
 - ~~**Drop the unneeded Health write usage string.**~~ Not possible: upload validation requires `NSHealthUpdateUsageDescription` for HealthKit apps.
-- **Resync the build number.** `project.yml` says `CURRENT_PROJECT_VERSION: '17'` but `Still.xcodeproj/project.pbxproj` says `12`. CI allocates the build number from TestFlight anyway, but the two files should agree.
+- **Keep source versions aligned.** `project.yml` and `Still.xcodeproj` now agree on 1.1.0 (29), with `app.yml` at 1.1.0. CI allocates release build numbers from TestFlight.
 - **Reviewer notes.** Explain that there is no login, that data stays on the device, what HealthKit is used for, and how to see sample data.
 
 ## Plan
