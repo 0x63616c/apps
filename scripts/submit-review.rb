@@ -52,6 +52,7 @@ unless waiting.empty?
 end
 
 version = versions(asc).find { |v| EDITABLE.include?(state(v)) }
+version ||= versions(asc).find { |v| state(v) == "WAITING_FOR_REVIEW" } if DRY_RUN && !waiting.empty?
 abort("No editable App Store version (#{versions(asc).map { |v| state(v) }.join(', ')}). Create one in App Store Connect.") unless version
 if version.dig("attributes", "versionString") != TARGET
   puts "VERSION: #{version.dig('attributes', 'versionString')} -> #{TARGET}"
