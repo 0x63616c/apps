@@ -31,6 +31,8 @@ concurrency:
 
 jobs:
   screenshots:
+    # The self-hosted runner has no Xcode 27.1 yet; do not block PRs on the Duo simulator.
+    continue-on-error: ${{ github.event_name == 'pull_request' }}
     runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
     timeout-minutes: 60
     env:
