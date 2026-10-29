@@ -58,6 +58,17 @@ jobs:
           fi
           echo "apps=$apps" >> "$GITHUB_OUTPUT"
           echo "Apps with PR screenshots: ${apps:-none}"
+      - name: Free simulator resources
+        if: steps.apps.outputs.apps != ''
+        # Cancelled runs can leave simulators booted on the self-hosted Mac until it hits its process
+        # limit ("insufficient system resources"). This runner takes one job at a time.
+        run: |
+          echo "User processes: $(ps -U "$USER" | wc -l) of $(sysctl -n kern.maxprocperuid)"
+          ps -U "$USER" -o comm= | awk -F/ '{print $NF}' | sort | uniq -c | sort -rn | head -15
+          xcrun simctl list devices booted
+          xcrun simctl shutdown all || true
+          sleep 5
+          echo "User processes after shutdown: $(ps -U "$USER" | wc -l)"
       - name: Capture PR screens (light)
         if: steps.apps.outputs.apps != ''
         timeout-minutes: 30
