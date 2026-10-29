@@ -1,5 +1,6 @@
 import SwiftUI
 import XCTest
+@testable import Still
 
 /// Renders SwiftUI components straight to PNG with `ImageRenderer`, without launching the app UI.
 ///
