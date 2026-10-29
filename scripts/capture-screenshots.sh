@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Captures an app's raw App Store screenshots (its screenshot_test in apps/<app>/app.yml) on a
+# Captures an app's raw App Store screenshots (its screenshot_test in apps/<app>/app.yml, or the key
+# named by SCREENSHOT_TEST_KEY, e.g. pr_screenshot_test) on a
 # fresh iPhone 17 Pro Max simulator (6.9", 1320x2868) with a 9:41 status bar.
 # Usage: scripts/capture-screenshots.sh <app> [output-dir] [appearance...]
 # Writes <output-dir>/<appearance>/<screen>.png; defaults to build/screenshots/<app>/raw and light dark.
@@ -9,7 +10,7 @@ cd "$(dirname "$0")/.."
 app=${1:?usage: capture-screenshots.sh <app> [output-dir] [appearance...]}
 project=$(ruby scripts/app-config.rb "$app" project_path)
 scheme=$(ruby scripts/app-config.rb "$app" scheme)
-test_id=$(ruby scripts/app-config.rb "$app" screenshot_test)
+test_id=$(ruby scripts/app-config.rb "$app" "${SCREENSHOT_TEST_KEY:-screenshot_test}")
 name=$(ruby scripts/app-config.rb "$app" name)
 out=${2:-build/screenshots/$app/raw}
 shift $(( $# > 1 ? 2 : 1 ))
@@ -46,7 +47,7 @@ for appearance in "${appearances[@]}"; do
     -project "$project" -scheme "$scheme" -destination "id=$udid" -derivedDataPath "$derived" \
     -only-testing:"$test_id" \
     -test-timeouts-enabled YES -default-test-execution-time-allowance 300 -maximum-test-execution-time-allowance 600 \
-    -resultBundlePath "build/screenshots/$app/ScreenshotTests-$appearance.xcresult" -quiet
+    -resultBundlePath "build/screenshots/$app/${SCREENSHOT_TEST_KEY:-screenshot_test}-$appearance.xcresult" -quiet
 done
 
 python3 - "$out" <<'PY'

@@ -1,0 +1,128 @@
+name: PR screenshots
+
+# Captures each changed app's PR preview screens (pr_screenshot_test in apps/<app>/app.yml) from its
+# synthetic fixture on an iPhone 17 Pro Max simulator, publishes the PNGs to the pr-screenshots
+# branch and updates one comment on the PR. Dispatch with `pr` to post screens for an existing PR.
+on:
+  pull_request:
+    paths:
+      - 'apps/**'
+      - 'packages/RDesign/**'
+      - scripts/capture-screenshots.sh
+      - .github/workflows/pr-screenshots.yml
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'App folder under apps/'
+        type: string
+        default: tendr
+        required: true
+      pr:
+        description: 'Pull request number to comment on (blank: artifact only)'
+        type: string
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: pr-screenshots-${{ github.event.pull_request.number || inputs.pr || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  screenshots:
+    # Same-repo PRs only: fork tokens cannot push the pr-screenshots branch.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
+    timeout-minutes: 45
+    env:
+      DEVELOPER_DIR: ${{ vars.DEVELOPER_DIR || '/Applications/Xcode_26.2.app/Contents/Developer' }}
+      PR: ${{ github.event.pull_request.number || inputs.pr }}
+      SCREENSHOT_TEST_KEY: pr_screenshot_test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Pick apps
+        id: apps
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          INPUT_APP: ${{ inputs.app }}
+        run: |
+          if [[ -n "$INPUT_APP" ]]; then
+            ruby scripts/app-config.rb "$INPUT_APP" pr_screenshot_test >/dev/null
+            apps=$INPUT_APP
+          else
+            apps=$(scripts/changed-apps.sh "$BASE" --build --only pr_screenshot_test | python3 -c 'import json,sys; print(" ".join(json.load(sys.stdin)))')
+          fi
+          echo "apps=$apps" >> "$GITHUB_OUTPUT"
+          echo "Apps with PR screenshots: ${apps:-none}"
+      - name: Free simulator resources
+        if: steps.apps.outputs.apps != ''
+        # Cancelled runs can leave simulators booted on the self-hosted Mac until it hits its process
+        # limit ("insufficient system resources"). This runner takes one job at a time.
+        run: |
+          echo "User processes: $(ps -U "$USER" | wc -l) of $(sysctl -n kern.maxprocperuid)"
+          ps -U "$USER" -o comm= | awk -F/ '{print $NF}' | sort | uniq -c | sort -rn | head -15
+          xcrun simctl list devices booted
+          xcrun simctl shutdown all || true
+          sleep 5
+          echo "User processes after shutdown: $(ps -U "$USER" | wc -l)"
+      - name: Capture PR screens (light)
+        if: steps.apps.outputs.apps != ''
+        timeout-minutes: 30
+        run: |
+          for app in ${{ steps.apps.outputs.apps }}; do
+            scripts/capture-screenshots.sh "$app" "build/pr-screenshots/$app" light
+          done
+      - uses: actions/upload-artifact@v4
+        if: steps.apps.outputs.apps != ''
+        with:
+          name: pr-screenshots
+          path: build/pr-screenshots
+          if-no-files-found: error
+      - name: Publish to the pr-screenshots branch and comment
+        if: steps.apps.outputs.apps != '' && env.PR != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/pr-screenshots"
+          rm -rf "$dir"
+          if git ls-remote --exit-code origin pr-screenshots >/dev/null; then
+            git worktree add "$dir" origin/pr-screenshots
+          else
+            git worktree add --detach "$dir" && (cd "$dir" && git checkout --orphan pr-screenshots && git rm -rfq .)
+          fi
+          short=${SHA:0:7}
+          body="<!-- pr-screenshots -->"$'\n'"### Screenshots (synthetic fixture, iPhone 17 Pro Max, light) at $short"$'\n'
+          for app in ${{ steps.apps.outputs.apps }}; do
+            dest="$dir/$PR/$short/$app"
+            mkdir -p "$dest"
+            cp build/pr-screenshots/"$app"/light/*.png "$dest/"
+            body+=$'\n'"**$app**"$'\n\n'"| "
+            row="| "; sep="|"
+            for png in "$dest"/*.png; do
+              name=$(basename "$png" .png)
+              body+="$name | "; sep+=" --- |"
+              row+="<img src=\"https://raw.githubusercontent.com/$GITHUB_REPOSITORY/pr-screenshots/$PR/$short/$app/$name.png\" width=\"260\"> | "
+            done
+            body+=$'\n'"$sep"$'\n'"$row"$'\n'
+          done
+          (
+            cd "$dir"
+            git add -A
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -qm "PR #$PR screenshots at $short" || true
+            git push origin HEAD:pr-screenshots
+          )
+          existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq '[.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- pr-screenshots -->")))][0].id // empty')
+          if [[ -n "$existing" ]]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -f body="$body" >/dev/null
+          else
+            gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -f body="$body" >/dev/null
+          fi
+          echo "$body" >> "$GITHUB_STEP_SUMMARY"
