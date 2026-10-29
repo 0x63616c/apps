@@ -118,9 +118,7 @@ struct SettingsView: View {
                         }.accessibilityIdentifier("weightTrendPicker")
                         if FeatureFlags.syringeUnits { Button("Dose entry") { treatment = true } }
                         Picker("Appearance", selection: Binding(get: { store.journal.appearance }, set: { var next = store.journal; next.appearance = $0; _ = store.commit(next) })) { Text("System").tag("system"); Text("Light").tag("light"); Text("Dark").tag("dark") }
-                    }
-                    Section("Injection site") {
-                        Picker("Start on", selection: Binding(get: { store.journal.injectionStartSide }, set: { var next = store.journal; next.injectionStartSide = $0; _ = store.commit(next) })) {
+                        Picker("Start injections on", selection: Binding(get: { store.journal.injectionStartSide }, set: { var next = store.journal; next.injectionStartSide = $0; _ = store.commit(next) })) {
                             ForEach(InjectionSide.allCases, id: \.self) { Text($0.title).tag($0) }
                         }.accessibilityIdentifier("injectionStartSidePicker")
                     }
