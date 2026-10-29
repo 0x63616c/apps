@@ -68,32 +68,22 @@ struct JournalView: View {
         switch entry { case .weight(let e): weight = e; case .dose(let e): dose = e }
     }
     @ViewBuilder private func row(_ entry: HistoryEntry) -> some View {
-        if case .dose(let e) = entry { doseRow(e) } else { HStack(spacing: 14) {
-            switch entry {
-            case .dose: EmptyView()
-            case .weight(let e):
+        switch entry {
+        case .dose(let e):
+            JournalDoseRow(entry: e).padding(.vertical, 8).contentShape(Rectangle())
+        case .weight(let e):
+            HStack(spacing: 14) {
                 Image(systemName: "scalemass.fill").foregroundStyle(Theme.weight).font(.title2)
                 details(title: "\(number(store.journal.unit.display(e.kilograms))) \(store.journal.unit.symbol)", subtitle: e.healthKitID == nil ? (e.date > Date() ? "Planned weight" : "Weight") : "Apple Health · \(e.sourceName ?? "Imported")", note: e.note)
-            }
-            Spacer(minLength: 4)
-            Text(entry.date, format: .dateTime.hour().minute()).font(.caption2).foregroundStyle(.secondary)
-        }.padding(.vertical, 8).contentShape(Rectangle()) }
+                Spacer(minLength: 4)
+                Text(e.date, format: .dateTime.hour().minute()).font(.caption2).foregroundStyle(.secondary)
+            }.padding(.vertical, 8).contentShape(Rectangle())
+        }
     }
 
-    private var rowStyle: String { UserDefaults.standard.string(forKey: "journalRowStyle") ?? "A" }
-    private func doseRow(_ e: DoseEntry) -> some View {
-        JournalDoseRow(entry: e, style: rowStyle).padding(.vertical, 8).contentShape(Rectangle())
-    }
-
-    private func details(title: String, subtitle: String, note: String, side: InjectionSide? = nil) -> some View {
+    private func details(title: String, subtitle: String, note: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
-                if let side {
-                    Text(side.abbreviation).font(.caption).foregroundStyle(.secondary)
-                        .accessibilityLabel(side.accessibilityName)
-                }
-            }
+            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
             Text(subtitle).font(.caption).foregroundStyle(.secondary)
             if !note.isEmpty {
                 Text(note).font(.caption).foregroundStyle(.secondary).lineLimit(3).accessibilityIdentifier("journalNote")
@@ -244,126 +234,36 @@ struct PrivacyView: View {
     }
 }
 
-/// Option A's leading badge: a tinted glass circle with L or R (a syringe when no side was logged).
-private struct SideBadge: View {
-    let side: InjectionSide?
-    let skipped: Bool
-    var body: some View {
-        let label = Group {
-            if skipped { Image(systemName: "minus").font(.subheadline.weight(.bold)) }
-            else if let side { Text(side.abbreviation).font(.subheadline.weight(.bold)).accessibilityLabel(side.accessibilityName) }
-            else { Image(systemName: "syringe.fill").font(.footnote) }
-        }.foregroundStyle(Theme.pine).frame(width: 36, height: 36)
-        if #available(iOS 26, *) {
-            label.glassEffect(.regular.tint(Theme.pine.opacity(0.12)), in: Circle())
-        } else {
-            label.background(Theme.sage, in: Circle())
-        }
-    }
-}
-
-/// Option C's body glyph: a figure with a dot on the logged side (as you look down at yourself).
-private struct BodySide: View {
-    let side: InjectionSide?
-    var body: some View {
-        VStack(spacing: 2) {
-            ZStack {
-                Image(systemName: "figure.stand").font(.title3).foregroundStyle(.secondary)
-                if let side {
-                    Circle().fill(Theme.pine).frame(width: 7, height: 7)
-                        .overlay(Circle().stroke(Theme.card, lineWidth: 1.5))
-                        .offset(x: side == .left ? -6 : 6, y: 1)
-                }
-            }.frame(width: 32, height: 26)
-            if let side { Text(side == .left ? "Left" : "Right").font(.caption2.weight(.medium)).foregroundStyle(.secondary) }
-        }.frame(width: 36).accessibilityLabel(side?.accessibilityName ?? "")
-    }
-}
-
-/// A Journal dose row. APP-6 preview: four layout options (A-D) for Calum to pick from; none shows
-/// "Taken", since a journal entry is taken unless marked otherwise.
+/// A Journal dose row: a checkmark, "7.5 mg · Medication" with the time underneath, and a trailing
+/// "Left"/"Right" chip when the injection side is known. No "Taken" label: a journal entry is taken
+/// unless marked otherwise.
 struct JournalDoseRow: View {
     let entry: DoseEntry
-    var style = "A"
-
-    private func amount(_ e: DoseEntry) -> String { e.status == .skipped ? "Skipped" : "\(number(e.milligrams, digits: 3)) mg" }
-    /// Only non-taken doses get a status word; "Taken" is implied in a journal.
-    private func statusWord(_ e: DoseEntry) -> String? { e.status == .taken ? nil : e.status.rawValue.capitalized }
-    private func noteText(_ e: DoseEntry) -> some View {
-        Text(e.note).font(.caption).foregroundStyle(.secondary).lineLimit(3).accessibilityIdentifier("journalNote")
-    }
-    private func time(_ e: DoseEntry) -> Text { Text(e.date, format: .dateTime.hour().minute()) }
 
     var body: some View {
-        Group {
-            switch style {
-            case "B": rowB(entry)
-            case "C": rowC(entry)
-            case "D": rowD(entry)
-            default: rowA(entry)
-            }
-        }.accessibilityElement(children: .combine)
-    }
-
-    /// A: leading glass badge with L/R; amount as the title, medication underneath, time trailing.
-    private func rowA(_ e: DoseEntry) -> some View {
+        let e = entry
+        let skipped = e.status == .skipped
         HStack(spacing: 14) {
-            SideBadge(side: e.side, skipped: e.status == .skipped)
+            Image(systemName: skipped ? "minus.circle" : "checkmark.circle.fill")
+                .font(.title2).foregroundStyle(skipped ? Color.secondary : Theme.pine)
             VStack(alignment: .leading, spacing: 3) {
-                Text(amount(e)).font(.subheadline.weight(.semibold))
-                Text([e.medication, statusWord(e)].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
-                if !e.note.isEmpty { noteText(e).padding(.top, 2) }
-            }
-            Spacer(minLength: 4)
-            time(e).font(.caption2).foregroundStyle(.secondary)
-        }
-    }
-
-    /// B: plain syringe glyph; the secondary line reads "Left side · 8:30 AM". No trailing column.
-    private func rowB(_ e: DoseEntry) -> some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: e.status == .skipped ? "minus.circle" : "syringe.fill").font(.title3).foregroundStyle(Theme.pine).frame(width: 28).padding(.top, 2)
-            VStack(alignment: .leading, spacing: 3) {
-                Text("\(amount(e)) · \(e.medication)").font(.subheadline.weight(.semibold))
-                (Text([statusWord(e), e.side.map { $0 == .left ? "Left side" : "Right side" }].compactMap { $0 }.map { $0 + " · " }.joined()) + time(e))
+                Text("\(skipped ? "Skipped" : "\(number(e.milligrams, digits: 3)) mg") · \(e.medication)")
+                    .font(.subheadline.weight(.semibold))
+                (Text(e.status == .planned ? "Planned · " : "") + Text(e.date, format: .dateTime.hour().minute()))
                     .font(.caption).foregroundStyle(.secondary)
-                if !e.note.isEmpty { noteText(e).padding(.top, 2) }
-            }
-            Spacer(minLength: 0)
-        }
-    }
-
-    /// C: a small body glyph marking the side, with "Left"/"Right" under it.
-    private func rowC(_ e: DoseEntry) -> some View {
-        HStack(spacing: 14) {
-            BodySide(side: e.side)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(amount(e)).font(.subheadline.weight(.semibold))
-                Text([e.medication, statusWord(e)].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
-                if !e.note.isEmpty { noteText(e).padding(.top, 2) }
+                if !e.note.isEmpty {
+                    Text(e.note).font(.caption).foregroundStyle(.secondary).lineLimit(3)
+                        .accessibilityIdentifier("journalNote").padding(.top, 2)
+                }
             }
             Spacer(minLength: 4)
-            time(e).font(.caption2).foregroundStyle(.secondary)
-        }
-    }
-
-    /// D: title and time stacked on the left, a trailing "Left"/"Right" chip.
-    private func rowD(_ e: DoseEntry) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: e.status == .skipped ? "minus.circle" : "checkmark.circle.fill").font(.title2).foregroundStyle(e.status == .skipped ? Color.secondary : Theme.pine)
-            VStack(alignment: .leading, spacing: 3) {
-                Text("\(amount(e)) · \(e.medication)").font(.subheadline.weight(.semibold))
-                time(e).font(.caption).foregroundStyle(.secondary)
-                if !e.note.isEmpty { noteText(e).padding(.top, 2) }
-            }
-            Spacer(minLength: 4)
-            if let side = e.side, e.status != .skipped {
+            if let side = e.side, !skipped {
                 Text(side == .left ? "Left" : "Right").font(.caption.weight(.semibold))
                     .padding(.horizontal, 10).padding(.vertical, 5)
                     .background(Theme.sage, in: Capsule())
                     .accessibilityLabel(side.accessibilityName)
             }
         }
+        .accessibilityElement(children: .combine)
     }
-
 }
