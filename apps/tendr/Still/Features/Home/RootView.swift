@@ -6,45 +6,42 @@ struct RootView: View {
     @Environment(Store.self) private var store
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @State private var columns = NavigationSplitViewVisibility.all
-    @State private var compactColumn = NavigationSplitViewColumn.detail
+    @State private var sidebarVisible = true
     @State private var selected = 0
     @State private var medicationVisit = 0
     @State private var journalFilter = "All"
     var body: some View {
-        // Keep the split view, tabs and every section's NavigationStack at the same
-        // structural identity. Replacing TabView with a separate detail tree on resize
-        // would discard destinations, scroll positions, editor drafts and filters.
-        NavigationSplitView(columnVisibility: $columns, preferredCompactColumn: $compactColumn) {
-            List {
-                sidebarSection("Home", symbol: "square.grid.2x2.fill", tag: 0)
-                sidebarSection("Treatment", symbol: "syringe.fill", tag: 1)
-                sidebarSection("Progress", symbol: "chart.xyaxis.line", tag: 2)
-                sidebarSection("Journal", symbol: "book.closed", tag: 3)
-                sidebarSection("Settings", symbol: "gearshape", tag: 4)
+        // Keep one tab host and each section's NavigationStack at the same
+        // structural identity across resize. A split-view detail column supplies
+        // its own traits and collapse lifecycle to a nested tab controller; it must
+        // not own the phone's tab bar. The sidebar is a sibling of the tab host.
+        HStack(spacing: 0) {
+            if usesSidebar && sidebarVisible {
+                List {
+                    sidebarSection("Home", symbol: "square.grid.2x2.fill", tag: 0)
+                    sidebarSection("Treatment", symbol: "syringe.fill", tag: 1)
+                    sidebarSection("Progress", symbol: "chart.xyaxis.line", tag: 2)
+                    sidebarSection("Journal", symbol: "book.closed", tag: 3)
+                    sidebarSection("Settings", symbol: "gearshape", tag: 4)
+                }
+                .listStyle(.sidebar)
+                .safeAreaInset(edge: .top) {
+                    Text("Tendr").font(.title.bold()).padding()
+                }
+                .frame(width: 200)
+                .accessibilityIdentifier("sectionSidebar")
             }
-            .listStyle(.sidebar)
-            .navigationTitle("Tendr")
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 240)
-            .toolbar(removing: .sidebarToggle)
-            .accessibilityIdentifier("sectionSidebar")
-        } detail: {
             sectionTabs
-                // This is the split view's back button, outside the section stacks.
-                // Compact navigation belongs to the tabs and their own destinations.
-                .navigationBarBackButtonHidden()
-                .toolbar(.hidden, for: .navigationBar)
-                .toolbar(removing: .sidebarToggle)
                 .safeAreaInset(edge: .top, spacing: 0) {
                     if usesSidebar {
                         HStack {
                             Button {
-                                withAnimation { columns = columns == .detailOnly ? .all : .detailOnly }
+                                withAnimation { sidebarVisible.toggle() }
                             } label: {
                                 Label("Sidebar", systemImage: "sidebar.left")
                                     .frame(minHeight: 44)
                             }
-                            .accessibilityLabel(columns == .detailOnly ? "Show sidebar" : "Hide sidebar")
+                            .accessibilityLabel(sidebarVisible ? "Hide sidebar" : "Show sidebar")
                             .accessibilityIdentifier("toggleSidebar")
                             Spacer()
                         }
@@ -53,10 +50,8 @@ struct RootView: View {
                     }
                 }
         }
-        .navigationSplitViewStyle(.balanced)
-        .onChange(of: horizontalSizeClass, initial: true) { _, _ in
-            columns = usesSidebar ? .all : .detailOnly
-            compactColumn = .detail
+        .onChange(of: horizontalSizeClass) { _, _ in
+            sidebarVisible = true
         }
         .onChange(of: selected) { _, section in
             // Returning to Home starts its charts live; folding is not a new visit.
@@ -77,7 +72,7 @@ struct RootView: View {
     }
 
     private func sidebarSection(_ title: String, symbol: String, tag: Int) -> some View {
-        Button { selected = tag; compactColumn = .detail } label: {
+        Button { selected = tag } label: {
             Label(title, systemImage: symbol).frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
         }
@@ -89,11 +84,15 @@ struct RootView: View {
 
     private var sectionTabs: some View {
         TabView(selection: $selected) {
-            TodayView(tab: $selected).environment(\.medicationVisit, medicationVisit).toolbar(usesSidebar ? .hidden : .visible, for: .tabBar).tag(0).tabItem { Label("Home", systemImage: "square.grid.2x2.fill").accessibilityIdentifier("navHome") }
-            TreatmentView(tab: $selected, journalFilter: $journalFilter).toolbar(usesSidebar ? .hidden : .visible, for: .tabBar).tag(1).tabItem { Label("Treatment", systemImage: "syringe.fill").accessibilityIdentifier("navTreatment") }
-            ProgressViewScreen().toolbar(usesSidebar ? .hidden : .visible, for: .tabBar).tag(2).tabItem { Label("Progress", systemImage: "chart.xyaxis.line").accessibilityIdentifier("navProgress") }
-            JournalView(filter: $journalFilter).toolbar(usesSidebar ? .hidden : .visible, for: .tabBar).tag(3).tabItem { Label("Journal", systemImage: "book.closed").accessibilityIdentifier("navJournal") }
-            SettingsView().toolbar(usesSidebar ? .hidden : .visible, for: .tabBar).tag(4).tabItem { Label("Settings", systemImage: "gearshape").accessibilityIdentifier("navSettings") }
+            Group {
+                TodayView(tab: $selected).environment(\.medicationVisit, medicationVisit).tag(0).tabItem { Label("Home", systemImage: "square.grid.2x2.fill").accessibilityIdentifier("navHome") }
+                TreatmentView(tab: $selected, journalFilter: $journalFilter).tag(1).tabItem { Label("Treatment", systemImage: "syringe.fill").accessibilityIdentifier("navTreatment") }
+                ProgressViewScreen().tag(2).tabItem { Label("Progress", systemImage: "chart.xyaxis.line").accessibilityIdentifier("navProgress") }
+                JournalView(filter: $journalFilter).tag(3).tabItem { Label("Journal", systemImage: "book.closed").accessibilityIdentifier("navJournal") }
+                SettingsView().tag(4).tabItem { Label("Settings", systemImage: "gearshape").accessibilityIdentifier("navSettings") }
+            }
+            // One preference for the entire tab host, independent of selection.
+            .toolbar(usesSidebar ? .hidden : .visible, for: .tabBar)
         }
     }
 }
