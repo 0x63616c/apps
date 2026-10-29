@@ -64,6 +64,19 @@ public struct WeightSummary {
     }
 }
 
+public enum InjectionSide: String, Codable, CaseIterable, Sendable {
+    case left, right
+    public var title: String { self == .left ? "Left" : "Right" }
+    public var opposite: InjectionSide { self == .left ? .right : .left }
+
+    /// Alternates from the latest taken dose with a recorded side (by dose date); planned, skipped and
+    /// unknown-side historical doses are ignored. With no recorded side, starts on `startOn`.
+    public static func suggestedNext(in doses: [DoseEntry], startOn: InjectionSide = .right) -> InjectionSide {
+        let latest = doses.filter { $0.status == .taken && $0.side != nil }.max { $0.date < $1.date }
+        return latest?.side?.opposite ?? startOn
+    }
+}
+
 public struct DoseEntry: Codable, Identifiable, Equatable, Sendable {
     public enum Status: String, Codable, CaseIterable, Sendable { case planned, taken, skipped }
     public var id = UUID()
@@ -77,9 +90,12 @@ public struct DoseEntry: Codable, Identifiable, Equatable, Sendable {
     public var concentration: Double?
     public var status: Status
     public var note: String
-    public init(date: Date, scheduledDate: Date? = nil, medication: String, milligrams: Double, concentration: Double? = nil, status: Status = .taken, note: String = "") {
+    /// Missing in older journals; synthesized Codable keeps it nil instead of inventing a side.
+    public var side: InjectionSide?
+    public init(date: Date, scheduledDate: Date? = nil, medication: String, milligrams: Double, concentration: Double? = nil, status: Status = .taken, note: String = "", side: InjectionSide? = nil) {
         self.date = date; self.scheduledDate = scheduledDate; self.medication = medication
         self.milligrams = milligrams; self.concentration = concentration; self.status = status; self.note = note
+        self.side = side
     }
     public func validate(now: Date) throws {
         guard milligrams.isFinite && (status == .skipped ? milligrams >= 0 : milligrams > 0),

@@ -22,6 +22,8 @@ Persist before publishing a successful edit. A failed load must never permit an 
 
 Validation belongs in the core and is enforced again at the write interface, even when the UI disables Save. Date-sensitive calculations receive `now`; charts and live counters share those same calculations. Display formatting must not become the format used for editable numeric values.
 
+Injection sides are optional on dose records: missing or null `side` decodes as unknown. The next side is the opposite of the latest known side by dose date; without one, it uses the journal's `injectionStartSide` preference (Right when absent). Editing an unknown dose leaves it unknown unless a side is chosen. Both fields are additive to version 1 of the local JSON format, so existing journals and device backups need no rewrite. Settings use the same atomic `Store.commit` path as doses. There is no separate export/import format, SwiftData store or CloudKit sync.
+
 ## Content growth
 
 Discover starts with bundled, original articles and recipes. Use stable content IDs, category, title, summary and structured article sections. Keep editorial content outside the health journal. Add a content-fetching adapter only when a real backend exists; preserve bundled content as an offline fallback. A CMS should deliver content, not executable screen layouts. Do not send personal tracking records to a content backend.

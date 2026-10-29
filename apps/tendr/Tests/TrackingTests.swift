@@ -281,6 +281,137 @@ final class TrackingTests: XCTestCase {
     }
 }
 
+final class InjectionSideTests: XCTestCase {
+    func testNoHistoryStartsOnRight() {
+        XCTAssertEqual(Journal().injectionStartSide, .right)
+        XCTAssertEqual(InjectionSide.suggestedNext(in: []), .right)
+    }
+
+    func testNoHistoryUsesStartOnLeft() {
+        XCTAssertEqual(InjectionSide.suggestedNext(in: [], startOn: .left), .left)
+    }
+
+    func testKnownSideSuggestsItsOppositeRegardlessOfPreference() {
+        let date = Date(timeIntervalSince1970: 1_000)
+        for side in InjectionSide.allCases {
+            let dose = DoseEntry(date: date, medication: "Example", milligrams: 0.5, side: side)
+            let expected: InjectionSide = side == .left ? .right : .left
+            for startOn in InjectionSide.allCases {
+                XCTAssertEqual(InjectionSide.suggestedNext(in: [dose], startOn: startOn), expected)
+            }
+        }
+    }
+
+    func testNewerUnknownSidesFallBackToLastKnownSide() {
+        let doses = [
+            DoseEntry(date: Date(timeIntervalSince1970: 4_000), medication: "Example", milligrams: 0.5),
+            DoseEntry(date: Date(timeIntervalSince1970: 3_000), medication: "Example", milligrams: 0.5),
+            DoseEntry(date: Date(timeIntervalSince1970: 2_000), medication: "Example", milligrams: 0.5, side: .right),
+            DoseEntry(date: Date(timeIntervalSince1970: 1_000), medication: "Example", milligrams: 0.5, side: .left)
+        ]
+        XCTAssertEqual(InjectionSide.suggestedNext(in: doses), .left)
+    }
+
+    func testSuggestionUsesDoseDateInsteadOfArrayOrScheduledOrder() {
+        let older = DoseEntry(date: Date(timeIntervalSince1970: 1_000), scheduledDate: Date(timeIntervalSince1970: 5_000), medication: "Example", milligrams: 0.5, side: .left)
+        let newest = DoseEntry(date: Date(timeIntervalSince1970: 3_000), scheduledDate: Date(timeIntervalSince1970: 500), medication: "Example", milligrams: 0.5, side: .right)
+        let middle = DoseEntry(date: Date(timeIntervalSince1970: 2_000), medication: "Example", milligrams: 0.5, side: .left)
+        for doses in [[older, newest, middle], [middle, newest, older], [newest, middle, older]] {
+            XCTAssertEqual(InjectionSide.suggestedNext(in: doses), .left)
+        }
+    }
+
+    func testPlannedAndSkippedDosesDoNotDriveTheSuggestion() {
+        let doses = [
+            DoseEntry(date: Date(timeIntervalSince1970: 1_000), medication: "Example", milligrams: 0.5, side: .left),
+            DoseEntry(date: Date(timeIntervalSince1970: 2_000), medication: "Example", milligrams: 0.5, status: .skipped, side: .left),
+            DoseEntry(date: Date(timeIntervalSince1970: 3_000), medication: "Example", milligrams: 0.5, status: .planned, side: .right)
+        ]
+        XCTAssertEqual(InjectionSide.suggestedNext(in: doses), .right)
+    }
+
+    func testAlternatesAcrossConsecutiveLogs() {
+        var doses: [DoseEntry] = []
+        var logged: [InjectionSide] = []
+        for day in 0..<4 {
+            let next = InjectionSide.suggestedNext(in: doses)
+            logged.append(next)
+            doses.append(DoseEntry(date: Date(timeIntervalSince1970: Double(day) * 86_400), medication: "Example", milligrams: 0.5, side: next))
+        }
+        XCTAssertEqual(logged, [.right, .left, .right, .left])
+    }
+
+    func testAllUnknownSidesUseStartOnPreference() {
+        let doses = [
+            DoseEntry(date: Date(timeIntervalSince1970: 1_000), medication: "Example", milligrams: 0.5),
+            DoseEntry(date: Date(timeIntervalSince1970: 2_000), medication: "Example", milligrams: 0.5)
+        ]
+        XCTAssertEqual(InjectionSide.suggestedNext(in: doses), .right)
+        XCTAssertEqual(InjectionSide.suggestedNext(in: doses, startOn: .left), .left)
+    }
+
+    func testLegacyJournalWithoutSidesLoadsAndPreservesHistoricalFieldsOnSave() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let file = JournalFile(url: directory.appendingPathComponent("journal.json"))
+        let legacy = Data(#"{"version":1,"medication":"Current medication","doses":[{"id":"11111111-1111-1111-1111-111111111111","date":1000,"scheduledDate":900,"medication":"Historical medication","milligrams":0.5,"concentration":5,"status":"taken","note":"Synthetic legacy record","vialID":"22222222-2222-2222-2222-222222222222","syringeUnits":10,"syringeUnitsPerML":100}]}"#.utf8)
+        try legacy.write(to: file.url)
+
+        var journal = try file.load()
+        let dose = try XCTUnwrap(journal.doses.first)
+        XCTAssertNil(dose.side)
+        XCTAssertEqual(journal.injectionStartSide, .right)
+        XCTAssertEqual(dose.id, UUID(uuidString: "11111111-1111-1111-1111-111111111111"))
+        XCTAssertEqual(dose.date, Date(timeIntervalSinceReferenceDate: 1_000))
+        XCTAssertEqual(dose.scheduledDate, Date(timeIntervalSinceReferenceDate: 900))
+        XCTAssertEqual(dose.medication, "Historical medication")
+        XCTAssertEqual(dose.milligrams, 0.5)
+        XCTAssertEqual(dose.concentration, 5)
+        XCTAssertEqual(dose.status, .taken)
+        XCTAssertEqual(dose.note, "Synthetic legacy record")
+        XCTAssertEqual(dose.vialID, UUID(uuidString: "22222222-2222-2222-2222-222222222222"))
+        XCTAssertEqual(dose.syringeUnits, 10)
+        XCTAssertEqual(dose.syringeUnitsPerML, 100)
+
+        journal.injectionStartSide = .left
+        try file.save(journal)
+        let reloaded = try file.load()
+        XCTAssertEqual(reloaded, journal)
+        XCTAssertEqual(reloaded.doses, [dose], "Changing the preference must not backfill historical sides")
+        XCTAssertEqual(reloaded.version, 1)
+    }
+
+    func testExplicitNullSideDecodesAsUnknown() throws {
+        let data = Data(#"{"id":"11111111-1111-1111-1111-111111111111","date":1000,"medication":"Example","milligrams":0.5,"status":"taken","note":"","side":null}"#.utf8)
+        let dose = try JSONDecoder().decode(DoseEntry.self, from: data)
+        XCTAssertNil(dose.side)
+    }
+
+    func testJournalRoundTripsBothSidesUnknownAndPreference() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = JournalFile(url: directory.appendingPathComponent("journal.json"))
+        var journal = Journal()
+        journal.injectionStartSide = .left
+        journal.doses = [
+            DoseEntry(date: Date(timeIntervalSince1970: 1_000), medication: "Example", milligrams: 0.5, side: .left),
+            DoseEntry(date: Date(timeIntervalSince1970: 2_000), medication: "Example", milligrams: 0.5, side: .right),
+            DoseEntry(date: Date(timeIntervalSince1970: 3_000), medication: "Example", milligrams: 0.5)
+        ]
+        try file.save(journal)
+        let reloaded = try file.load()
+        XCTAssertEqual(reloaded, journal)
+        XCTAssertEqual(InjectionSide.suggestedNext(in: reloaded.doses, startOn: reloaded.injectionStartSide), .left)
+
+        journal.doses[1].side = .left
+        try file.save(journal)
+        let edited = try file.load()
+        XCTAssertEqual(edited, journal)
+        XCTAssertEqual(InjectionSide.suggestedNext(in: edited.doses, startOn: edited.injectionStartSide), .right)
+    }
+}
+
 final class MedicationRateTests: XCTestCase {
     func testHalfLifeSlopeMatchesAnalyticDerivative() {
         let date = Date(timeIntervalSince1970: 1_700_000_000)

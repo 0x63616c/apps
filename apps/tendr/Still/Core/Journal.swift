@@ -11,6 +11,7 @@ public struct Journal: Codable, Equatable, Sendable {
     public var goal: WeightGoal?
     public var vials: [Vial] = []
     public var doseInputUnit: String?
+    public var injectionStartSide: InjectionSide = .right
     public var syringeUnitsPerML: Double?
     public var halfLifeDays: Double = 7
     public var medicationModel: MedicationModel?
@@ -28,7 +29,7 @@ public struct Journal: Codable, Equatable, Sendable {
     public var unit: WeightUnit = .lb
     public var schedule = DoseSchedule()
     public init() {}
-    private enum CodingKeys: String, CodingKey { case medicationModel, doseInputUnit, version, goal, vials, syringeUnitsPerML, halfLifeDays, appearance, weightTrend, healthKitWeightsEnabled, lastHealthKitSync, weightsStartAtFirstDose, weights, doses, medication, concentration, containerML, unit, schedule }
+    private enum CodingKeys: String, CodingKey { case medicationModel, doseInputUnit, injectionStartSide, version, goal, vials, syringeUnitsPerML, halfLifeDays, appearance, weightTrend, healthKitWeightsEnabled, lastHealthKitSync, weightsStartAtFirstDose, weights, doses, medication, concentration, containerML, unit, schedule }
     public init(from decoder: Decoder) throws {
         self.init()
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -36,6 +37,7 @@ public struct Journal: Codable, Equatable, Sendable {
         guard version == 1 else { throw TrackingError.invalidFile }
         medicationModel = try values.decodeIfPresent(MedicationModel.self, forKey: .medicationModel)
         doseInputUnit = try values.decodeIfPresent(String.self, forKey: .doseInputUnit)
+        injectionStartSide = try values.decodeIfPresent(InjectionSide.self, forKey: .injectionStartSide) ?? .right
         if let value = try values.decodeIfPresent(WeightGoal.self, forKey: .goal) { goal = value }
         if let value = try values.decodeIfPresent([Vial].self, forKey: .vials) { vials = value }
         if let value = try values.decodeIfPresent(Double.self, forKey: .syringeUnitsPerML) { syringeUnitsPerML = value }
