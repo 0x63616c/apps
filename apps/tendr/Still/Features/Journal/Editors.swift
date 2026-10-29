@@ -118,7 +118,7 @@ struct DoseEditor: View {
                         }
                     }
                     VStack(alignment: .leading, spacing: 16) {
-                        HStack {
+                        if status != .skipped { HStack {
                             Text("Injection site")
                             Spacer()
                             Picker("Injection site", selection: $side) {
@@ -127,7 +127,7 @@ struct DoseEditor: View {
                             }.pickerStyle(.menu).labelsHidden()
                                 .accessibilityValue(side?.title ?? "Unknown")
                                 .accessibilityIdentifier("injectionSidePicker")
-                        }
+                        } }
                         if entry == nil {
                             DatePicker("Taken at", selection: $date, in: ...Date())
                         } else {
@@ -152,8 +152,9 @@ struct DoseEditor: View {
                     if let entry {
                         amount = number(entry.syringeUnits ?? entry.milligrams, digits: 4); mode = entry.syringeUnits != nil ? "units" : "mg"
                         confirmedU100 = entry.syringeUnitsPerML == 100 || confirmedU100
-                        // Keep an unknown historical side unknown until the user chooses one.
-                        date = entry.date; status = entry.status; note = entry.note; vialID = entry.vialID; side = entry.side
+                        // A planned dose being logged gets the suggestion; an unknown historical side stays unknown until chosen.
+                        date = entry.date; status = entry.status; note = entry.note; vialID = entry.vialID
+                        side = entry.side ?? (entry.status == .planned ? InjectionSide.suggestedNext(in: store.journal.doses.filter { $0.id != entry.id }, startOn: store.journal.injectionStartSide) : nil)
                     } else {
                         vialID = store.journal.vials.sorted { $0.received > $1.received }.first?.id
                         mode = store.journal.doseInputUnit ?? (confirmedU100 && vialID != nil ? "units" : "mg")
@@ -183,7 +184,7 @@ struct DoseEditor: View {
     }
     func save() {
         guard let mg = milligrams else { return }
-        var updated = DoseEntry(date: date, scheduledDate: entry?.scheduledDate ?? scheduledDate, medication: entry?.medication ?? vial?.medication ?? store.journal.medication, milligrams: mg, concentration: concentration, status: status, note: note, side: side)
+        var updated = DoseEntry(date: date, scheduledDate: entry?.scheduledDate ?? scheduledDate, medication: entry?.medication ?? vial?.medication ?? store.journal.medication, milligrams: mg, concentration: concentration, status: status, note: note, side: status == .skipped ? nil : side)
         if let entry { updated.id = entry.id }
         updated.vialID = vialID
         if mode == "units" && status != .skipped { updated.syringeUnits = parse(amount); updated.syringeUnitsPerML = 100 }

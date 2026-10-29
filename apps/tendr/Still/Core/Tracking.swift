@@ -69,9 +69,10 @@ public enum InjectionSide: String, Codable, CaseIterable, Sendable {
     public var title: String { self == .left ? "Left" : "Right" }
     public var opposite: InjectionSide { self == .left ? .right : .left }
 
-    /// Uses the latest recorded side by dose date, skipping unknown historical sides.
+    /// Alternates from the latest taken dose with a recorded side (by dose date); planned, skipped and
+    /// unknown-side historical doses are ignored. With no recorded side, starts on `startOn`.
     public static func suggestedNext(in doses: [DoseEntry], startOn: InjectionSide = .right) -> InjectionSide {
-        let latest = doses.filter { $0.side != nil }.max { $0.date < $1.date }
+        let latest = doses.filter { $0.status == .taken && $0.side != nil }.max { $0.date < $1.date }
         return latest?.side?.opposite ?? startOn
     }
 }

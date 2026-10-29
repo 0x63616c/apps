@@ -321,6 +321,26 @@ final class InjectionSideTests: XCTestCase {
         }
     }
 
+    func testPlannedAndSkippedDosesDoNotDriveTheSuggestion() {
+        let doses = [
+            DoseEntry(date: Date(timeIntervalSince1970: 1_000), medication: "Example", milligrams: 0.5, side: .left),
+            DoseEntry(date: Date(timeIntervalSince1970: 2_000), medication: "Example", milligrams: 0.5, status: .skipped, side: .left),
+            DoseEntry(date: Date(timeIntervalSince1970: 3_000), medication: "Example", milligrams: 0.5, status: .planned, side: .right)
+        ]
+        XCTAssertEqual(InjectionSide.suggestedNext(in: doses), .right)
+    }
+
+    func testAlternatesAcrossConsecutiveLogs() {
+        var doses: [DoseEntry] = []
+        var logged: [InjectionSide] = []
+        for day in 0..<4 {
+            let next = InjectionSide.suggestedNext(in: doses)
+            logged.append(next)
+            doses.append(DoseEntry(date: Date(timeIntervalSince1970: Double(day) * 86_400), medication: "Example", milligrams: 0.5, side: next))
+        }
+        XCTAssertEqual(logged, [.right, .left, .right, .left])
+    }
+
     func testAllUnknownSidesUseStartOnPreference() {
         let doses = [
             DoseEntry(date: Date(timeIntervalSince1970: 1_000), medication: "Example", milligrams: 0.5),
