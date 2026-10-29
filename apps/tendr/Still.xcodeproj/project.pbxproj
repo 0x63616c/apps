@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		D00100000000000000000003 /* DuoScreenshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00100000000000000000004 /* DuoScreenshotTests.swift */; };
 		D00100000000000000000005 /* PRScreenshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00100000000000000000006 /* PRScreenshotTests.swift */; };
-		D00100000000000000000007 /* RowOptionScreenshots.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00100000000000000000008 /* RowOptionScreenshots.swift */; };
 		D00100000000000000000001 /* TendrLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00100000000000000000002 /* TendrLayout.swift */; };
 		01A20BFD238D2EFD9811910E /* Journal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033134A7B3BB4B6F478EA308 /* Journal.swift */; };
 		0CEEFB81B4E1D90DA1ED2720 /* Tips.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9F64851BA5A10FBA84AE70F /* Tips.swift */; };
@@ -55,7 +54,6 @@
 /* Begin PBXFileReference section */
 		D00100000000000000000004 /* DuoScreenshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuoScreenshotTests.swift; sourceTree = "<group>"; };
 		D00100000000000000000006 /* PRScreenshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PRScreenshotTests.swift; sourceTree = "<group>"; };
-		D00100000000000000000008 /* RowOptionScreenshots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RowOptionScreenshots.swift; sourceTree = "<group>"; };
 		D00100000000000000000002 /* TendrLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TendrLayout.swift; sourceTree = "<group>"; };
 		033134A7B3BB4B6F478EA308 /* Journal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Journal.swift; sourceTree = "<group>"; };
 		03E0EFE505FE380DEF4BEB01 /* HealthKitWeightStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitWeightStore.swift; sourceTree = "<group>"; };
@@ -199,7 +197,6 @@
 				465396C3C4C01BE553B940BC /* PolishScreenshots.swift */,
 				D00100000000000000000004 /* DuoScreenshotTests.swift */,
 				D00100000000000000000006 /* PRScreenshotTests.swift */,
-				D00100000000000000000008 /* RowOptionScreenshots.swift */,
 				8050AA757F821DD957ED59C6 /* ScreenshotTests.swift */,
 				76AB8C929B38B5C4144D9B93 /* StillUITests.swift */,
 				88CF7E20C755A7CBDE3CF517 /* TipJarTests.swift */,
@@ -375,7 +372,6 @@
 				7A5EBAAD1DCBE8F3AE838370 /* PolishScreenshots.swift in Sources */,
 				D00100000000000000000003 /* DuoScreenshotTests.swift in Sources */,
 				D00100000000000000000005 /* PRScreenshotTests.swift in Sources */,
-				D00100000000000000000007 /* RowOptionScreenshots.swift in Sources */,
 				B31D5DCD2FC6FAA369F6FB0C /* ScreenshotTests.swift in Sources */,
 				1878A28B539F99DD562844CC /* StillUITests.swift in Sources */,
 				B59452CFE6181914227E1047 /* TipJarTests.swift in Sources */,
