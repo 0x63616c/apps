@@ -9,6 +9,43 @@ final class DuoScreenshotTests: XCTestCase {
     }
     private var canFold: Bool { ProcessInfo.processInfo.environment["DUO_CAN_FOLD"] == "1" }
 
+    /// APP-3: inspect before touching the bar, since interaction masked the bug.
+    @MainActor func testPhoneTabLabelsSurviveActivationAndSelection() throws {
+        continueAfterFailure = false
+        if canFold { try request("pose", name: "outer") }
+        XCUIDevice.shared.orientation = .portrait
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let app = launchFixture()
+        assertPhoneTabs(in: app, checkpoint: "launch")
+
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 5))
+        app.activate()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 5))
+        assertPhoneTabs(in: app, checkpoint: "reactivation")
+
+        for section in ["Treatment", "Progress", "Journal", "Settings", "Home"] {
+            app.tabBars.buttons[section].tap()
+            XCTAssertTrue(app.tabBars.buttons[section].isSelected)
+            assertPhoneTabs(in: app, checkpoint: "selected \(section)")
+        }
+    }
+
+    @MainActor private func assertPhoneTabs(in app: XCUIApplication, checkpoint: String) {
+        for section in ["Home", "Treatment", "Progress", "Journal", "Settings"] {
+            let button = app.tabBars.buttons[section]
+            XCTAssertTrue(button.waitForExistence(timeout: 5), "Missing \(section) at \(checkpoint)")
+            XCTAssertEqual(button.label, section)
+            XCTAssertTrue(button.isHittable, "Unreachable \(section) at \(checkpoint)")
+        }
+        // Accessibility titles can survive a missing rendered title. Keep visual
+        // evidence as well; these assertions alone cannot prove glyph visibility.
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "APP-3 tab labels: \(checkpoint)"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
     @MainActor func testMainScreens() throws {
         continueAfterFailure = false
         defer { XCUIDevice.shared.orientation = .portrait }
