@@ -72,7 +72,7 @@ struct JournalView: View {
             switch entry {
             case .dose(let e):
                 Image(systemName: e.status == .taken ? "checkmark.circle.fill" : e.status == .skipped ? "minus.circle" : "circle.dashed").foregroundStyle(e.status == .taken ? Theme.pine : Color.secondary).font(.title2)
-                details(title: e.status == .skipped ? "Skipped · \(e.medication)" : "\(number(e.milligrams, digits: 3)) mg · \(e.medication)", subtitle: e.status.rawValue.capitalized, note: e.note)
+                details(title: e.status == .skipped ? "Skipped · \(e.medication)" : "\(number(e.milligrams, digits: 3)) mg · \(e.medication)", subtitle: e.status.rawValue.capitalized, note: e.note, side: e.side)
             case .weight(let e):
                 Image(systemName: "scalemass.fill").foregroundStyle(Theme.weight).font(.title2)
                 details(title: "\(number(store.journal.unit.display(e.kilograms))) \(store.journal.unit.symbol)", subtitle: e.healthKitID == nil ? (e.date > Date() ? "Planned weight" : "Weight") : "Apple Health · \(e.sourceName ?? "Imported")", note: e.note)
@@ -81,9 +81,15 @@ struct JournalView: View {
             Text(entry.date, format: .dateTime.hour().minute()).font(.caption2).foregroundStyle(.secondary)
         }.padding(.vertical, 8).contentShape(Rectangle())
     }
-    private func details(title: String, subtitle: String, note: String) -> some View {
+    private func details(title: String, subtitle: String, note: String, side: InjectionSide? = nil) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+                if let side {
+                    Text(side.abbreviation).font(.caption).foregroundStyle(.secondary)
+                        .accessibilityLabel(side.accessibilityName)
+                }
+            }
             Text(subtitle).font(.caption).foregroundStyle(.secondary)
             if !note.isEmpty {
                 Text(note).font(.caption).foregroundStyle(.secondary).lineLimit(3).accessibilityIdentifier("journalNote")
