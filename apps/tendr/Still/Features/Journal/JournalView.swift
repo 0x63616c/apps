@@ -67,29 +67,23 @@ struct JournalView: View {
     private func edit(_ entry: HistoryEntry) {
         switch entry { case .weight(let e): weight = e; case .dose(let e): dose = e }
     }
-    private func row(_ entry: HistoryEntry) -> some View {
-        HStack(spacing: 14) {
-            switch entry {
-            case .dose(let e):
-                Image(systemName: e.status == .taken ? "checkmark.circle.fill" : e.status == .skipped ? "minus.circle" : "circle.dashed").foregroundStyle(e.status == .taken ? Theme.pine : Color.secondary).font(.title2)
-                details(title: e.status == .skipped ? "Skipped · \(e.medication)" : "\(number(e.milligrams, digits: 3)) mg · \(e.medication)", subtitle: e.status.rawValue.capitalized, note: e.note, side: e.side)
-            case .weight(let e):
+    @ViewBuilder private func row(_ entry: HistoryEntry) -> some View {
+        switch entry {
+        case .dose(let e):
+            JournalDoseRow(entry: e).padding(.vertical, 8).contentShape(Rectangle())
+        case .weight(let e):
+            HStack(spacing: 14) {
                 Image(systemName: "scalemass.fill").foregroundStyle(Theme.weight).font(.title2)
                 details(title: "\(number(store.journal.unit.display(e.kilograms))) \(store.journal.unit.symbol)", subtitle: e.healthKitID == nil ? (e.date > Date() ? "Planned weight" : "Weight") : "Apple Health · \(e.sourceName ?? "Imported")", note: e.note)
-            }
-            Spacer(minLength: 4)
-            Text(entry.date, format: .dateTime.hour().minute()).font(.caption2).foregroundStyle(.secondary)
-        }.padding(.vertical, 8).contentShape(Rectangle())
+                Spacer(minLength: 4)
+                Text(e.date, format: .dateTime.hour().minute()).font(.caption2).foregroundStyle(.secondary)
+            }.padding(.vertical, 8).contentShape(Rectangle())
+        }
     }
-    private func details(title: String, subtitle: String, note: String, side: InjectionSide? = nil) -> some View {
+
+    private func details(title: String, subtitle: String, note: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
-                if let side {
-                    Text(side.abbreviation).font(.caption).foregroundStyle(.secondary)
-                        .accessibilityLabel(side.accessibilityName)
-                }
-            }
+            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
             Text(subtitle).font(.caption).foregroundStyle(.secondary)
             if !note.isEmpty {
                 Text(note).font(.caption).foregroundStyle(.secondary).lineLimit(3).accessibilityIdentifier("journalNote")
@@ -237,5 +231,39 @@ struct PrivacyView: View {
             }
             if FeatureFlags.assistantPreview { Section("Assistant") { Text("The assistant is a coming-soon preview. No chat service is connected and no journal data is sent to AI.") } }
         }.navigationTitle("Privacy & About").navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// A Journal dose row: a checkmark, "7.5 mg · Medication" with the time underneath, and a trailing
+/// "Left"/"Right" chip when the injection side is known. No "Taken" label: a journal entry is taken
+/// unless marked otherwise.
+struct JournalDoseRow: View {
+    let entry: DoseEntry
+
+    var body: some View {
+        let e = entry
+        let skipped = e.status == .skipped
+        HStack(spacing: 14) {
+            Image(systemName: skipped ? "minus.circle" : "checkmark.circle.fill")
+                .font(.title2).foregroundStyle(skipped ? Color.secondary : Theme.pine)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("\(skipped ? "Skipped" : "\(number(e.milligrams, digits: 3)) mg") · \(e.medication)")
+                    .font(.subheadline.weight(.semibold))
+                (Text(e.status == .planned ? "Planned · " : "") + Text(e.date, format: .dateTime.hour().minute()))
+                    .font(.caption).foregroundStyle(.secondary)
+                if !e.note.isEmpty {
+                    Text(e.note).font(.caption).foregroundStyle(.secondary).lineLimit(3)
+                        .accessibilityIdentifier("journalNote").padding(.top, 2)
+                }
+            }
+            Spacer(minLength: 4)
+            if let side = e.side, !skipped {
+                Text(side == .left ? "Left" : "Right").font(.caption.weight(.semibold))
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(Theme.sage, in: Capsule())
+                    .accessibilityLabel(side.accessibilityName)
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 }

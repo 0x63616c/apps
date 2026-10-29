@@ -81,10 +81,6 @@ struct TreatmentView: View {
                                             .foregroundStyle(.secondary)
                                         Spacer()
                                         Text("\(number(dose.milligrams, digits: 3)) mg").monospacedDigit()
-                                        if let side = dose.side {
-                                            Text(side.abbreviation).font(.caption).foregroundStyle(.secondary)
-                                                .accessibilityLabel(side.accessibilityName)
-                                        }
                                     }.font(.subheadline)
                                 }
                                 if taken.count > 3 {
