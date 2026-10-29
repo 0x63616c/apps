@@ -1,4 +1,4 @@
-Closes APP-N
+Closes [APP-N](https://tickets.worldwidewebb.co/t/APP-N)
 
 <!-- Tickets (https://tickets.worldwidewebb.co) is the source of truth.
 Use a Conventional Commit title ending with [APP-N], e.g. feat(app): add thing [APP-12].
