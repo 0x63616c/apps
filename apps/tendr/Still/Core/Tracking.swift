@@ -67,6 +67,8 @@ public struct WeightSummary {
 public enum InjectionSide: String, Codable, CaseIterable, Sendable {
     case left, right
     public var title: String { self == .left ? "Left" : "Right" }
+    public var abbreviation: String { self == .left ? "L" : "R" }
+    public var accessibilityName: String { self == .left ? "Left side" : "Right side" }
     public var opposite: InjectionSide { self == .left ? .right : .left }
 
     /// Alternates from the latest taken dose with a recorded side (by dose date); planned, skipped and

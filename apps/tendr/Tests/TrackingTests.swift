@@ -282,6 +282,19 @@ final class TrackingTests: XCTestCase {
 }
 
 final class InjectionSideTests: XCTestCase {
+    func testSideAbbreviationsAndAccessibilityNames() {
+        XCTAssertEqual(InjectionSide.left.abbreviation, "L")
+        XCTAssertEqual(InjectionSide.right.abbreviation, "R")
+        XCTAssertEqual(InjectionSide.left.accessibilityName, "Left side")
+        XCTAssertEqual(InjectionSide.right.accessibilityName, "Right side")
+    }
+
+    func testDoseWithoutSideHasNoSideLabel() {
+        let dose = DoseEntry(date: Date(timeIntervalSince1970: 1_000), medication: "Example", milligrams: 0.5)
+        XCTAssertNil(dose.side?.abbreviation)
+        XCTAssertNil(dose.side?.accessibilityName)
+    }
+
     func testNoHistoryStartsOnRight() {
         XCTAssertEqual(Journal().injectionStartSide, .right)
         XCTAssertEqual(InjectionSide.suggestedNext(in: []), .right)
