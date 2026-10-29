@@ -20,7 +20,7 @@ extension Store {
         let notes = [0: "First dose. Nervous but fine.", 4: "First week at 5 mg.", 8: "First week at 7.5 mg.", 11: "Felt good. Easy walk after dinner."]
         journal.doses = amounts.enumerated().map { index, milligrams in
             let weeksAgo = amounts.count - 1 - index
-            return DoseEntry(date: day(-5 - weeksAgo * 7, hour: 8, minute: 30), medication: journal.medication, milligrams: milligrams, note: notes[index] ?? "")
+            return DoseEntry(date: day(-5 - weeksAgo * 7, hour: 8, minute: 30), medication: journal.medication, milligrams: milligrams, note: notes[index] ?? "", side: index.isMultiple(of: 2) ? .right : .left)
         }
         let firstDose = cal.startOfDay(for: journal.doses[0].date)
         journal.schedule.weekdays = [cal.component(.weekday, from: day(2, hour: 8, minute: 30))]

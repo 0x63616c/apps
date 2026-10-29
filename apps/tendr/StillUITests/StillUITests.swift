@@ -98,6 +98,94 @@ final class StillUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Dose entry"].exists)
         XCTAssertFalse(app.staticTexts["A space to talk"].exists)
     }
+    @MainActor func testInjectionSidePreferenceSelectionAndEditsSurviveRelaunch() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--uitest", "--reset-test-journal"]
+        app.launch()
+        XCTAssertTrue(app.buttons["logDose"].waitForExistence(timeout: 10))
+        app.buttons["logDose"].tap()
+        let picker = app.buttons["injectionSidePicker"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        XCTAssertEqual(picker.value as? String, "Right")
+        app.buttons["Cancel"].tap()
+
+        app.buttons["Settings"].tap()
+        app.buttons["injectionStartSidePicker"].tap()
+        app.buttons["Left"].tap()
+        app.terminate()
+        app.launchArguments = ["--uitest"]
+        app.launch()
+        XCTAssertTrue(app.buttons["logDose"].waitForExistence(timeout: 10))
+        app.buttons["logDose"].tap()
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        XCTAssertEqual(picker.value as? String, "Left", "Start on persists before any dose has a side")
+
+        // Override the suggestion, then verify both the saved side and next suggestion.
+        picker.tap()
+        app.buttons["Right"].tap()
+        let amount = app.textFields["doseAmount"]
+        amount.tap()
+        amount.typeText("0.5")
+        app.buttons["saveDose"].tap()
+        XCTAssertTrue(app.buttons["logDose"].waitForExistence(timeout: 5))
+        app.terminate()
+        app.launch()
+        app.buttons["Journal"].tap()
+        let record = app.staticTexts["0.5 mg · Semaglutide"]
+        XCTAssertTrue(record.waitForExistence(timeout: 5))
+        record.tap()
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        XCTAssertEqual(picker.value as? String, "Right")
+        picker.tap()
+        app.buttons["Left"].tap()
+        app.buttons["saveDose"].tap()
+        XCTAssertTrue(record.waitForExistence(timeout: 5))
+        app.terminate()
+        app.launch()
+        app.buttons["Journal"].tap()
+        XCTAssertTrue(record.waitForExistence(timeout: 5))
+        record.tap()
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        XCTAssertEqual(picker.value as? String, "Left", "Editing the side persists")
+        app.buttons["Cancel"].tap()
+        app.buttons["Home"].tap()
+        app.buttons["logDose"].tap()
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        XCTAssertEqual(picker.value as? String, "Right", "Known history overrides Start on Left")
+    }
+
+    @MainActor func testEditingAnUnknownDoseKeepsItsSideUnknownUnlessChosen() {
+        // Demo doses intentionally retain nil sides, like records from older app versions.
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo", "--uitest"]
+        app.launch()
+        app.buttons["Journal"].tap()
+        app.buttons["Doses"].tap()
+        let record = app.staticTexts["Easy morning. Keeping water close today."]
+        XCTAssertTrue(record.waitForExistence(timeout: 5))
+        record.tap()
+        let picker = app.buttons["injectionSidePicker"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        XCTAssertEqual(picker.value as? String, "Unknown")
+        app.buttons["saveDose"].tap()
+        XCTAssertTrue(record.waitForExistence(timeout: 5))
+        record.tap()
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        XCTAssertEqual(picker.value as? String, "Unknown", "Saving an old dose must not invent a side")
+        picker.tap()
+        app.buttons["Left"].tap()
+        app.buttons["saveDose"].tap()
+        XCTAssertTrue(record.waitForExistence(timeout: 5))
+        record.tap()
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        XCTAssertEqual(picker.value as? String, "Left")
+        app.buttons["Cancel"].tap()
+        app.buttons["Home"].tap()
+        app.buttons["logDose"].tap()
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        XCTAssertEqual(picker.value as? String, "Right")
+    }
+
     @MainActor func testReopeningKilogramWeightDoesNotConvertItAgain() {
         let app = XCUIApplication()
         app.launchArguments = ["--demo", "--uitest"]
