@@ -1,0 +1,63 @@
+name: Component snapshots
+
+# Renders component galleries (snapshot_test in apps/<app>/app.yml) to PNG with ImageRenderer on the
+# Mac runner and uploads them as an artifact. Dispatch on a design branch, optionally with one test.
+on:
+  pull_request:
+    paths:
+      - 'apps/*/StillSnapshots/**'
+      - scripts/capture-snapshots.sh
+      - .github/workflows/component-snapshots.yml
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'App folder under apps/'
+        type: string
+        default: tendr
+        required: true
+      test:
+        description: 'Optional -only-testing id, e.g. StillSnapshots/GallerySnapshots/testUpcomingDoseDates'
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: component-snapshots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  snapshots:
+    runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
+    timeout-minutes: 40
+    env:
+      DEVELOPER_DIR: ${{ vars.DEVELOPER_DIR || '/Applications/Xcode_26.2.app/Contents/Developer' }}
+      APP: ${{ inputs.app || 'tendr' }}
+      TEST_ID: ${{ inputs.test }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free simulator resources
+        # Cancelled runs can leave simulators booted on the self-hosted Mac; it takes one job at a time.
+        run: |
+          xcrun simctl shutdown all || true
+          echo "User processes: $(ps -U "$USER" | wc -l)"
+      - name: Render galleries
+        timeout-minutes: 30
+        run: scripts/capture-snapshots.sh "$APP" "build/snapshots/$APP" ${TEST_ID:+"$TEST_ID"}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: component-snapshots-${{ env.APP }}
+          path: build/snapshots/${{ env.APP }}
+          if-no-files-found: error
+      - name: Generated Xcode project
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodeproj-${{ env.APP }}
+          path: apps/${{ env.APP }}/*.xcodeproj/project.pbxproj
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: component-snapshots-results-${{ env.APP }}
+          path: build/snapshots-derived/${{ env.APP }}/snapshots.xcresult
