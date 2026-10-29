@@ -9,6 +9,7 @@
 - Shared release entrypoint: [fastlane/Fastfile](fastlane/Fastfile), configured by `apps/<app>/app.yml`. Read [docs/RELEASE.md](docs/RELEASE.md); `ruby scripts/check-release.rb` checks lane mechanics without Apple access. Uploading an IPA does not prove processing or internal-group availability.
 - Pages source is `site/<app>`; `site/.legacy-root` preserves Tendr’s live URLs until the rename described in [docs/RENAME.md](docs/RENAME.md). Do not publish or rename repositories without authorization.
 - Keep credentials, signing assets and personal health data out of commits. Use synthetic fixtures for screenshots.
+- UI PRs must show screenshots from fixture data: the PR screenshots workflow posts each app's `pr_screenshot_test` screens; extend that test (or attach fixture screenshots) when a PR changes other screens. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Maintaining this file
 
