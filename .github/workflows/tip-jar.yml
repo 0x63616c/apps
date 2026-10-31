@@ -74,3 +74,10 @@ jobs:
           name: tip-jar-results
           path: build/tip-jar/*.xcresult
           if-no-files-found: ignore
+      - name: Delete simulator
+        if: always()
+        run: |
+          if [ -n "${UDID:-}" ]; then
+            xcrun simctl shutdown "$UDID" || true
+            xcrun simctl delete "$UDID" || true
+          fi
