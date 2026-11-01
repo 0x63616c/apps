@@ -50,9 +50,12 @@ enum Enforcement {
             websites.formUnion(picks.webDomainTokens)
             domains.formUnion(lock.group.domains.map { WebDomain(domain: $0) })
         }
+        // Only ask for our own known identity; never resolve or inspect private selected identities.
+        let ownTokens: Set<ApplicationToken> = ManagedSettings.Application(bundleIdentifier: "com.calumwebb.blockr").token.map { Set([$0]) } ?? []
+        apps.subtract(ownTokens)
         guard apps.count <= 50, categories.count <= 50, websites.count <= 50, domains.count <= 50 else { throw BlockrError.unavailable("This combined lock exceeds the system’s 50-item limit.") }
         store.shield.applications = apps.isEmpty ? nil : apps
-        store.shield.applicationCategories = categories.isEmpty ? nil : .specific(categories)
+        store.shield.applicationCategories = categories.isEmpty ? nil : .specific(categories, except: ownTokens)
         store.shield.webDomains = websites.isEmpty ? nil : websites
         store.shield.webDomainCategories = categories.isEmpty ? nil : .specific(categories)
         store.webContent.blockedByFilter = domains.isEmpty ? nil : .specific(domains)
