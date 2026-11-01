@@ -176,6 +176,7 @@ struct LockView: View {
                                 }.buttonStyle(.plain)
                                     .background(duration == seconds ? Color.white : Color(white: 0.08), in: RoundedRectangle(cornerRadius: 14))
                                     .foregroundStyle(duration == seconds ? .black : .white)
+                                    .accessibilityLabel(Duration.seconds(seconds).formatted(.units(allowed: [.days, .hours, .minutes], width: .wide)))
                                     .accessibilityAddTraits(duration == seconds ? .isSelected : [])
                                     .contextMenu {
                                         if !Durations.presets.contains(seconds) {
@@ -272,6 +273,14 @@ struct ActiveView: View {
                     #endif
                 }
                 Text("Let the time pass.").font(.title3).padding(.top, 32)
+                DisclosureGroup("View group") {
+                    if !lock.group.categoryIntent.isEmpty { Text(lock.group.categoryIntent) }
+                    ForEach(lock.group.domains, id: \.self) { Text($0) }
+                    #if os(iOS)
+                    let selection = Enforcement.selection(model.state.snapshots[lock.id.uuidString])
+                    Text("\(selection.applicationTokens.count) apps · \(selection.categoryTokens.count) categories · \(selection.webDomainTokens.count) websites").foregroundStyle(.secondary)
+                    #endif
+                }
             }.padding(.vertical, 32)
             #if os(iOS)
             .familyActivityPicker(isPresented: $choosing, selection: $picks)

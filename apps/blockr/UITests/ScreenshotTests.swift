@@ -33,6 +33,7 @@ final class ScreenshotTests: XCTestCase {
         snap("confirm")
         app.buttons["Start lock"].tap()
         XCTAssertTrue(app.staticTexts["Let the time pass."].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["View group"].exists)
         snap("active")
         app.tabBars.buttons["Settings"].tap()
         XCTAssertTrue(app.staticTexts["Settings are locked until your lock ends."].waitForExistence(timeout: 5))
