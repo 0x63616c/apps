@@ -1,0 +1,946 @@
+[
+  {
+    "slug": "01-welcome",
+    "title": "Welcome",
+    "section": "Setup",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "02-permission",
+    "title": "Screen Time explanation",
+    "section": "Setup",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "03-permission-system",
+    "title": "System permission prompt",
+    "section": "Setup",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "04-permission-denied",
+    "title": "Permission declined",
+    "section": "Setup",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "05-permission-help",
+    "title": "Permission help",
+    "section": "Setup",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "05b-permission-error",
+    "title": "Permission service error",
+    "section": "Setup",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "06-home-empty",
+    "title": "Empty home",
+    "section": "Groups",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "07-home-groups",
+    "title": "Multiple groups",
+    "section": "Groups",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "08-home-ready",
+    "title": "Ready home",
+    "section": "Groups",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "09-group-new",
+    "title": "New group",
+    "section": "Groups",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "10-group-edit",
+    "title": "Edit group",
+    "section": "Groups",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "10b-websites",
+    "title": "Typed websites",
+    "section": "Groups",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "11-picker",
+    "title": "FamilyActivityPicker",
+    "section": "Groups",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "11b-picker-category",
+    "title": "Picker category selection",
+    "section": "Groups",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "11c-picker-empty",
+    "title": "Picker empty search",
+    "section": "Groups",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "12-group-category",
+    "title": "Group with category",
+    "section": "Groups",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "12b-group-error",
+    "title": "Group validation error",
+    "section": "Groups",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "12c-group-save-error",
+    "title": "Group save error",
+    "section": "Groups",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "12d-group-empty",
+    "title": "Group with selection cleared",
+    "section": "Groups",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "12e-draft-discard",
+    "title": "Discard group draft",
+    "section": "Groups",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "13-delete-confirm",
+    "title": "Delete group confirmation",
+    "section": "Groups",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "14b-group-select",
+    "title": "Choose a group",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "14-start",
+    "title": "Duration \u00b7 default 2h",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "15d-duration-hour",
+    "title": "One hour selected",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "15e-duration-four",
+    "title": "Four hours selected",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "15-duration-day",
+    "title": "One day selected",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "15b-duration-three",
+    "title": "Three days selected",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "15c-start-category",
+    "title": "Start category lock",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "16-custom",
+    "title": "Add duration \u00b7 + sheet",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "16a-custom-invalid",
+    "title": "Custom duration \u00b7 validation",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "16b-custom-review",
+    "title": "Saved 1.5h chip \u00b7 selected",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "16c-duration-edit",
+    "title": "Long-press saved chip \u00b7 edit or delete",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "16d-duration-change",
+    "title": "Edit saved duration \u00b7 sheet",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "17-confirm",
+    "title": "Confirm 2 hours",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "17-confirm-hour",
+    "title": "Confirm 1 hour",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "17-confirm-four",
+    "title": "Confirm 4 hours",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "17-confirm-day",
+    "title": "Confirm 24 hours",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "17-confirm-three",
+    "title": "Confirm 72 hours",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "17-confirm-custom",
+    "title": "Confirm 1 hour 30 minutes",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "17-confirm-category",
+    "title": "Confirm 2 hours",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "18-starting",
+    "title": "Applying lock",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "19-start-error",
+    "title": "Lock start failed",
+    "section": "Start lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "20-active",
+    "title": "Active lock home",
+    "section": "During a lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "21-group-locked",
+    "title": "Group read only",
+    "section": "During a lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "22-shield",
+    "title": "Shield \u00b7 time left",
+    "section": "During a lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "22b-shield-fallback",
+    "title": "Shield \u00b7 details unavailable",
+    "section": "During a lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "22c-shield-web",
+    "title": "Website shield",
+    "section": "During a lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "23-lock-ended",
+    "title": "Lock completed",
+    "section": "During a lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "23b-permission-lost",
+    "title": "Access lost during lock",
+    "section": "During a lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "23c-end-delayed",
+    "title": "End reconciliation",
+    "section": "During a lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "23d-end-error",
+    "title": "Protection refresh error",
+    "section": "During a lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "23e-reselect",
+    "title": "Reselect after permission restored",
+    "section": "During a lock",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "24-stats",
+    "title": "Stats overview",
+    "section": "Stats",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "25-stats-apps",
+    "title": "Per-app breakdown",
+    "section": "Stats",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "26-stats-empty",
+    "title": "Empty stats",
+    "section": "Stats",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "26b-stats-unavailable",
+    "title": "Usage unavailable",
+    "section": "Stats",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "26c-stats-loading",
+    "title": "Loading usage report",
+    "section": "Stats",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "27-stats-about",
+    "title": "Stats explanation",
+    "section": "Stats",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "28-settings-locked",
+    "title": "Settings during lock",
+    "section": "Settings",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "29-settings",
+    "title": "Settings unlocked",
+    "section": "Settings",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "30-data",
+    "title": "Local data",
+    "section": "Settings",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "30b-data-confirm",
+    "title": "Delete data confirmation",
+    "section": "Settings",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "30c-data-error",
+    "title": "Data deletion error",
+    "section": "Settings",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "31-about",
+    "title": "About",
+    "section": "Settings",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "32-sync-current",
+    "title": "iCloud \u00b7 Up to date",
+    "section": "iCloud \u00b7 iPhone",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "32-sync-syncing",
+    "title": "iCloud \u00b7 Syncing",
+    "section": "iCloud \u00b7 iPhone",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "32-sync-off",
+    "title": "iCloud \u00b7 iCloud is off",
+    "section": "iCloud \u00b7 iPhone",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "32-sync-signed-out",
+    "title": "iCloud \u00b7 Sign in to iCloud",
+    "section": "iCloud \u00b7 iPhone",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "32-sync-error",
+    "title": "iCloud \u00b7 Couldn\u2019t sync",
+    "section": "iCloud \u00b7 iPhone",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "32a-system-settings",
+    "title": "iCloud \u00b7 Settings handoff",
+    "section": "iCloud \u00b7 iPhone",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "33-remote-lock",
+    "title": "iCloud \u00b7 lock arrived from Mac",
+    "section": "iCloud \u00b7 iPhone",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "34-group-needs-picks",
+    "title": "iCloud \u00b7 group needs local apps",
+    "section": "iCloud \u00b7 iPhone",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "11d-local-picks",
+    "title": "Pick apps for synced group",
+    "section": "iCloud \u00b7 iPhone",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "35-group-ready",
+    "title": "iCloud \u00b7 local picks ready",
+    "section": "iCloud \u00b7 iPhone",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "36-remote-needs-picks",
+    "title": "iCloud \u00b7 remote lock needs apps",
+    "section": "iCloud \u00b7 iPhone",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "11e-remote-picks",
+    "title": "Choose apps for arriving lock",
+    "section": "iCloud \u00b7 iPhone",
+    "width": 402,
+    "height": 874,
+    "platform": "iPhone"
+  },
+  {
+    "slug": "40-menu-idle",
+    "title": "Menu bar \u00b7 start a lock",
+    "section": "Mac",
+    "width": 400,
+    "height": 460,
+    "platform": "Mac"
+  },
+  {
+    "slug": "40b-menu-active",
+    "title": "Menu bar \u00b7 active lock",
+    "section": "Mac",
+    "width": 400,
+    "height": 460,
+    "platform": "Mac"
+  },
+  {
+    "slug": "41-mac-groups",
+    "title": "Mac window \u00b7 groups",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "41b-mac-group",
+    "title": "Mac \u00b7 group editor",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "41c-mac-group-new",
+    "title": "Mac \u00b7 new website group",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "42-mac-start",
+    "title": "Mac \u00b7 start lock",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "42d-mac-hour",
+    "title": "Mac \u00b7 1h selected",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "42e-mac-four",
+    "title": "Mac \u00b7 4h selected",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "42f-mac-day",
+    "title": "Mac \u00b7 1d selected",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "42g-mac-three",
+    "title": "Mac \u00b7 3d selected",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "42b-mac-custom",
+    "title": "Mac \u00b7 custom duration sheet",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "42c-mac-saved",
+    "title": "Mac \u00b7 saved custom chip",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "42h-mac-edit",
+    "title": "Mac \u00b7 edit or delete saved duration",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "42j-mac-change",
+    "title": "Mac \u00b7 edit saved duration sheet",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "42a-mac-confirm",
+    "title": "Mac \u00b7 confirm 2h lock",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "42d-mac-hour-confirm",
+    "title": "Mac \u00b7 confirm 1h",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "42e-mac-four-confirm",
+    "title": "Mac \u00b7 confirm 4h",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "42f-mac-day-confirm",
+    "title": "Mac \u00b7 confirm 1d",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "42g-mac-three-confirm",
+    "title": "Mac \u00b7 confirm 3d",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "42i-mac-confirm-custom",
+    "title": "Mac \u00b7 confirm custom duration",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "43-mac-active",
+    "title": "Mac \u00b7 active website lock",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "43b-mac-group-locked",
+    "title": "Mac \u00b7 group during lock",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "44-mac-stats",
+    "title": "Mac window \u00b7 stats",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "45-mac-settings",
+    "title": "Mac window \u00b7 settings",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "45b-mac-settings-locked",
+    "title": "Mac \u00b7 settings during lock",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "45c-mac-about",
+    "title": "Mac \u00b7 About",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "46-mac-web-setup",
+    "title": "Mac \u00b7 website blocking needs setup",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "46a-mac-system-settings",
+    "title": "Mac \u00b7 system settings handoff",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "46b-mac-web-enabled",
+    "title": "Mac \u00b7 website blocking enabled",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "46c-mac-web-error",
+    "title": "Mac \u00b7 website blocking error",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "46d-mac-safari",
+    "title": "Mac \u00b7 Safari Screen Time manual setup",
+    "section": "Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "47-browser-blocked",
+    "title": "Browser \u00b7 blocked page concept",
+    "section": "Mac \u00b7 browsers",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "47b-browser-network-error",
+    "title": "Browser \u00b7 content filter fallback",
+    "section": "Mac \u00b7 browsers",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "50-mac-sync-current",
+    "title": "Mac iCloud \u00b7 Up to date",
+    "section": "iCloud \u00b7 Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "50-mac-sync-syncing",
+    "title": "Mac iCloud \u00b7 Syncing",
+    "section": "iCloud \u00b7 Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "50-mac-sync-off",
+    "title": "Mac iCloud \u00b7 iCloud is off",
+    "section": "iCloud \u00b7 Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "50-mac-sync-signed-out",
+    "title": "Mac iCloud \u00b7 Sign in to iCloud",
+    "section": "iCloud \u00b7 Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "50-mac-sync-error",
+    "title": "Mac iCloud \u00b7 Couldn\u2019t sync",
+    "section": "iCloud \u00b7 Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "50a-mac-icloud-settings",
+    "title": "Mac iCloud \u00b7 System Settings handoff",
+    "section": "iCloud \u00b7 Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "51-mac-remote-lock",
+    "title": "Mac iCloud \u00b7 lock arrived from iPhone",
+    "section": "iCloud \u00b7 Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "52-mac-needs-picks",
+    "title": "Mac iCloud \u00b7 group needs local setup",
+    "section": "iCloud \u00b7 Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  },
+  {
+    "slug": "53-mac-remote-unprotected",
+    "title": "Mac iCloud \u00b7 remote lock needs setup",
+    "section": "iCloud \u00b7 Mac",
+    "width": 1120,
+    "height": 760,
+    "platform": "Mac"
+  }
+]

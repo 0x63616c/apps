@@ -1,0 +1,599 @@
+{
+  "renderer": "Headless Chromium via Playwright",
+  "viewport": "Per screens.json: iPhone 402 × 874; Mac 1120 × 760; menu 400 × 460 CSS px",
+  "scale": 2,
+  "screenCount": 118,
+  "errors": [],
+  "findings": [
+    {
+      "screen": "01-welcome",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "02-permission",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "03-permission-system",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "04-permission-denied",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "05-permission-help",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "05b-permission-error",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "06-home-empty",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "07-home-groups",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "08-home-ready",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "09-group-new",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "10-group-edit",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "10b-websites",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "11-picker",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "11b-picker-category",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "11c-picker-empty",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "12-group-category",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "12b-group-error",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "12c-group-save-error",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "12d-group-empty",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "12e-draft-discard",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "13-delete-confirm",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "14b-group-select",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "14-start",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "15d-duration-hour",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "15e-duration-four",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "15-duration-day",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "15b-duration-three",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "15c-start-category",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "16-custom",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "16a-custom-invalid",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "16b-custom-review",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "16c-duration-edit",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "16d-duration-change",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "17-confirm",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "17-confirm-hour",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "17-confirm-four",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "17-confirm-day",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "17-confirm-three",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "17-confirm-custom",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "17-confirm-category",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "18-starting",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "19-start-error",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "20-active",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "21-group-locked",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "22-shield",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "22b-shield-fallback",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "22c-shield-web",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "23-lock-ended",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "23b-permission-lost",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "23c-end-delayed",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "23d-end-error",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "23e-reselect",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "24-stats",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "25-stats-apps",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "26-stats-empty",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "26b-stats-unavailable",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "26c-stats-loading",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "27-stats-about",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "28-settings-locked",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "29-settings",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "30-data",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "30b-data-confirm",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "30c-data-error",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "31-about",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "32-sync-current",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "32-sync-syncing",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "32-sync-off",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "32-sync-signed-out",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "32-sync-error",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "32a-system-settings",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "33-remote-lock",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "34-group-needs-picks",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "11d-local-picks",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "35-group-ready",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "36-remote-needs-picks",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "11e-remote-picks",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "40-menu-idle",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "40b-menu-active",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "41-mac-groups",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "41b-mac-group",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "41c-mac-group-new",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "42-mac-start",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "42d-mac-hour",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "42e-mac-four",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "42f-mac-day",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "42g-mac-three",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "42b-mac-custom",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "42c-mac-saved",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "42h-mac-edit",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "42j-mac-change",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "42a-mac-confirm",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "42d-mac-hour-confirm",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "42e-mac-four-confirm",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "42f-mac-day-confirm",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "42g-mac-three-confirm",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "42i-mac-confirm-custom",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "43-mac-active",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "43b-mac-group-locked",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "44-mac-stats",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "45-mac-settings",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "45b-mac-settings-locked",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "45c-mac-about",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "46-mac-web-setup",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "46a-mac-system-settings",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "46b-mac-web-enabled",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "46c-mac-web-error",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "46d-mac-safari",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "47-browser-blocked",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "47b-browser-network-error",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "50-mac-sync-current",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "50-mac-sync-syncing",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "50-mac-sync-off",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "50-mac-sync-signed-out",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "50-mac-sync-error",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "50a-mac-icloud-settings",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "51-mac-remote-lock",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "52-mac-needs-picks",
+      "overflow": false,
+      "outside": []
+    },
+    {
+      "screen": "53-mac-remote-unprotected",
+      "overflow": false,
+      "outside": []
+    }
+  ]
+}
