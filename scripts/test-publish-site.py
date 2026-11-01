@@ -29,7 +29,7 @@ with tempfile.TemporaryDirectory(prefix="publish-site-") as directory:
     (root / "scripts").mkdir()
     for script in ["build-site.sh", "publish-site.sh"]:
         shutil.copy2(ROOT / "scripts" / script, root / "scripts" / script)
-    write("site/.retain", "# Keep retired apps\n\nfestr\nshotr\nblockr\nmissing")
+    write("site/.retain", "# Keep retired apps\n\noldapp\nretired\nblockr\nmissing")
     write("site/.legacy-root", "blockr\n")
     write("site/README.md", "Private publishing instructions\n")
     write("site/blockr/index.html", "New Blockr\n")
@@ -40,7 +40,7 @@ with tempfile.TemporaryDirectory(prefix="publish-site-") as directory:
 
     git("checkout", "-qb", "gh-pages")
     git("rm", "-rq", ".")
-    for app in ["festr", "shotr", "blockr", "obsolete"]:
+    for app in ["oldapp", "retired", "blockr", "obsolete"]:
         write(f"{app}/index.html", f"Old {app}\n")
         write(f"{app}/support/index.html", f"Old {app} support\n")
     git("add", ".")
@@ -57,7 +57,7 @@ with tempfile.TemporaryDirectory(prefix="publish-site-") as directory:
         return git("show", f"origin/gh-pages:{path}")
 
     assert "Published site" in publish()
-    for app in ["festr", "shotr"]:
+    for app in ["oldapp", "retired"]:
         assert published(f"{app}/index.html") == f"Old {app}"
         assert published(f"{app}/support/index.html") == f"Old {app} support"
     assert published("blockr/index.html") == "New Blockr"
@@ -80,6 +80,6 @@ with tempfile.TemporaryDirectory(prefix="publish-site-") as directory:
     git("add", ".")
     git("commit", "-qm", "Remove retention fixture")
     assert "Published site" in publish()
-    assert git("ls-tree", "--name-only", "origin/gh-pages", "festr", "shotr") == ""
+    assert git("ls-tree", "--name-only", "origin/gh-pages", "oldapp", "retired") == ""
 
 print("Site publication checks passed (retention, build priority, removal, legacy root, no-op).")

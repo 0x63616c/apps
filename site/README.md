@@ -9,7 +9,7 @@ Plain HTML and CSS in the RDesign palette (black, white and graphite; card radiu
 
 The `Site` workflow runs `scripts/publish-site.sh` on merges to `main` that change the site or its publishing scripts. It can also be dispatched manually. It publishes to `gh-pages` and requests a Pages build; Pages serves the branch root at https://0x63616c.github.io/apps/. The script can still be run by hand when authorized.
 
-`site/.retain` lists directories (one name per line, with `#` comment lines) to restore from the previous `origin/gh-pages` tree when the build no longer produces them. Freshly built directories always take priority. Festr and Shotr stay live this way after their sources are removed; remove their retained names only with Calum's OK.
+`site/.retain` lists directories (one name per line, with `#` comment lines) to restore from the previous `origin/gh-pages` tree when the build no longer produces them. Freshly built directories always take priority. Remove retained names only with Calum's OK.
 
 `site/.legacy-root` mirrors one app at the site root. It keeps Tendr's original URLs (`/tendr/`, `/tendr/privacy/`, `/tendr/support/`) working while this repository is still called `tendr`. Remove it as part of the rename in `docs/RENAME.md`.
 
