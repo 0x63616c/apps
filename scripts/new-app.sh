@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Scaffolds a new -r app from templates/new-app.
 #   scripts/new-app.sh <Name> <bundle-suffix>
-#   scripts/new-app.sh Festr festr      → apps/festr, bundle ID com.calumwebb.festr, site/festr
+#   scripts/new-app.sh Samplr samplr      → apps/samplr, bundle ID com.calumwebb.samplr, site/samplr
 #
 # Creates the XcodeGen project (RDesign, launch screen, placeholder icon, Home and Settings with
 # privacy and support links, a screenshot UI test), apps/<app>/app.yml for fastlane and CI,
@@ -14,7 +14,7 @@ fail() { printf 'error: %s\n' "$*" >&2; exit 1; }
 raw=${1:-}
 suffix=${2:-}
 [[ -n "$raw" && -n "$suffix" ]] || fail "usage: scripts/new-app.sh <Name> <bundle-suffix>"
-[[ "$raw" =~ ^[A-Za-z][A-Za-z0-9]*$ ]] || fail "Name must be letters and digits, starting with a letter (for example Festr)"
+[[ "$raw" =~ ^[A-Za-z][A-Za-z0-9]*$ ]] || fail "Name must be letters and digits, starting with a letter (for example Samplr)"
 [[ "$suffix" =~ ^[a-z0-9][a-z0-9.-]*$ ]] || fail "Bundle suffix must be lowercase letters, digits, dots or hyphens"
 
 name="$(printf '%s' "${raw:0:1}" | tr '[:lower:]' '[:upper:]')${raw:1}"

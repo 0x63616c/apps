@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Imports an existing app repository into apps/<slug> with its full history (docs/IMPORT.md).
 #   scripts/import-app.sh <owner/repo> <slug> [--branch main] [--move <path>=<dest>]...
-#   scripts/import-app.sh 0x63616c/shots shotr
-#   scripts/import-app.sh 0x63616c/festr festr --move admin=web/festr-admin
+#   scripts/import-app.sh 0x63616c/tendr tendr
+#   scripts/import-app.sh owner/repo samplr --move admin=web/samplr-admin
 #
 # With git-filter-repo installed (brew install git-filter-repo) the imported history is rewritten
 # into apps/<slug>/, so `git log -- apps/<slug>/<file>` reaches the original first commit. Without

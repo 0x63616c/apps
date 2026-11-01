@@ -211,7 +211,7 @@ class DuoCapabilitiesTests(unittest.TestCase):
                 {"name": "Tendr Duo Screenshots", "udid": "stale-booted", "state": "Booted", "isAvailable": True},
                 {"name": "Tendr Screenshots", "udid": "other-capture", "state": "Booted", "isAvailable": True},
                 {"name": "Personal Tendr Duo Screenshots", "udid": "personal", "state": "Booted", "isAvailable": True},
-                {"name": "Festr Duo Screenshots", "udid": "other-app", "state": "Booted", "isAvailable": True},
+                {"name": "Blockr Duo Screenshots", "udid": "other-app", "state": "Booted", "isAvailable": True},
             ],
             "mock.ios26": [
                 {"name": "Tendr Duo Screenshots old-run", "udid": "stale-shutdown", "state": "Shutdown", "isAvailable": False},
