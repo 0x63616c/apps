@@ -63,6 +63,7 @@ represented as a working system shield or a signed Mac filter.
 - Removed the group-editor website footer, restored compact Stats rows with definitions in an optional disclosure, and made locked Settings a compact read-only screen. Corrected Mac active title and menu timer; added remote-origin state, disabled unavailable sync, and fixed unnecessary local-picks prompt on website-only groups.
 - Restored the duration screen’s six-chip preset row, removed decorative marketing content, added the end-time preview and fixed the Review action at the bottom. Custom editor now scrolls with the keyboard and large text. Added fixture coverage for save/edit/delete and selected-preset fallback.
 - Added the active lock’s read-only group disclosure and full-unit duration accessibility labels, preserving selected traits and avoiding second-by-second timer announcements.
+- Made Mac confirmation explicitly website-only, removed provisioning jargon from unavailable-filter copy, moved routine sync details into disclosure and reset details into its confirmation.
 - Extended fixture UI screenshots with locked Settings and a reset-disabled assertion.
 
 ## Checks and evidence

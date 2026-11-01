@@ -102,7 +102,7 @@ struct MacFilterSetupView: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack { Text("Website protection"); Spacer(); Text(filter.label).foregroundStyle(.secondary) }
             if filter.status == .unavailable {
-                Text("This build needs signed Mac filter profiles before timed website protection can be enabled.").foregroundStyle(.secondary)
+                Text("Timed website protection is unavailable in this build.").foregroundStyle(.secondary)
             } else if filter.status != .enabled {
                 if case .error(let reason) = filter.status { Text(reason).foregroundStyle(.secondary) }
                 Text("Approve Blockr in General → Login Items & Extensions → Network Extensions, then approve website filtering.").foregroundStyle(.secondary)

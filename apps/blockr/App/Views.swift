@@ -218,7 +218,11 @@ struct LockView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     Text("Ready to lock?").font(.largeTitle.weight(.semibold))
                     Text(group.name).font(.title2)
+                    #if os(macOS)
+                    Text("Websites only on this Mac").foregroundStyle(.secondary)
+                    #else
                     Text(group.categoryIntent.isEmpty ? "Your selections on this device" : group.categoryIntent).foregroundStyle(.secondary)
+                    #endif
                     Text(Durations.label(duration)).font(.system(size: 56, weight: .medium)).monospacedDigit()
                     Text("Until \(Date().addingTimeInterval(Double(duration)).formatted(date: .abbreviated, time: .shortened))").foregroundStyle(.secondary)
                     Text("No cancelling once started.")

@@ -49,7 +49,9 @@ struct SettingsView: View {
                     if let last = model.state.lastSync { Text("Last synced \(last.formatted(date: .abbreviated, time: .shortened))").foregroundStyle(.secondary) }
                     Toggle("Sync with iCloud", isOn: Binding(get: { model.state.syncEnabled }, set: { enabled in model.perform { try model.mutate { state in try state.replica.requireEditable(at: Date()); state.syncEnabled = enabled } } })).disabled(model.locked || model.syncStatus == .unavailable)
                     Button("Retry sync") { Task { await model.synchronize() } }.frame(minHeight: 44)
-                    Text("App picks stay on each device. A device needs its own setup and a connection to receive a lock. Offline devices cannot start it immediately.").foregroundStyle(.secondary)
+                    DisclosureGroup("About sync") {
+                        Text("App picks stay on each device. A device needs its own setup and a connection to receive a lock. Offline devices cannot start it immediately.").foregroundStyle(.secondary)
+                    }
                     Divider()
                     #if os(iOS)
                     HStack { Text("Screen Time"); Spacer(); Text(model.authorized ? "Allowed" : "Needs access").foregroundStyle(.secondary) }
@@ -61,7 +63,6 @@ struct SettingsView: View {
                     Divider()
                     Text("Data").font(.title2.weight(.medium))
                     Button("Reset this device", role: .destructive) { reset = true }.disabled(model.locked)
-                    Text("Removes local groups, picks and stats. Synced groups may return. No iCloud records are deleted.").foregroundStyle(.secondary)
                     Divider()
                     Text("Blockr").font(.title2.weight(.medium))
                     Link("Privacy policy", destination: URL(string: "https://0x63616c.github.io/apps/blockr/privacy/")!).frame(minHeight: 44)
@@ -79,7 +80,7 @@ struct SettingsView: View {
                 } }
             }
             Button("Keep data", role: .cancel) {}
-        }
+        } message: { Text("Removes local groups, picks and stats. Synced groups may return. No iCloud records are deleted.") }
     }
     @ViewBuilder private var lockedContents: some View {
         Label("Settings are locked until your lock ends.", systemImage: "lock").foregroundStyle(.secondary)
