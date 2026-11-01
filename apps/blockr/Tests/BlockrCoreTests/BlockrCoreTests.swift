@@ -181,4 +181,30 @@ final class BlockrCoreTests: XCTestCase {
         XCTAssertNil(replica.shieldLock(at: now, receipts: receipts) { _ in false })
     }
 
+    func testInstallationReservationRejectsConcurrentStartAndPreservesIdentity() throws {
+        let lockID = UUID(), attempt = UUID()
+        let pending = try Receipt.beginInstallation(lockID: lockID, previous: nil, id: attempt, at: now)
+        XCTAssertThrowsError(try Receipt.beginInstallation(lockID: lockID, previous: pending, id: UUID(), at: now))
+        let active = pending.updating(coverage: .active, at: now)
+        XCTAssertFalse(pending.hasInstalledCoverage)
+        XCTAssertTrue(active.hasInstalledCoverage)
+        let partial = pending.updating(coverage: .partial, at: now)
+        XCTAssertTrue(try Receipt.beginInstallation(lockID: lockID, previous: partial, id: UUID(), at: now).hasInstalledCoverage)
+        XCTAssertEqual(active.installationID, attempt)
+        XCTAssertThrowsError(try Receipt.beginInstallation(lockID: lockID, previous: active, id: UUID(), at: now))
+        let failed = pending.updating(coverage: .failed, at: now)
+        let replacement = try Receipt.beginInstallation(lockID: lockID, previous: failed, id: UUID(), at: now)
+        XCTAssertNotEqual(replacement.installationID, attempt)
+        XCTAssertTrue(replacement.interruptionObserved)
+    }
+    func testStartupRecoveryWaitsForLeaseAndLegacyReceiptsDecode() throws {
+        let pending = try Receipt.beginInstallation(lockID: UUID(), previous: nil, id: UUID(), at: now)
+        XCTAssertFalse(pending.installationNeedsRecovery(at: now.addingTimeInterval(59)))
+        XCTAssertTrue(pending.installationNeedsRecovery(at: now.addingTimeInterval(60)))
+        XCTAssertFalse(pending.updating(coverage: .active, at: now).installationNeedsRecovery(at: now.addingTimeInterval(120)))
+        let legacy = Receipt(lockID: UUID(), coverage: .partial, acknowledged: now)
+        let data = try JSONEncoder().encode(legacy)
+        XCTAssertFalse(String(decoding: data, as: UTF8.self).contains("installationID"))
+        XCTAssertNil(try JSONDecoder().decode(Receipt.self, from: data).installationID)
+    }
 }

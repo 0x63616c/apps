@@ -110,15 +110,30 @@ public struct Receipt: Codable, Equatable, Sendable {
     public var acknowledged: Date
     public var interruptionObserved: Bool
     public var appliedAt: Date?
-    public init(lockID: UUID, coverage: Coverage, acknowledged: Date, interruptionObserved: Bool = false, appliedAt: Date? = nil) {
+    public var installationID: UUID?
+    public init(lockID: UUID, coverage: Coverage, acknowledged: Date, interruptionObserved: Bool = false, appliedAt: Date? = nil, installationID: UUID? = nil) {
         self.lockID = lockID; self.coverage = coverage; self.acknowledged = acknowledged
-        self.interruptionObserved = interruptionObserved; self.appliedAt = appliedAt
+        self.interruptionObserved = interruptionObserved; self.appliedAt = appliedAt; self.installationID = installationID
+    }
+    /// Reserve under coordinated storage before calling the external monitoring service.
+    public static func beginInstallation(lockID: UUID, previous: Receipt?, id: UUID, at now: Date) throws -> Receipt {
+        guard previous?.coverage != .pending, previous?.coverage != .active else { throw BlockrError.locked }
+        return Receipt(lockID: lockID, coverage: .pending, acknowledged: now,
+            interruptionObserved: previous?.interruptionObserved == true || previous.map { [.partial, .failed, .interrupted].contains($0.coverage) } == true,
+            appliedAt: previous?.appliedAt, installationID: id)
+    }
+    public var hasInstalledCoverage: Bool {
+        [.active, .partial].contains(coverage) || (coverage == .pending && appliedAt != nil)
+    }
+    /// Expiry of a startup lease permits crash recovery without racing a live initial call.
+    public func installationNeedsRecovery(at now: Date) -> Bool {
+        coverage == .pending && now.timeIntervalSince(acknowledged) >= 60
     }
     /// Once coverage is incomplete, a later repair cannot establish uninterrupted protection.
     public func updating(coverage: Coverage, at now: Date) -> Receipt {
         Receipt(lockID: lockID, coverage: coverage, acknowledged: now,
             interruptionObserved: interruptionObserved || [.partial, .failed, .interrupted].contains(self.coverage) || [.partial, .failed, .interrupted].contains(coverage),
-            appliedAt: appliedAt ?? ([.active, .partial].contains(coverage) ? now : nil))
+            appliedAt: appliedAt ?? ([.active, .partial].contains(coverage) ? now : nil), installationID: installationID)
     }
 }
 public struct Replica: Codable, Equatable, Sendable {
@@ -133,7 +148,7 @@ public struct Replica: Codable, Equatable, Sendable {
     /// The caller matches opaque local selections without exporting them into the replica.
     public func shieldLock(at now: Date, receipts: [Receipt], matches: (Lock) -> Bool) -> Lock? {
         liveLocks(at: now).last { lock in
-            receipts.contains { $0.lockID == lock.id && [.active, .partial, .pending].contains($0.coverage) } && matches(lock)
+            receipts.contains { $0.lockID == lock.id && $0.hasInstalledCoverage } && matches(lock)
         }
     }
     public func nextRevision(device: String) throws -> Revision {

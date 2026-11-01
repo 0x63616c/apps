@@ -81,7 +81,9 @@ import FamilyControls
             do {
                 try Enforcement.start(lock, picks: picks, remote: true)
             } catch {
-                try? Storage.update { $0.receipt(lock, .failed) }
+                try? Storage.update { state in
+                    if !state.receipts.contains(where: { $0.lockID == lock.id }) { state.receipt(lock, .failed) }
+                }
                 self.error = "Lock from another device: \(error.localizedDescription)"
             }
         }
