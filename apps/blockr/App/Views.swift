@@ -174,6 +174,10 @@ struct LockView: View {
 }
 struct ActiveView: View {
     @EnvironmentObject private var model: Model
+    #if os(iOS)
+    @State private var choosing = false
+    @State private var picks = FamilyActivitySelection()
+    #endif
     var body: some View {
         if let lock = model.live.last {
             VStack(alignment: .leading, spacing: 24) {
@@ -187,9 +191,26 @@ struct ActiveView: View {
                 }
                 if model.live.contains(where: { item in !model.state.receipts.contains { $0.lockID == item.id && $0.coverage == .active } }) {
                     Text("This device needs local setup. Locks on your other devices keep running.").foregroundStyle(.secondary)
+                    #if os(iOS)
+                    if !model.authorized {
+                        Button("Allow Screen Time") { Task { await model.authorize() } }
+                    } else {
+                        Button("Pick apps on this device") { choosing = true }
+                    }
+                    #endif
                 }
                 Text("Let the time pass.").font(.title3).padding(.top, 32)
             }.padding(.vertical, 32)
+            #if os(iOS)
+            .familyActivityPicker(isPresented: $choosing, selection: $picks)
+            .onChange(of: choosing) { old, new in
+                if old && !new && Enforcement.hasSelection(picks) {
+                    for item in model.live where !model.state.receipts.contains(where: { $0.lockID == item.id && $0.coverage == .active }) {
+                        model.setUpLocalProtection(item, picks: picks)
+                    }
+                }
+            }
+            #endif
         }
     }
 }

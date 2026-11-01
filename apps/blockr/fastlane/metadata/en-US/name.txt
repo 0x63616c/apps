@@ -1,1 +1,1 @@
-Blockr
+Blockr: App Blocker

@@ -10,9 +10,9 @@ import UIKit
     @UIApplicationDelegateAdaptor(PushDelegate.self) var delegate
     #endif
     var body: some Scene {
-        WindowGroup { RootView().environmentObject(model).preferredColorScheme(.dark).tint(.white) }
         #if os(macOS)
-        .defaultSize(width: 1000, height: 720)
+        WindowGroup { RootView().environmentObject(model).preferredColorScheme(.dark).tint(.white) }
+            .defaultSize(width: 1000, height: 720)
         MenuBarExtra("Blockr", systemImage: model.locked ? "lock.fill" : "lock.shield") {
             VStack(alignment: .leading, spacing: 20) {
                 Text("Blockr").font(.title2.weight(.semibold))
@@ -24,6 +24,8 @@ import UIKit
                 OpenWindowButton()
             }.padding(24).frame(width: 340).background(.black)
         }.menuBarExtraStyle(.window)
+        #else
+        WindowGroup { RootView().environmentObject(model).preferredColorScheme(.dark).tint(.white) }
         #endif
     }
 }

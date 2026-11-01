@@ -1,1 +1,1 @@
-replace,these,keywords
+focus,screen time,app blocker,website blocker,lock

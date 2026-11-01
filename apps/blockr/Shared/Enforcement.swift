@@ -58,7 +58,9 @@ enum Enforcement {
             let authorized = AuthorizationCenter.shared.authorizationStatus == .approved
             for lock in state.replica.locks {
                 guard let receipt = state.receipts.first(where: { $0.lockID == lock.id }) else { continue }
-                if lock.end <= now && [.active, .partial, .pending].contains(receipt.coverage) {
+                if lock.isLive(at: now) && receipt.coverage == .pending && !center.activities.contains(DeviceActivityName(lock.id.uuidString)) {
+                    state.receipt(lock, .failed, now: now)
+                } else if lock.end <= now && [.active, .partial, .pending].contains(receipt.coverage) {
                     // Only a monitor boundary provides completion evidence. A late launch cannot prove continuity.
                     state.receipt(lock, authorized && monitorEnded == lock.id && receipt.coverage == .active ? .completed : .interrupted, now: now)
                     center.stopMonitoring([DeviceActivityName(lock.id.uuidString)])

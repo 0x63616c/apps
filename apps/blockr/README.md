@@ -1,0 +1,48 @@
+# Blockr
+
+Universal SwiftUI product: iPhone/iPad app, native Mac companion and menu-bar extra. APP-14; visual reference is APP-13 pass 2. No design source is copied into this change.
+
+## Build and test
+
+```sh
+swift test --package-path apps/blockr --jobs 4
+(cd apps/blockr && xcodegen generate)
+xcodebuild -project apps/blockr/Blockr.xcodeproj -scheme Blockr -sdk iphonesimulator -jobs 4 CODE_SIGNING_ALLOWED=NO build
+xcodebuild -project apps/blockr/Blockr.xcodeproj -scheme BlockrMac -destination 'generic/platform=macOS' -jobs 4 CODE_SIGNING_ALLOWED=NO build
+```
+
+Requires Xcode 27 at `/Applications/Xcode-27.0.app`. CI builds both platforms, runs the package tests and publishes the generated project as `blockr-generated-project`. The checked-in project is obtained from that artifact on Linux. `BlockrUITests/ScreenshotTests` uses `--screenshots` synthetic fixtures, without requesting authorization or writing shared state; capture via the shared PR screenshots workflow. No fixture code runs without that launch argument.
+
+## iOS protection
+
+Individual Screen Time authorization, local FamilyActivityPicker, Blockr's named ManagedSettings store, and three extensions. App/category/domain tokens are Codable device-local data only. Typed hostnames use `webContent.blockedByFilter`; tokens use system shields. Typed-host filtering uses the system web-content policy, so not every browser/transport is guaranteed. Blockr never resolves opaque app identities. System selections may include Blockr itself inside a category; the public API provides no supported way to inspect an opaque token and remove Blockr by bundle ID. Test this on a signed device; avoid selecting Blockr.
+
+An immutable local selection snapshot and lock intent are persisted before scheduling. The monitor is registered before restrictions apply. All mutations recheck active locks in shared storage. No early unlock, pause, cancellation or lock extension. The monitor recomputes the union of all remaining sessions and restores Blockr's previous app-removal restriction only when none remain. Launch reconciles expired sessions without assuming continuity. A failed local application remains visibly unprotected and can be repaired with local picks. Overlapping remote sessions retain independent original expiry times. Less than 15 minutes remaining cannot be installed as a new Screen Time interval and is reported as unprotected, never silently extended.
+
+Shared JSON uses NSFileCoordinator and atomic replacement across processes. Decode failures never reset the file to an unlocked state. Monitor and shield processes cannot display storage errors; the app surfaces them on next launch. DeviceActivity callbacks may be late. Revoking access, uninstalling the app, OS scheduling and clock changes can interrupt protection. Blockr makes no tamper-proof guarantee.
+
+Stats count shield **button taps**, not every blocked-open attempt. Successful local monitor completions with no observed interruption count toward unbroken locks. Expired sessions recovered only on app launch are conservatively interrupted. Time locked deduplicates overlaps. Estimated time saved and per-app usage show unavailable: no fabricated baseline or export of protected report data. A privacy-preserving DeviceActivityReport baseline needs a separate signed-device feasibility check.
+
+## iCloud switch and deployment
+
+The default Release and Debug entitlements **do not contain iCloud or push entitlements**. `BLOCKR_CLOUD_ENABLED=NO` prevents even constructing CKContainer: invoking it without entitlements can terminate an app. UI shows “iCloud unavailable.” Local locks work independently. The iCloud container is not assumed to exist.
+
+Before enabling, confirm/create `iCloud.com.calumwebb.blockr` in the Apple developer account, attach it to **both** platform app identifiers for `com.calumwebb.blockr`, enable CloudKit, and regenerate their profiles. Add app-only entitlements `com.apple.developer.icloud-container-identifiers = [iCloud.com.calumwebb.blockr]`, `com.apple.developer.icloud-services = [CloudKit]`, and the appropriate `aps-environment` / `com.apple.developer.aps-environment` push entitlement for each platform. Set `BLOCKR_CLOUD_ENABLED=YES` only for configurations with those entitlements. Do not add iCloud to the Screen Time extensions. Deploy the `BlockrReplica` record type with a `payload` Bytes field to the production schema before TestFlight. Verify account status, custom zone and silent pushes with two signed devices. CI's default signing does not opt in until this is confirmed.
+
+Sync uses a custom private zone with one versioned Codable metadata replica record. Persistent local state is the outbound queue. Each round fetches the latest change tag, deterministically merges logical revisions/tombstones and immutable lock unions, then conditionally saves; server-record conflicts refetch and merge up to four times. Failed sends preserve local intent for retry. Paginated record queries and indexes are unnecessary for this single-record schema. A 900 KB guard preserves local data and reports an error before CloudKit's record-size limit; an eventual large-history migration should split immutable sessions into records. Sync runs on foreground entry, every 30 seconds while open and best-effort iOS zone-subscription silent pushes. Offline/force-quit devices cannot be promised immediate enforcement. Up to date describes a completed local exchange, not acknowledgement by every device.
+
+Only group UUID/name, normalized typed hosts, user-entered category hint, custom durations/tombstones and immutable lock schedules cross devices. Picks, tokens, attempts and enforcement receipts do not. Group edits/deletions cannot alter a lock snapshot. An account change detaches previous metadata and picks; already active local locks continue to expiry and are excluded from the new account's outbound payload. Local reset is blocked during any lock, removes only the local replica and does not remotely delete records.
+
+## Native macOS limits
+
+Native macOS has no public FamilyActivityPicker, AuthorizationCenter, ManagedSettingsStore or DeviceActivityCenter support. Catalyst availability does not establish native Mac support. Mac is a group/schedule/stats companion and explicitly shows “Not protected here” for remote sessions. Local Mac starts fail with an actionable explanation; it never starts a pretend protected timer. Desktop app blocking, app-removal prevention and Screen Time usage are unavailable. Manual macOS Screen Time website rules are separate and cannot be installed or expired by Blockr.
+
+**Timed Mac website enforcement is not shipped in this build.** An App Store-compatible Network Extension must be a signed `NEFilterDataProvider` system extension, separately entitled and user approved. A usable release needs a Blockr-only provider identifier (proposed `com.calumwebb.blockr.ContentFilter`), registered App Group association, Network Extension distribution entitlement, system-extension install entitlement on the Mac app, Mac provisioning, activation/configuration and provider-health verification. An unsigned filter or merely opening Settings is not proof of protection. No hosts-file changes, TLS interception, private APIs or fabricated “enabled” state are used. This requires signed-device testing across Safari/Chromium/Firefox, existing connections, QUIC/DoH, private browsing, VPN coexistence, expiry with Blockr quit and provider restart before claiming coverage. See Apple's [content filter sample](https://developer.apple.com/documentation/networkextension/filtering-network-traffic) and [deployment technote](https://developer.apple.com/documentation/technotes/tn3134-network-extension-provider-deployment).
+
+Mac TestFlight is not configured. The shared lane uploads iOS only; Mac distribution needs verified Mac App Store application profiles/certificate compatibility and a Mac Installer Distribution certificate for packaging. No certificate was created, revoked or reconfigured.
+
+## Release
+
+Four existing Blockr bundle IDs only, family-controls plus app group. `register_ids app:blockr` enables FAMILY_CONTROLS using the ASC API without touching other apps. Blockr App Store profiles regenerate (`force: true`) on each CI release so approved entitlements are included. An actual archive validates that all four profiles carry Family Controls. TestFlight uses app 6829523373, group Internal. CI waits for processing and group distribution; upload alone is insufficient evidence.
+
+Required signed-device acceptance: authorization deny/retry/revoke, picker/category overlap, typed domains/subdomains, shield fallback and Close actions, app-removal restoration, monitor expiry with app killed/rebooted, concurrent remote locks, short remaining intervals and account switch/offline conflict recovery. Simulator and package tests cannot prove these system behaviors.

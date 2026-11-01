@@ -150,6 +150,16 @@ import FamilyControls
         }
         await synchronize()
     }
+    #if os(iOS)
+    func setUpLocalProtection(_ lock: Lock, picks: FamilyActivitySelection) {
+        perform {
+            // Local readiness may be repaired during a remote lock; group metadata remains immutable.
+            let data = try JSONEncoder().encode(picks)
+            try mutate { $0.selections[lock.group.id.uuidString] = data }
+            try Enforcement.start(lock, picks: picks, remote: true)
+        }
+    }
+    #endif
     var syncLabel: String {
         switch syncStatus {
         case .unavailable: "iCloud unavailable"
