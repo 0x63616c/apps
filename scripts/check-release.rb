@@ -7,6 +7,8 @@ ENV.delete("ASC_KEY_PATH")
 ENV["RUNNER_TEMP"] = File.expand_path("../build", __dir__)
 
 module UI
+  def self.important(message); end
+
   def self.user_error!(message)
     raise message
   end
