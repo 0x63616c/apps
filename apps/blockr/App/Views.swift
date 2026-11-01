@@ -115,6 +115,11 @@ struct HomeLockView: View {
                                 VStack(alignment: .leading, spacing: 6) {
                                     Text(group.name).font(.title3.weight(.medium))
                                     Text(group.categoryIntent.isEmpty ? "\(group.domains.count) websites" : group.categoryIntent).foregroundStyle(.secondary)
+                                    #if os(iOS)
+                                    if group.requiresLocalSelection && model.state.selections[group.id.uuidString] == nil {
+                                        Text("Pick apps on this device").font(.callout).foregroundStyle(.secondary)
+                                    }
+                                    #endif
                                 }
                                 Spacer()
                                 Image(systemName: "chevron.right").foregroundStyle(.secondary)
@@ -217,8 +222,8 @@ struct LockView: View {
                     primary(model.isStarting ? "Starting…" : "Start lock") {
                         Task { await model.start(group: group, seconds: duration); confirm = false; if model.locked { dismiss() } }
                     }.disabled(model.isStarting || model.locked)
-                    Button("Keep choosing") { confirm = false }.frame(maxWidth: .infinity, minHeight: 44)
-                }.padding(32).frame(minWidth: 300).presentationDetents([.large])
+                    Button("Keep choosing") { confirm = false }.frame(maxWidth: .infinity, minHeight: 44).disabled(model.isStarting)
+                }.padding(32).frame(minWidth: 300).presentationDetents([.large]).interactiveDismissDisabled(model.isStarting)
             }
         }
     }
