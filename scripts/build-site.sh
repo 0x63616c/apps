@@ -12,5 +12,5 @@ if [[ -f site/.legacy-root ]]; then
   [[ "$legacy" =~ ^[a-z][a-z0-9-]*$ && -d "site/$legacy" ]] || { echo "Invalid legacy app" >&2; exit 1; }
   cp -R "site/$legacy/." "$out/"
 fi
-rm -f "$out/README.md" "$out/.legacy-root"
+rm -f "$out/README.md" "$out/.legacy-root" "$out/.retain"
 touch "$out/.nojekyll"
