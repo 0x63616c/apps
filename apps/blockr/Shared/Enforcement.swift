@@ -16,11 +16,10 @@ enum Enforcement {
     static func hasSelection(_ value: FamilyActivitySelection) -> Bool {
         !value.applicationTokens.isEmpty || !value.categoryTokens.isEmpty || !value.webDomainTokens.isEmpty
     }
-    static func schedule(_ lock: Lock, now: Date) throws {
-        guard lock.remaining(at: now) >= 900 else { throw BlockrError.unavailable("Less than 15 minutes remain. This device cannot install that lock.") }
-        let calendar = Calendar.current
-        let components: Set<Calendar.Component> = [.era, .year, .month, .day, .hour, .minute, .second]
-        let schedule = DeviceActivitySchedule(intervalStart: calendar.dateComponents(components, from: now), intervalEnd: calendar.dateComponents(components, from: lock.end), repeats: false)
+    static func schedule(_ lock: Lock, now: Date, remote: Bool) throws {
+        if remote && lock.remaining(at: now) < 900 { throw BlockrError.unavailable("Less than 15 minutes remain. This device cannot install that lock.") }
+        let interval = try Scheduling.components(start: remote ? now : lock.start, end: lock.end)
+        let schedule = DeviceActivitySchedule(intervalStart: interval.start, intervalEnd: interval.end, repeats: false)
         try center.startMonitoring(DeviceActivityName(lock.id.uuidString), during: schedule)
     }
     static func apply(_ state: inout LocalState, now: Date) throws {
@@ -33,10 +32,16 @@ enum Enforcement {
             store.shield.webDomains = nil
             store.shield.webDomainCategories = nil
             store.webContent.blockedByFilter = nil
-            if let previous = state.previousDenyRemoval { store.application.denyAppRemoval = previous; state.previousDenyRemoval = nil }
+            if state.removalWasCaptured {
+                store.application.denyAppRemoval = state.previousDenyRemoval
+                state.previousDenyRemoval = nil; state.removalWasCaptured = false
+            }
             return
         }
-        if state.previousDenyRemoval == nil { state.previousDenyRemoval = store.application.denyAppRemoval ?? false }
+        if !state.removalWasCaptured {
+            state.previousDenyRemoval = store.application.denyAppRemoval
+            state.removalWasCaptured = true
+        }
         var apps = Set<ApplicationToken>(), categories = Set<ActivityCategoryToken>(), websites = Set<WebDomainToken>(), domains = Set<WebDomain>()
         for lock in live {
             let picks = selection(state.snapshots[lock.id.uuidString])
@@ -83,7 +88,7 @@ enum Enforcement {
             state.receipt(lock, .pending)
         }
         do {
-            try schedule(lock, now: Date())
+            try schedule(lock, now: Date(), remote: remote)
             try Storage.update { state in
                 try apply(&state, now: Date())
                 state.receipt(lock, lock.group.requiresLocalSelection && !hasSelection(picks) ? .partial : .active)

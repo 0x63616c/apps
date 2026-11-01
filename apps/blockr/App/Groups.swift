@@ -73,6 +73,7 @@ struct GroupEditor: View {
                 }
                 Section { TextField("example.com", text: $domains, axis: .vertical).lineLimit(3...8).autocorrectionDisabled() }
                     header: { Text("Websites") } footer: { Text("One hostname per line. No links or wildcards. Subdomains are included where the system supports them.") }
+                if let error = model.error { Section { Text(error).accessibilityLabel("Could not save: \(error)") } }
                 if model.locked { Text("A lock started. Changes are unavailable until it ends.") }
                 if group != nil { Section { Button("Delete group", role: .destructive) { deleting = true }.disabled(model.locked) } }
             }

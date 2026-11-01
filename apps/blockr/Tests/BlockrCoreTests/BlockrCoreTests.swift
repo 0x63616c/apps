@@ -26,6 +26,16 @@ final class BlockrCoreTests: XCTestCase {
         XCTAssertFalse(lock.isLive(at: lock.start.addingTimeInterval(-1)))
         XCTAssertEqual(lock.remaining(at: lock.end.addingTimeInterval(10)), 0)
     }
+    func testScheduleUTCAndMinimumCustomDuration() throws {
+        let start = ISO8601DateFormatter().date(from: "2026-11-01T08:30:00Z")!
+        let end = start.addingTimeInterval(3600)
+        let interval = try Scheduling.components(start: start, end: end)
+        XCTAssertEqual(interval.start.timeZone?.secondsFromGMT(), 0)
+        XCTAssertEqual(interval.start.calendar?.date(from: interval.start), start)
+        XCTAssertEqual(interval.end.calendar?.date(from: interval.end), end)
+        XCTAssertNoThrow(try Scheduling.components(start: start, end: start.addingTimeInterval(900)))
+        XCTAssertThrowsError(try Scheduling.components(start: start, end: start.addingTimeInterval(899)))
+    }
     func testNames() throws {
         XCTAssertEqual(try Validation.name("  Deep work \n"), "Deep work")
         for value in [" ", String(repeating: "a", count: 41), "a\nb"] { XCTAssertThrowsError(try Validation.name(value)) }

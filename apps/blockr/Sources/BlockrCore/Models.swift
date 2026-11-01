@@ -175,3 +175,18 @@ public struct Statistics: Equatable, Sendable {
         streak = count
     }
 }
+
+/// UTC calendar components preserve elapsed-duration schedules across DST folds and timezone changes.
+public enum Scheduling {
+    public static func components(start: Date, end: Date) throws -> (start: DateComponents, end: DateComponents) {
+        guard (900...604800).contains(end.timeIntervalSince(start)) else { throw BlockrError.invalidDuration }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        func components(_ date: Date) -> DateComponents {
+            var result = calendar.dateComponents([.era, .year, .month, .day, .hour, .minute, .second], from: date)
+            result.calendar = calendar; result.timeZone = calendar.timeZone
+            return result
+        }
+        return (components(start), components(end))
+    }
+}

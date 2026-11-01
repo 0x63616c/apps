@@ -13,6 +13,7 @@ struct LocalState: Codable {
     var receipts: [Receipt] = []
     var attempts: [Attempt] = []
     var previousDenyRemoval: Bool?
+    var removalWasCaptured = false
     var detachedLockIDs: [UUID] = []
     var accountID: String?
     var accountHasBeenLinked = false
