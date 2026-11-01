@@ -141,9 +141,7 @@ struct HomeLockView: View {
             }
         }
         .sheet(isPresented: $editor) { GroupEditor(group: editing) }
-        .sheet(isPresented: $start) {
-            NavigationStack { LockView().toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { start = false } } } }
-        }
+        .navigationDestination(isPresented: $start) { LockView() }
     }
 }
 
@@ -151,9 +149,9 @@ struct LockView: View {
     @EnvironmentObject private var model: Model
     @State private var selectedGroup: UUID?
     @State private var duration = Durations.defaultValue
-    @State private var custom = false
+    private enum Modal: String, Identifiable { case custom, confirmation; var id: String { rawValue } }
+    @State private var modal: Modal?
     @State private var editingDuration: Int?
-    @State private var confirm = false
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         ScrollView {
@@ -181,17 +179,17 @@ struct LockView: View {
                                     .accessibilityAddTraits(duration == seconds ? .isSelected : [])
                                     .contextMenu {
                                         if !Durations.presets.contains(seconds) {
-                                            Button("Edit saved duration") { editingDuration = seconds; custom = true }
+                                            Button("Edit saved duration") { editingDuration = seconds; modal = .custom }
                                             Button("Delete duration", role: .destructive) { model.deleteDuration(seconds); if duration == seconds { duration = 7200 } }
                                         }
                                     }
                             }
-                            Button { editingDuration = nil; custom = true } label: { Image(systemName: "plus").frame(maxWidth: .infinity).frame(height: 48) }.buttonStyle(.bordered).accessibilityLabel("Add custom duration")
+                            Button { editingDuration = nil; modal = .custom } label: { Image(systemName: "plus").frame(maxWidth: .infinity).frame(height: 48) }.buttonStyle(.bordered).accessibilityLabel("Add custom duration")
                         }
                         if !model.state.replica.customDurations.isEmpty {
                             Menu("Edit saved duration") {
                                 ForEach(model.state.replica.customDurations.sorted(), id: \.self) { seconds in
-                                    Button(Durations.label(seconds)) { editingDuration = seconds; custom = true }
+                                    Button(Durations.label(seconds)) { editingDuration = seconds; modal = .custom }
                                 }
                             }.frame(minHeight: 44)
                         }
@@ -203,15 +201,15 @@ struct LockView: View {
                         #else
                         MacFilterSetupView(filter: model.filter)
                         #endif
-                        primary("Review lock") { confirm = true }.disabled(selectedGroup == nil || model.isStarting)
+                        primary("Review lock") { modal = .confirmation }.disabled(selectedGroup == nil || model.isStarting)
                     }
                 }
             }.padding(24).frame(maxWidth: 600)
         }.background(.black)
         .onAppear { if selectedGroup == nil { selectedGroup = model.groups.first?.id } }
-        .sheet(isPresented: $custom) { DurationEditor(selected: $duration, original: editingDuration) }
-        .sheet(isPresented: $confirm) {
-            if let group = model.groups.first(where: { $0.id == selectedGroup }) {
+        .sheet(item: $modal) { presented in
+            if presented == .custom { DurationEditor(selected: $duration, original: editingDuration) }
+            else if let group = model.groups.first(where: { $0.id == selectedGroup }) {
                 VStack(alignment: .leading, spacing: 24) {
                     Text("Ready to lock?").font(.largeTitle.weight(.semibold))
                     Text(group.name).font(.title2)
@@ -220,9 +218,15 @@ struct LockView: View {
                     Text("Until \(Date().addingTimeInterval(Double(duration)).formatted(date: .abbreviated, time: .shortened))").foregroundStyle(.secondary)
                     Text("No cancelling once started.")
                     primary(model.isStarting ? "Starting…" : "Start lock") {
-                        Task { await model.start(group: group, seconds: duration); confirm = false; if model.locked { dismiss() } }
+                        Task {
+                            await model.start(group: group, seconds: duration)
+                            modal = nil
+                            #if os(iOS)
+                            if model.locked { dismiss() }
+                            #endif
+                        }
                     }.disabled(model.isStarting || model.locked)
-                    Button("Keep choosing") { confirm = false }.frame(maxWidth: .infinity, minHeight: 44).disabled(model.isStarting)
+                    Button("Keep choosing") { modal = nil }.frame(maxWidth: .infinity, minHeight: 44).disabled(model.isStarting)
                 }.padding(32).frame(minWidth: 300).presentationDetents([.large]).interactiveDismissDisabled(model.isStarting)
             }
         }
