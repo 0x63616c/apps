@@ -14,6 +14,7 @@ src="$(git -C "$root" rev-parse --short HEAD)"
 tmp="$(mktemp -d)"
 trap 'git -C "$root" worktree remove --force "$tmp" >/dev/null 2>&1 || true' EXIT
 git -C "$root" fetch -q origin "+refs/heads/gh-pages:refs/remotes/origin/gh-pages" 2>/dev/null || true
+git -C "$root" worktree prune
 if git -C "$root" show-ref -q --verify refs/remotes/origin/gh-pages; then
   git -C "$root" worktree add -q -B gh-pages "$tmp" origin/gh-pages
 else
