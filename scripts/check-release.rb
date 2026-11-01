@@ -155,6 +155,14 @@ raise "global profile overrides widget" if build[:xcargs].include?("PROVISIONING
 raise "missing export profiles" unless build[:export_options][:provisioningProfiles].keys == profiles
 raise "wrong archive project" unless build[:project].end_with?("apps/festr/Festr.xcodeproj")
 
+# iPad multitasking requires all four orientations in the iOS app's generated Info.plist.
+blockr_spec = YAML.safe_load_file(File.expand_path("../apps/blockr/project.yml", __dir__))
+blockr_settings = blockr_spec.fetch("targets").fetch("Blockr").fetch("settings").fetch("base")
+orientations = %w[UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight]
+%w[INFOPLIST_KEY_UISupportedInterfaceOrientations INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad].each do |key|
+  raise "Blockr #{key} must support all orientations" unless blockr_settings.fetch(key).split == orientations
+end
+
 # Blockr regenerates all four profiles and verifies the managed entitlement before archive.
 check.calls.clear
 blockr_project = File.expand_path("../apps/blockr/Blockr.xcodeproj/project.pbxproj", __dir__)
