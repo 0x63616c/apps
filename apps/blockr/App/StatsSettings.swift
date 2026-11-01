@@ -44,9 +44,7 @@ struct SettingsView: View {
                 HStack { Text("Screen Time"); Spacer(); Text(model.authorized ? "Allowed" : "Needs access").foregroundStyle(.secondary) }
                 if !model.authorized { Button("Allow Screen Time") { Task { await model.authorize() } } }
                 #else
-                HStack { Text("Website protection"); Spacer(); Text("Needs setup").foregroundStyle(.secondary) }
-                Text("A signed content filter is required for timed website blocking. This build has no filter installed and cannot block Mac apps or websites.").foregroundStyle(.secondary)
-                Button("Open System Settings") { openSettings() }
+                MacFilterSetupView(filter: model.filter)
                 Text("Manual Screen Time website restrictions are separate from Blockr locks and do not expire with them.").foregroundStyle(.secondary)
                 #endif
                 Divider()

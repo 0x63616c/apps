@@ -21,6 +21,15 @@ signed_targets:
   DeviceActivityMonitor:
     bundle_id: com.calumwebb.blockr.DeviceActivityMonitor
     profile_name: Blockr DeviceActivityMonitor CI App Store
+macos_registration_targets:
+  BlockrMac:
+    bundle_id: com.calumwebb.blockr
+    macos: true
+    capabilities: [NETWORK_EXTENSIONS, SYSTEM_EXTENSION_INSTALL]
+  ContentFilter:
+    bundle_id: com.calumwebb.blockr.ContentFilter
+    macos: true
+    capabilities: [NETWORK_EXTENSIONS]
 family_controls: true
 regenerate_profiles: true
 beta_description: Choose apps and websites, then commit to a timed lock. Groups and custom durations with local Screen Time protection on iPhone and iPad. Mac companion with honest protection status.

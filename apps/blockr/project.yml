@@ -13,6 +13,7 @@ settings:
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     CODE_SIGN_STYLE: Automatic
     BLOCKR_CLOUD_ENABLED: 'NO'
+    BLOCKR_FILTER_ENABLED: 'NO'
 packages:
   BlockrCore:
     path: .
@@ -75,16 +76,45 @@ targets:
   BlockrMac:
     templates: [MainApp]
     platform: macOS
+    dependencies:
+      - target: ContentFilter
+        embed: true
+        codeSign: true
+        copy:
+          destination: wrapper
+          subpath: Contents/Library/SystemExtensions
     entitlements:
       path: App/BlockrMac.entitlements
       properties:
         com.apple.security.app-sandbox: true
         com.apple.security.network.client: true
+        com.apple.developer.system-extension.install: true
+        com.apple.developer.networking.networkextension: [content-filter-provider-systemextension]
         com.apple.security.application-groups: [group.com.calumwebb.blockr]
     settings:
       base:
         PRODUCT_NAME: Blockr
         ASSETCATALOG_COMPILER_APPICON_NAME: MacIcon
+        INFOPLIST_KEY_BlockrFilterEnabled: $(BLOCKR_FILTER_ENABLED)
+        INFOPLIST_KEY_NSSystemExtensionUsageDescription: Blockr filters selected websites during your timed locks.
+  ContentFilter:
+    type: system-extension
+    platform: macOS
+    sources: [ContentFilter, Shared]
+    dependencies:
+      - package: BlockrCore
+    entitlements:
+      path: ContentFilter/ContentFilter.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.developer.networking.networkextension: [content-filter-provider-systemextension]
+        com.apple.security.application-groups: [group.com.calumwebb.blockr]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.calumwebb.blockr.ContentFilter
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: ContentFilter/Info.plist
+        SKIP_INSTALL: YES
   ShieldConfiguration:
     templates: [ScreenTimeExtension]
   ShieldAction:

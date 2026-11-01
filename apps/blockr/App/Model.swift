@@ -12,16 +12,19 @@ import FamilyControls
     @Published var loaded = false
     @Published var isStarting = false
     let sync = CloudSync()
+    #if os(macOS)
+    let filter = MacFilter()
+    #endif
     let fixture = ProcessInfo.processInfo.arguments.contains("--screenshots")
     private var syncTicks = 0
     var live: [Lock] { state.replica.liveLocks(at: Date()) }
     var locked: Bool { !live.isEmpty }
-    var groups: [Group] { state.replica.visibleGroups }
+    var groups: [BlockrCore.Group] { state.replica.visibleGroups }
     init() {
         if fixture {
             state.onboardingComplete = true
             authorized = true
-            state.replica.groups = [Group(name: "Social", domains: ["example.com"], categoryIntent: "Social apps", revision: Revision(1, device: "fixture"))]
+            state.replica.groups = [BlockrCore.Group(name: "Social", domains: ["example.com"], categoryIntent: "Social apps", revision: Revision(1, device: "fixture"))]
             loaded = true
         } else { refresh() }
     }
@@ -35,6 +38,7 @@ import FamilyControls
     func refresh() {
         guard !fixture else { return }
         do {
+            if !loaded { try Storage.update { _ in } }
             #if os(iOS)
             try Enforcement.reconcile()
             authorized = AuthorizationCenter.shared.authorizationStatus == .approved
@@ -45,6 +49,9 @@ import FamilyControls
     }
     func tick() async {
         refresh()
+        #if os(macOS)
+        await refreshMacProtection()
+        #endif
         syncTicks += 1
         if syncTicks % 6 == 1 { await synchronize() }
     }
@@ -94,14 +101,19 @@ import FamilyControls
                 #else
                 guard !hosts.isEmpty || !intent.isEmpty else { throw BlockrError.emptySelection }
                 #endif
-                let group = Group(id: id ?? UUID(), name: name, domains: hosts, categoryIntent: intent, revision: state.replica.nextRevision(device: state.deviceID))
+                #if os(iOS)
+                let needsPicks = Enforcement.hasSelection(picks)
+                #else
+                let needsPicks = state.replica.groups.first(where: { $0.id == id })?.requiresLocalSelection ?? false
+                #endif
+                let group = BlockrCore.Group(id: id ?? UUID(), name: name, domains: hosts, categoryIntent: intent, requiresLocalSelection: needsPicks, revision: state.replica.nextRevision(device: state.deviceID))
                 state.replica.groups.removeAll { $0.id == group.id }
                 state.replica.groups.append(group)
                 state.selections[group.id.uuidString] = selection
             }
         }
     }
-    func deleteGroup(_ group: Group) {
+    func deleteGroup(_ group: BlockrCore.Group) {
         perform { try mutate { state in
             try state.replica.requireEditable(at: Date())
             var tombstone = group
@@ -136,22 +148,56 @@ import FamilyControls
             state.replica.durations.append(DurationPreference(seconds: seconds, revision: revision, deleted: true))
         } }
     }
-    func start(group: Group, seconds: Int) async {
+    func start(group: BlockrCore.Group, seconds: Int) async {
         guard !isStarting else { return }
         isStarting = true
         defer { isStarting = false }
+        #if os(macOS)
+        do {
+            await filter.refresh()
+            guard filter.status == .enabled else { throw BlockrError.unavailable("Set up website protection in Settings before starting a lock.") }
+            guard !group.domains.isEmpty else { throw BlockrError.unavailable("Add typed websites to this group. Mac app blocking is unavailable.") }
+            let lock = try Lock(group: group, start: Date(), duration: seconds, origin: state.deviceID)
+            try mutate { state in try state.replica.start(lock, at: Date()); state.receipt(lock, .pending) }
+            try await filter.confirm(lock.id)
+            try mutate { $0.receipt(lock, group.requiresLocalSelection ? .partial : .active) }
+        } catch { self.error = error.localizedDescription }
+        refresh()
+        #else
         perform {
             guard !locked else { throw BlockrError.locked }
             let lock = try Lock(group: group, start: Date(), duration: seconds, origin: state.deviceID)
             #if os(iOS)
             if fixture { try state.replica.start(lock, at: Date()); state.receipt(lock, .active) }
             else { try Enforcement.start(lock, picks: Enforcement.selection(state.selections[group.id.uuidString])) }
-            #else
-            throw BlockrError.unavailable("Timed website blocking needs a signed content filter. This build cannot protect this Mac.")
             #endif
         }
+        #endif
         await synchronize()
     }
+    #if os(macOS)
+    func refreshMacProtection() async {
+        await filter.refresh()
+        for lock in live {
+            if filter.status == .enabled, !lock.group.domains.isEmpty {
+                do {
+                    try await filter.confirm(lock.id)
+                    try mutate { $0.receipt(lock, lock.group.requiresLocalSelection ? .partial : .active) }
+                } catch { try? mutate { $0.receipt(lock, .interrupted) } }
+            } else if state.receipts.contains(where: { $0.lockID == lock.id && [.active, .partial].contains($0.coverage) }) {
+                try? mutate { $0.receipt(lock, .interrupted) }
+            }
+        }
+        for lock in state.replica.locks where lock.end <= Date() {
+            if let receipt = state.receipts.first(where: { $0.lockID == lock.id }), [.active, .partial, .pending].contains(receipt.coverage) {
+                // App relaunch/long suspension cannot establish uninterrupted filter service.
+                let continuous = filter.status == .enabled && receipt.coverage == .active && Date().timeIntervalSince(receipt.acknowledged) < 15
+                try? mutate { $0.receipt(lock, continuous ? .completed : .interrupted) }
+            }
+        }
+        refresh()
+    }
+    #endif
     #if os(iOS)
     func setUpLocalProtection(_ lock: Lock, picks: FamilyActivitySelection) {
         perform {

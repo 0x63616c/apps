@@ -7,8 +7,8 @@ import FamilyControls
 struct GroupsView: View {
     @EnvironmentObject private var model: Model
     @State private var editor = false
-    @State private var editing: Group?
-    @State private var deleting: Group?
+    @State private var editing: BlockrCore.Group?
+    @State private var deleting: BlockrCore.Group?
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -47,7 +47,7 @@ struct GroupsView: View {
 struct GroupEditor: View {
     @EnvironmentObject private var model: Model
     @Environment(\.dismiss) private var dismiss
-    var group: Group?
+    var group: BlockrCore.Group?
     @State private var name = ""
     @State private var intent = ""
     @State private var domains = ""

@@ -102,7 +102,7 @@ struct HomeLockView: View {
     @EnvironmentObject private var model: Model
     @State private var start = false
     @State private var editor = false
-    @State private var editing: Group?
+    @State private var editing: BlockrCore.Group?
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
@@ -200,8 +200,7 @@ struct LockView: View {
                             Button("Allow Screen Time") { Task { await model.authorize() } }
                         }
                         #else
-                        Text("Website protection unavailable on this Mac. Set up Screen Time manually in System Settings, or start a lock on your iPhone.").foregroundStyle(.secondary)
-                        Button("Open System Settings") { openSettings() }
+                        MacFilterSetupView(filter: model.filter)
                         #endif
                         primary("Review lock") { confirm = true }.disabled(selectedGroup == nil || model.isStarting)
                     }

@@ -77,10 +77,11 @@ public struct Group: Codable, Identifiable, Equatable, Sendable {
     public var name: String
     public var domains: [String]
     public var categoryIntent: String
+    public var requiresLocalSelection: Bool
     public var revision: Revision
     public var deleted: Bool
-    public init(id: UUID = UUID(), name: String, domains: [String] = [], categoryIntent: String = "", revision: Revision, deleted: Bool = false) {
-        self.id = id; self.name = name; self.domains = domains; self.categoryIntent = categoryIntent; self.revision = revision; self.deleted = deleted
+    public init(id: UUID = UUID(), name: String, domains: [String] = [], categoryIntent: String = "", requiresLocalSelection: Bool = false, revision: Revision, deleted: Bool = false) {
+        self.id = id; self.name = name; self.domains = domains; self.categoryIntent = categoryIntent; self.requiresLocalSelection = requiresLocalSelection; self.revision = revision; self.deleted = deleted
     }
 }
 public struct DurationPreference: Codable, Equatable, Sendable {

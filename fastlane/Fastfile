@@ -56,20 +56,31 @@ platform :ios do
     app = r_app(options)
     connect_api_key
     targets = app["signed_targets"] || { app["scheme"] => { "bundle_id" => app["bundle_id"] } }
+    if app["macos_registration_targets"]
+      UI.user_error!("Mac registration is limited to Blockr") unless app["bundle_id"] == "com.calumwebb.blockr"
+      targets = targets.merge(app["macos_registration_targets"])
+    end
     targets.each do |target, info|
       identifier = info.fetch("bundle_id")
       bundle = Spaceship::ConnectAPI::BundleId.find(identifier)
       if bundle
         UI.message("Bundle ID #{identifier} already registered")
       else
-        bundle = Spaceship::ConnectAPI::BundleId.create(name: "#{app['name']} #{target}", platform: "IOS", identifier: identifier)
+        bundle = Spaceship::ConnectAPI::BundleId.create(name: "#{app['name']} #{target}", platform: info["macos"] ? "MAC_OS" : "IOS", identifier: identifier)
         UI.success("Registered bundle ID #{identifier}")
       end
-      if app["family_controls"]
+      if app["family_controls"] && !info["macos"]
         UI.user_error!("Family Controls registration is limited to Blockr IDs") unless app["bundle_id"] == "com.calumwebb.blockr" && (identifier == "com.calumwebb.blockr" || identifier.start_with?("com.calumwebb.blockr."))
         unless bundle.get_capabilities.any? { |capability| capability.capability_type == "FAMILY_CONTROLS" }
           bundle.create_capability("FAMILY_CONTROLS")
           UI.success("Enabled FAMILY_CONTROLS on #{identifier}")
+        end
+      end
+      if info["macos"]
+        UI.user_error!("Only Blockr Mac identifiers may be changed") unless ["com.calumwebb.blockr", "com.calumwebb.blockr.ContentFilter"].include?(identifier)
+        Array(info["capabilities"]).each do |capability|
+          UI.user_error!("Unexpected Blockr Mac capability") unless ["NETWORK_EXTENSIONS", "SYSTEM_EXTENSION_INSTALL"].include?(capability)
+          bundle.create_capability(capability) unless bundle.get_capabilities.any? { |existing| existing.capability_type == capability }
         end
       end
       types = bundle.get_capabilities.map(&:capability_type)

@@ -58,5 +58,18 @@ enum Storage {
         guard let result else { throw BlockrError.unavailable("Shared storage could not be opened.") }
         return try result.get()
     }
-    static func read() throws -> LocalState { try update { $0 } }
+    static func read() throws -> LocalState {
+        let url = try file
+        var coordinationError: NSError?
+        var result: Result<LocalState, Error>?
+        NSFileCoordinator().coordinate(readingItemAt: url, options: .withoutChanges, error: &coordinationError) { coordinated in
+            result = Result {
+                if !FileManager.default.fileExists(atPath: coordinated.path) { return LocalState() }
+                return try JSONDecoder().decode(LocalState.self, from: Data(contentsOf: coordinated))
+            }
+        }
+        if let coordinationError { throw coordinationError }
+        guard let result else { throw BlockrError.unavailable("Shared storage could not be read.") }
+        return try result.get()
+    }
 }

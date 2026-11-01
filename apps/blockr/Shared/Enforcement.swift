@@ -86,7 +86,7 @@ enum Enforcement {
             try schedule(lock, now: Date())
             try Storage.update { state in
                 try apply(&state, now: Date())
-                state.receipt(lock, .active)
+                state.receipt(lock, lock.group.requiresLocalSelection && !hasSelection(picks) ? .partial : .active)
             }
         } catch {
             center.stopMonitoring([DeviceActivityName(lock.id.uuidString)])
