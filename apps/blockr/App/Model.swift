@@ -17,6 +17,7 @@ import FamilyControls
     #endif
     let fixture = ProcessInfo.processInfo.arguments.contains("--screenshots")
     private var syncTicks = 0
+    private var maintenance: Task<Void, Never>?
     var live: [Lock] { state.replica.liveLocks(at: Date()) }
     var locked: Bool { !live.isEmpty }
     var groups: [BlockrCore.Group] { state.replica.visibleGroups }
@@ -26,8 +27,18 @@ import FamilyControls
             authorized = true
             state.replica.groups = [BlockrCore.Group(name: "Social", domains: ["example.com"], categoryIntent: "Social apps", revision: Revision(1, device: "fixture"))]
             loaded = true
-        } else { refresh() }
+        } else {
+            refresh()
+            // The Mac menu-bar process keeps receiving schedules with its main window closed.
+            maintenance = Task { [weak self] in
+                while !Task.isCancelled {
+                    await self?.tick()
+                    try? await Task.sleep(for: .seconds(5))
+                }
+            }
+        }
     }
+    deinit { maintenance?.cancel() }
     func perform(_ body: () throws -> Void) {
         do { try body(); refresh() } catch { self.error = error.localizedDescription; refresh() }
     }

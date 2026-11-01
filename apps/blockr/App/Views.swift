@@ -38,13 +38,9 @@ struct RootView: View {
         .alert("Blockr", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
             Button("OK") { model.error = nil }
         } message: { Text(model.error ?? "") }
-        .task {
-            while !Task.isCancelled {
-                await model.tick()
-                try? await Task.sleep(for: .seconds(5))
-            }
-        }
+        .task { await model.synchronize() }
         .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await model.synchronize() } } }
+        .onReceive(NotificationCenter.default.publisher(for: .init("BlockrShowLock"))) { _ in page = .lock }
     }
     @ViewBuilder private func destination(_ page: Page) -> some View {
         switch page { case .lock:

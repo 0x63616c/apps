@@ -11,7 +11,7 @@ import UIKit
     #endif
     var body: some Scene {
         #if os(macOS)
-        WindowGroup { RootView().environmentObject(model).preferredColorScheme(.dark).tint(.white) }
+        WindowGroup("Blockr", id: "main") { RootView().environmentObject(model).preferredColorScheme(.dark).tint(.white) }
             .defaultSize(width: 1000, height: 720)
         MenuBarExtra("Blockr", systemImage: model.locked ? "lock.fill" : "lock.shield") {
             VStack(alignment: .leading, spacing: 20) {
@@ -21,7 +21,7 @@ import UIKit
                     Text(lock.end, style: .timer).font(.system(size: 48, weight: .medium, design: .rounded)).monospacedDigit()
                     Text("\(model.state.receipts.first(where: { $0.lockID == lock.id })?.coverage == .active ? "Active" : "Not protected on this Mac") · until \(lock.end.formatted(date: .omitted, time: .shortened))").foregroundStyle(.secondary)
                 } else { Text("Nothing locked").foregroundStyle(.secondary) }
-                OpenWindowButton()
+                OpenWindowButton(title: model.locked ? "Open Blockr" : "Start a lock")
             }.padding(24).frame(width: 340).background(.black)
         }.menuBarExtraStyle(.window)
         #else
@@ -32,8 +32,14 @@ import UIKit
 #if os(macOS)
 private struct OpenWindowButton: View {
     @Environment(\.openWindow) private var openWindow
-    @Environment(\.openURL) private var openURL
-    var body: some View { Button("Open Blockr") { NSApp.activate(ignoringOtherApps: true); NSApp.windows.first(where: { $0.canBecomeMain })?.makeKeyAndOrderFront(nil) }.buttonStyle(.borderedProminent) }
+    var title: String
+    var body: some View {
+        Button(title) {
+            openWindow(id: "main")
+            NSApp.activate(ignoringOtherApps: true)
+            NotificationCenter.default.post(name: .init("BlockrShowLock"), object: nil)
+        }.buttonStyle(.borderedProminent)
+    }
 }
 #endif
 #if os(iOS)
