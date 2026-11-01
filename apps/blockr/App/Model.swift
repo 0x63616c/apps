@@ -21,7 +21,7 @@ import FamilyControls
     var live: [Lock] { state.replica.liveLocks(at: Date()) }
     var locked: Bool { !live.isEmpty }
     var groups: [BlockrCore.Group] { state.replica.visibleGroups }
-    init() {
+    init(startMaintenance: Bool = true) {
         if fixture {
             state.onboardingComplete = true
             authorized = true
@@ -30,10 +30,12 @@ import FamilyControls
         } else {
             refresh()
             // The Mac menu-bar process keeps receiving schedules with its main window closed.
-            maintenance = Task { [weak self] in
-                while !Task.isCancelled {
-                    await self?.tick()
-                    try? await Task.sleep(for: .seconds(5))
+            if startMaintenance {
+                maintenance = Task { [weak self] in
+                    while !Task.isCancelled {
+                        await self?.tick()
+                        try? await Task.sleep(for: .seconds(5))
+                    }
                 }
             }
         }

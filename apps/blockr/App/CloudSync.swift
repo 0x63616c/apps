@@ -19,7 +19,13 @@ actor CloudSync {
             guard try Storage.read().syncEnabled else { return .off }
             let container = self.container ?? CKContainer(identifier: "iCloud.com.calumwebb.blockr")
             self.container = container
-            guard try await container.accountStatus() == .available else { return .signedOut }
+            switch try await container.accountStatus() {
+            case .available: break
+            case .noAccount: return .signedOut
+            case .restricted: return .error("iCloud access is restricted on this device.")
+            case .couldNotDetermine, .temporarilyUnavailable: return .error("iCloud is temporarily unavailable. Retry sync.")
+            @unknown default: return .error("iCloud account status is unavailable. Retry sync.")
+            }
             let account = try await container.userRecordID().recordName
             // Never send one Apple Account's replica into another account's database.
             try Storage.update { state in

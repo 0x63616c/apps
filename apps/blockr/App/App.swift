@@ -50,9 +50,11 @@ final class PushDelegate: NSObject, UIApplicationDelegate {
     }
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
         Task { @MainActor in
-            let model = Model()
+            let model = Model(startMaintenance: false)
+            let before = model.state.replica
             await model.synchronize()
-            completionHandler(.newData)
+            if case .error = model.syncStatus { completionHandler(.failed) }
+            else { completionHandler(model.state.replica == before ? .noData : .newData) }
         }
     }
 }
