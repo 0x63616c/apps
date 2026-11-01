@@ -114,6 +114,12 @@ public struct Receipt: Codable, Equatable, Sendable {
         self.lockID = lockID; self.coverage = coverage; self.acknowledged = acknowledged
         self.interruptionObserved = interruptionObserved; self.appliedAt = appliedAt
     }
+    /// Once coverage is incomplete, a later repair cannot establish uninterrupted protection.
+    public func updating(coverage: Coverage, at now: Date) -> Receipt {
+        Receipt(lockID: lockID, coverage: coverage, acknowledged: now,
+            interruptionObserved: interruptionObserved || [.partial, .failed, .interrupted].contains(self.coverage) || [.partial, .failed, .interrupted].contains(coverage),
+            appliedAt: appliedAt ?? ([.active, .partial].contains(coverage) ? now : nil))
+    }
 }
 public struct Replica: Codable, Equatable, Sendable {
     public var groups: [Group] = []
@@ -123,7 +129,11 @@ public struct Replica: Codable, Equatable, Sendable {
     public var visibleGroups: [Group] { groups.filter { !$0.deleted }.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending } }
     public var customDurations: [Int] { durations.filter { !$0.deleted }.map(\.seconds) }
     public func liveLocks(at now: Date) -> [Lock] { locks.filter { $0.isLive(at: now) }.sorted { $0.end < $1.end } }
-    public func nextRevision(device: String) -> Revision { Revision(max(groups.map(\.revision.counter).max() ?? 0, durations.map(\.revision.counter).max() ?? 0) + 1, device: device) }
+    public func nextRevision(device: String) throws -> Revision {
+        let counter = max(groups.map(\.revision.counter).max() ?? 0, durations.map(\.revision.counter).max() ?? 0)
+        guard counter < Int64.max else { throw BlockrError.unavailable("Sync revision limit reached. Changes could not be saved.") }
+        return Revision(counter + 1, device: device)
+    }
     public mutating func requireEditable(at now: Date) throws { guard liveLocks(at: now).isEmpty else { throw BlockrError.locked } }
     public mutating func start(_ lock: Lock, at now: Date) throws {
         try requireEditable(at: now)

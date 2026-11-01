@@ -83,23 +83,40 @@ enum Enforcement {
     static func start(_ lock: Lock, picks: FamilyActivitySelection, remote: Bool = false) throws {
         guard AuthorizationCenter.shared.authorizationStatus == .approved else { throw BlockrError.unavailable("Allow Screen Time access, then pick apps on this device.") }
         guard hasSelection(picks) || !lock.group.domains.isEmpty else { throw BlockrError.emptySelection }
-        let data = try JSONEncoder().encode(picks)
+        var previousSnapshot: Data?
+        var previousReceipt: Receipt?
+        let alreadyScheduled = center.activities.contains(DeviceActivityName(lock.id.uuidString))
         // Save pending intent before scheduling: a crash must not discard an irreversible start.
         try Storage.update { state in
             if !remote { try state.replica.start(lock, at: Date()) }
-            state.snapshots[lock.id.uuidString] = data
+            else {
+                guard state.replica.locks.contains(lock), lock.isLive(at: Date()) else { throw BlockrError.locked }
+                guard !state.receipts.contains(where: { $0.lockID == lock.id && $0.coverage == .active }) else { throw BlockrError.locked }
+            }
+            previousSnapshot = state.snapshots[lock.id.uuidString]
+            previousReceipt = state.receipts.first { $0.lockID == lock.id }
+            // Repair may add protection, but cannot remove an immutable session's original picks.
+            var combined = selection(state.snapshots[lock.id.uuidString])
+            combined.applicationTokens.formUnion(picks.applicationTokens)
+            combined.categoryTokens.formUnion(picks.categoryTokens)
+            combined.webDomainTokens.formUnion(picks.webDomainTokens)
+            state.snapshots[lock.id.uuidString] = try JSONEncoder().encode(combined)
             state.receipt(lock, .pending)
         }
         do {
-            try schedule(lock, now: Date(), remote: remote)
+            if !alreadyScheduled { try schedule(lock, now: Date(), remote: remote) }
             try Storage.update { state in
                 try apply(&state, now: Date())
                 state.receipt(lock, lock.group.requiresLocalSelection && !hasSelection(picks) ? .partial : .active)
             }
         } catch {
-            center.stopMonitoring([DeviceActivityName(lock.id.uuidString)])
+            if !alreadyScheduled { center.stopMonitoring([DeviceActivityName(lock.id.uuidString)]) }
             try Storage.update { state in
-                state.receipt(lock, .failed)
+                if let previousReceipt, [.active, .partial].contains(previousReceipt.coverage) {
+                    state.snapshots[lock.id.uuidString] = previousSnapshot
+                    state.receipts.removeAll { $0.lockID == lock.id }
+                    state.receipts.append(previousReceipt)
+                } else { state.receipt(lock, .failed) }
                 try apply(&state, now: Date())
             }
             throw error

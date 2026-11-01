@@ -14,8 +14,10 @@ struct StatsView: View {
                 metric("Shield-button taps", "\(model.state.attempts.count)")
                 metric("Blocked opens", "—")
                 metric("Estimated time saved", "—")
-                Text("Shield taps are recorded on this device when you close a shield. They do not count every blocked open. Unbroken locks are locally completed sessions with no observed interruption.").foregroundStyle(.secondary)
-                Text("Time saved and per-app usage are unavailable. Blockr does not have a verified usage baseline. Time locked counts overlapping completed sessions once.").foregroundStyle(.secondary)
+                DisclosureGroup("About these stats") {
+                    Text("Shield taps are recorded on this device when you close a shield. They do not count every blocked open. Unbroken locks are locally completed sessions with no observed interruption.").foregroundStyle(.secondary)
+                    Text("Time saved and per-app usage are unavailable. Blockr does not have a verified usage baseline. Time locked counts overlapping completed sessions once.").foregroundStyle(.secondary)
+                }
             }.padding(24).frame(maxWidth: 640)
         }.background(.black)
     }
@@ -36,7 +38,7 @@ struct SettingsView: View {
                 if case .unavailable = model.syncStatus { Text("iCloud is not enabled in this build. Groups and locks stay on this device.").foregroundStyle(.secondary) }
                 if case .error(let reason) = model.syncStatus { Text(reason).foregroundStyle(.secondary) }
                 if let last = model.state.lastSync { Text("Last synced \(last.formatted(date: .abbreviated, time: .shortened))").foregroundStyle(.secondary) }
-                Toggle("Sync with iCloud", isOn: Binding(get: { model.state.syncEnabled }, set: { enabled in model.perform { try model.mutate { state in try state.replica.requireEditable(at: Date()); state.syncEnabled = enabled } } })).disabled(model.locked)
+                Toggle("Sync with iCloud", isOn: Binding(get: { model.state.syncEnabled }, set: { enabled in model.perform { try model.mutate { state in try state.replica.requireEditable(at: Date()); state.syncEnabled = enabled } } })).disabled(model.locked || model.syncStatus == .unavailable)
                 Button("Retry sync") { Task { await model.synchronize() } }.frame(minHeight: 44)
                 Text("App picks stay on each device. A device needs its own setup and a connection to receive a lock. Offline devices cannot start it immediately.").foregroundStyle(.secondary)
                 Divider()

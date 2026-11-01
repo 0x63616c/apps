@@ -119,7 +119,7 @@ import FamilyControls
                 #else
                 let needsPicks = state.replica.groups.first(where: { $0.id == id })?.requiresLocalSelection ?? false
                 #endif
-                let group = BlockrCore.Group(id: id ?? UUID(), name: name, domains: hosts, categoryIntent: intent, requiresLocalSelection: needsPicks, revision: state.replica.nextRevision(device: state.deviceID))
+                let group = BlockrCore.Group(id: id ?? UUID(), name: name, domains: hosts, categoryIntent: intent, requiresLocalSelection: needsPicks, revision: try state.replica.nextRevision(device: state.deviceID))
                 state.replica.groups.removeAll { $0.id == group.id }
                 state.replica.groups.append(group)
                 state.selections[group.id.uuidString] = selection
@@ -131,7 +131,7 @@ import FamilyControls
             try state.replica.requireEditable(at: Date())
             var tombstone = group
             tombstone.deleted = true
-            tombstone.revision = state.replica.nextRevision(device: state.deviceID)
+            tombstone.revision = try state.replica.nextRevision(device: state.deviceID)
             state.replica.groups.removeAll { $0.id == group.id }
             state.replica.groups.append(tombstone)
             state.selections.removeValue(forKey: group.id.uuidString)
@@ -141,7 +141,7 @@ import FamilyControls
         perform { try mutate { state in
             try state.replica.requireEditable(at: Date())
             guard (900...604800).contains(seconds) else { throw BlockrError.invalidDuration }
-            let revision = state.replica.nextRevision(device: state.deviceID)
+            let revision = try state.replica.nextRevision(device: state.deviceID)
             if let old, old != seconds, !Durations.presets.contains(old) {
                 state.replica.durations.removeAll { $0.seconds == old }
                 state.replica.durations.append(DurationPreference(seconds: old, revision: revision, deleted: true))
@@ -156,7 +156,7 @@ import FamilyControls
         perform { try mutate { state in
             try state.replica.requireEditable(at: Date())
             guard !Durations.presets.contains(seconds) else { return }
-            let revision = state.replica.nextRevision(device: state.deviceID)
+            let revision = try state.replica.nextRevision(device: state.deviceID)
             state.replica.durations.removeAll { $0.seconds == seconds }
             state.replica.durations.append(DurationPreference(seconds: seconds, revision: revision, deleted: true))
         } }

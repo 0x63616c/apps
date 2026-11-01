@@ -156,7 +156,7 @@ struct LockView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                PageTitle(title: "Start a lock")
+                PageTitle(title: model.locked ? "Locked." : "Start a lock")
                 if model.locked { ActiveView() }
                 else {
                     Image(systemName: "lock.shield").font(.system(size: 56, weight: .ultraLight)).frame(maxWidth: .infinity).padding(.vertical, 16).accessibilityHidden(true)
@@ -246,6 +246,7 @@ struct ActiveView: View {
                 Image(systemName: "lock.fill").font(.largeTitle).accessibilityHidden(true)
                 Text(lock.group.name).font(.title2.weight(.medium))
                 Text(lock.end, style: .timer).font(.system(size: timerSize, weight: .medium)).monospacedDigit().minimumScaleFactor(0.5).lineLimit(1).accessibilityLabel("Lock ends \(lock.end.formatted())")
+                if lock.origin != model.state.deviceID { Text("Started on another device").foregroundStyle(.secondary) }
                 Text("Until \(lock.end.formatted(date: .abbreviated, time: .shortened))").foregroundStyle(.secondary)
                 ForEach(model.live) { item in
                     let coverage = model.state.receipts.first { $0.lockID == item.id }?.coverage ?? .pending

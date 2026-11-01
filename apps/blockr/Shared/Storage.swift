@@ -22,11 +22,9 @@ struct LocalState: Codable {
     var deviceID = UUID().uuidString
     var lastSync: Date?
     mutating func receipt(_ lock: Lock, _ coverage: Coverage, now: Date = Date()) {
-        let previous = receipts.first { $0.lockID == lock.id }
-        let interrupted = previous?.interruptionObserved == true || [.failed, .interrupted].contains(coverage)
-        let applied = previous?.appliedAt ?? ([.active, .partial].contains(coverage) ? now : nil)
+        let previous = receipts.first { $0.lockID == lock.id } ?? Receipt(lockID: lock.id, coverage: .pending, acknowledged: now)
         receipts.removeAll { $0.lockID == lock.id }
-        receipts.append(Receipt(lockID: lock.id, coverage: coverage, acknowledged: now, interruptionObserved: interrupted, appliedAt: applied))
+        receipts.append(previous.updating(coverage: coverage, at: now))
     }
 }
 

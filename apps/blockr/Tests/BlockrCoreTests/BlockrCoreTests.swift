@@ -137,4 +137,32 @@ final class BlockrCoreTests: XCTestCase {
         let text = String(decoding: data, as: UTF8.self)
         XCTAssertFalse(text.contains("selection")); XCTAssertFalse(text.contains("token")); XCTAssertFalse(text.contains("receipt"))
     }
+    func testRevisionExhaustionDoesNotCrash() throws {
+        var replica = Replica()
+        replica.groups = [group(Int64.max)]
+        XCTAssertThrowsError(try replica.nextRevision(device: "a"))
+        replica.groups = [group(41)]
+        XCTAssertEqual(try replica.nextRevision(device: "a").counter, 42)
+    }
+    func testPartialRepairCannotInventUnbrokenLock() throws {
+        let lock = try Lock(group: group(), start: now, duration: 3600, origin: "a")
+        let pending = Receipt(lockID: lock.id, coverage: .pending, acknowledged: now)
+        let partial = pending.updating(coverage: .partial, at: now)
+        let repaired = partial.updating(coverage: .active, at: now.addingTimeInterval(1800))
+        let completed = repaired.updating(coverage: .completed, at: lock.end)
+        XCTAssertTrue(completed.interruptionObserved)
+        XCTAssertEqual(Statistics(locks: [lock], receipts: [completed], now: lock.end).completed, 0)
+        XCTAssertEqual(Statistics(locks: [lock], receipts: [completed], now: lock.end).timeLocked, 0)
+    }
+    func testReceiptPreservesFirstApplicationAndFailureAcrossRetry() {
+        let pending = Receipt(lockID: UUID(), coverage: .pending, acknowledged: now)
+        let active = pending.updating(coverage: .active, at: now.addingTimeInterval(10))
+        let failed = active.updating(coverage: .failed, at: now.addingTimeInterval(20))
+        let repaired = failed.updating(coverage: .active, at: now.addingTimeInterval(30))
+        XCTAssertTrue(repaired.interruptionObserved)
+        XCTAssertEqual(repaired.appliedAt, now.addingTimeInterval(10))
+        XCTAssertFalse(active.interruptionObserved)
+        let legacyPartial = Receipt(lockID: UUID(), coverage: .partial, acknowledged: now)
+        XCTAssertTrue(legacyPartial.updating(coverage: .active, at: now).interruptionObserved)
+    }
 }

@@ -34,6 +34,10 @@ final class ScreenshotTests: XCTestCase {
         app.buttons["Start lock"].tap()
         XCTAssertTrue(app.staticTexts["Let the time pass."].waitForExistence(timeout: 5))
         snap("active")
+        app.tabBars.buttons["Settings"].tap()
+        XCTAssertTrue(app.staticTexts["Settings are locked until your lock ends."].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Reset this device"].isEnabled)
+        snap("settings-locked")
     }
     @MainActor private func snap(_ name: String) {
         let shot = XCUIScreen.main.screenshot()
