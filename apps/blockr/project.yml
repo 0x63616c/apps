@@ -98,6 +98,7 @@ targets:
         INFOPLIST_KEY_BlockrFilterEnabled: $(BLOCKR_FILTER_ENABLED)
         INFOPLIST_KEY_NSSystemExtensionUsageDescription: Blockr filters selected websites during your timed locks.
   ContentFilter:
+    productName: com.calumwebb.blockr.ContentFilter
     type: system-extension
     platform: macOS
     sources: [ContentFilter, Shared]
