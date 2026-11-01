@@ -29,7 +29,7 @@ struct GroupsView: View {
                                     #endif
                                 }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
                             }.buttonStyle(.plain).disabled(model.locked)
-                            Button { deleting = group } label: { Image(systemName: "trash").frame(width: 44, height: 44) }.buttonStyle(.plain).accessibilityLabel("Delete \(group.name)").disabled(model.locked)
+                            Button { deleting = group } label: { Image(systemName: "trash").frame(width: 44, height: 44).contentShape(Rectangle()) }.buttonStyle(.plain).accessibilityLabel("Delete \(group.name)").disabled(model.locked)
                         }
                         Divider()
                     }.padding(.vertical, 8)

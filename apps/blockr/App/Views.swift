@@ -86,7 +86,7 @@ func openSettings() {
     #endif
 }
 func primary(_ title: String, action: @escaping () -> Void) -> some View {
-    Button(action: action) { Text(title).font(.body.weight(.semibold)).frame(maxWidth: .infinity).frame(minHeight: 54) }
+    Button(action: action) { Text(title).font(.body.weight(.semibold)).frame(maxWidth: .infinity).frame(minHeight: 54).contentShape(Rectangle()) }
         .buttonStyle(.plain).background(.white, in: RoundedRectangle(cornerRadius: 18)).foregroundStyle(.black)
 }
 struct PageTitle: View {
@@ -129,7 +129,7 @@ struct HomeLockView: View {
                         Divider()
                     }
                     Button { editing = nil; editor = true } label: {
-                        HStack(spacing: 16) { Image(systemName: "plus").font(.title2); Text("New group").font(.title3); Spacer(); Image(systemName: "chevron.right").foregroundStyle(.secondary) }.frame(minHeight: 54)
+                        HStack(spacing: 16) { Image(systemName: "plus").font(.title2); Text("New group").font(.title3); Spacer(); Image(systemName: "chevron.right").foregroundStyle(.secondary) }.frame(minHeight: 54).contentShape(Rectangle())
                     }.buttonStyle(.plain)
                     Divider()
                 }
@@ -174,7 +174,7 @@ struct LockView: View {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 78))], spacing: 12) {
                             ForEach(Durations.sorted(custom: model.state.replica.customDurations), id: \.self) { seconds in
                                 Button { duration = seconds } label: {
-                                    Text(Durations.label(seconds)).font(.body.weight(.medium)).frame(maxWidth: .infinity).frame(height: 48)
+                                    Text(Durations.label(seconds)).font(.body.weight(.medium)).frame(maxWidth: .infinity).frame(height: 48).contentShape(Rectangle())
                                 }.buttonStyle(.plain)
                                     .background(duration == seconds ? Color.white : Color(white: 0.08), in: RoundedRectangle(cornerRadius: 14))
                                     .foregroundStyle(duration == seconds ? .black : .white)

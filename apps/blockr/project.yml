@@ -112,6 +112,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.calumwebb.blockr.ContentFilter
+        PRODUCT_NAME: com.calumwebb.blockr.ContentFilter
+        PRODUCT_MODULE_NAME: ContentFilter
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_FILE: ContentFilter/Info.plist
         SKIP_INSTALL: YES
