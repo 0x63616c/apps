@@ -1,6 +1,28 @@
 {
   "shots": [
-    { "screen": "home", "appearance": "dark", "eyebrow": "Blockr", "headline": "A short headline\nfor the app." },
-    { "screen": "settings", "appearance": "light", "eyebrow": "Privacy", "headline": "Private\nby design." }
+    {
+      "screen": "home",
+      "appearance": "dark",
+      "eyebrow": "Blockr",
+      "headline": "Take your time back."
+    },
+    {
+      "screen": "active",
+      "appearance": "dark",
+      "eyebrow": "Blockr",
+      "headline": "Let the time pass."
+    },
+    {
+      "screen": "groups",
+      "appearance": "dark",
+      "eyebrow": "Blockr",
+      "headline": "Keep distractions together."
+    },
+    {
+      "screen": "stats",
+      "appearance": "dark",
+      "eyebrow": "Blockr",
+      "headline": "Your time, in view."
+    }
   ]
 }

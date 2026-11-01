@@ -53,6 +53,7 @@ struct GroupEditor: View {
     @State private var domains = ""
     @State private var picker = false
     @State private var discard = false
+    @State private var deleting = false
     #if os(iOS)
     @State private var selection = FamilyActivitySelection()
     #endif
@@ -73,6 +74,7 @@ struct GroupEditor: View {
                 Section { TextField("example.com", text: $domains, axis: .vertical).lineLimit(3...8).autocorrectionDisabled() }
                     header: { Text("Websites") } footer: { Text("One hostname per line. No links or wildcards. Subdomains are included where the system supports them.") }
                 if model.locked { Text("A lock started. Changes are unavailable until it ends.") }
+                if group != nil { Section { Button("Delete group", role: .destructive) { deleting = true }.disabled(model.locked) } }
             }
             .scrollContentBackground(.hidden).background(.black)
             .navigationTitle(group == nil ? "New group" : "Edit group")
@@ -90,6 +92,10 @@ struct GroupEditor: View {
                 }.disabled(model.locked) }
             }
             .confirmationDialog("Discard changes?", isPresented: $discard) { Button("Discard", role: .destructive) { dismiss() }; Button("Keep editing", role: .cancel) {} }
+            .confirmationDialog("Delete this group?", isPresented: $deleting) {
+                Button("Delete group", role: .destructive) { if let group { model.deleteGroup(group); if model.error == nil { dismiss() } } }
+                Button("Keep group", role: .cancel) {}
+            }
             #if os(iOS)
             .familyActivityPicker(isPresented: $picker, selection: $selection)
             #endif

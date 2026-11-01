@@ -7,18 +7,19 @@ final class ScreenshotTests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.staticTexts["pageHeader-Blockr"].waitForExistence(timeout: 15))
         snap("home")
-        for page in ["Groups", "Stats", "Settings"] {
+        for page in ["Stats", "Settings"] {
             app.tabBars.buttons[page].tap()
             XCTAssertTrue(app.staticTexts["pageHeader-\(page)"].waitForExistence(timeout: 5))
             snap(page.lowercased())
         }
-        app.tabBars.buttons["Groups"].tap()
+        app.tabBars.buttons["Lock"].tap()
+        snap("groups")
         app.buttons["New group"].tap()
         XCTAssertTrue(app.textFields["group-name"].waitForExistence(timeout: 5))
         snap("group-new")
         app.buttons["Cancel"].tap()
         app.buttons["Discard"].tap()
-        app.tabBars.buttons["Lock"].tap()
+        app.buttons["Start a lock"].tap()
         app.buttons["Add custom duration"].tap()
         XCTAssertTrue(app.staticTexts["Custom duration"].waitForExistence(timeout: 5))
         snap("custom-duration")

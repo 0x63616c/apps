@@ -27,7 +27,7 @@ struct RootView: View {
                 } detail: { destination(page ?? .lock).padding(32).frame(minWidth: 520, minHeight: 550) }
                 #else
                 TabView {
-                    ForEach(Page.allCases) { item in
+                    ForEach([Page.lock, .stats, .settings]) { item in
                         NavigationStack { destination(item) }.tabItem { Label(item.rawValue, systemImage: item.symbol) }
                     }
                 }
@@ -47,7 +47,13 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await model.synchronize() } } }
     }
     @ViewBuilder private func destination(_ page: Page) -> some View {
-        switch page { case .lock: LockView(); case .groups: GroupsView(); case .stats: StatsView(); case .settings: SettingsView() }
+        switch page { case .lock:
+            #if os(iOS)
+            HomeLockView()
+            #else
+            LockView()
+            #endif
+        case .groups: GroupsView(); case .stats: StatsView(); case .settings: SettingsView() }
     }
 }
 struct WelcomeView: View {
@@ -91,6 +97,55 @@ struct PageTitle: View {
     var title: String
     var body: some View { Text(title).font(.system(size: 34, weight: .semibold)).tracking(-1).frame(maxWidth: .infinity, alignment: .leading).accessibilityAddTraits(.isHeader).accessibilityIdentifier("pageHeader-\(title)") }
 }
+
+struct HomeLockView: View {
+    @EnvironmentObject private var model: Model
+    @State private var start = false
+    @State private var editor = false
+    @State private var editing: Group?
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 28) {
+                Text(model.locked ? "Locked." : "Take your time back.")
+                    .font(.system(size: 34, weight: .semibold)).tracking(-1)
+                    .accessibilityAddTraits(.isHeader).accessibilityIdentifier("pageHeader-Blockr")
+                if model.locked { ActiveView() }
+                else {
+                    if model.groups.isEmpty { Text("Create a group of apps and websites.").foregroundStyle(.secondary) }
+                    ForEach(model.groups) { group in
+                        Button { editing = group; editor = true } label: {
+                            HStack(spacing: 16) {
+                                Image(systemName: "lock").font(.title2)
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(group.name).font(.title3.weight(.medium))
+                                    Text(group.categoryIntent.isEmpty ? "\(group.domains.count) websites" : group.categoryIntent).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right").foregroundStyle(.secondary)
+                            }.frame(minHeight: 64).contentShape(Rectangle())
+                        }.buttonStyle(.plain)
+                        .contextMenu { Button("Delete group", role: .destructive) { model.deleteGroup(group) } }
+                        Divider()
+                    }
+                    Button { editing = nil; editor = true } label: {
+                        HStack(spacing: 16) { Image(systemName: "plus").font(.title2); Text("New group").font(.title3); Spacer(); Image(systemName: "chevron.right").foregroundStyle(.secondary) }.frame(minHeight: 54)
+                    }.buttonStyle(.plain)
+                    Divider()
+                }
+            }.padding(24).frame(maxWidth: 600)
+        }.background(.black)
+        .safeAreaInset(edge: .bottom) {
+            if !model.locked {
+                primary("Start a lock") { start = true }.disabled(model.groups.isEmpty).padding(24).background(.black)
+            }
+        }
+        .sheet(isPresented: $editor) { GroupEditor(group: editing) }
+        .sheet(isPresented: $start) {
+            NavigationStack { LockView().toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { start = false } } } }
+        }
+    }
+}
+
 struct LockView: View {
     @EnvironmentObject private var model: Model
     @State private var selectedGroup: UUID?
@@ -98,10 +153,11 @@ struct LockView: View {
     @State private var custom = false
     @State private var editingDuration: Int?
     @State private var confirm = false
+    @Environment(\.dismiss) private var dismiss
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                PageTitle(title: "Blockr")
+                PageTitle(title: "Start a lock")
                 if model.locked { ActiveView() }
                 else {
                     Image(systemName: "lock.shield").font(.system(size: 56, weight: .ultraLight)).frame(maxWidth: .infinity).padding(.vertical, 16).accessibilityHidden(true)
@@ -164,7 +220,7 @@ struct LockView: View {
                     Text("Until \(Date().addingTimeInterval(Double(duration)).formatted(date: .abbreviated, time: .shortened))").foregroundStyle(.secondary)
                     Text("No cancelling once started.")
                     primary(model.isStarting ? "Starting…" : "Start lock") {
-                        Task { await model.start(group: group, seconds: duration); confirm = false }
+                        Task { await model.start(group: group, seconds: duration); confirm = false; if model.locked { dismiss() } }
                     }.disabled(model.isStarting || model.locked)
                     Button("Keep choosing") { confirm = false }.frame(maxWidth: .infinity, minHeight: 44)
                 }.padding(32).frame(minWidth: 300).presentationDetents([.medium, .large])
