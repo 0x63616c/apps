@@ -23,7 +23,7 @@ final class ScreenshotTests: XCTestCase {
         app.buttons["Add custom duration"].tap()
         XCTAssertTrue(app.staticTexts["Custom duration"].waitForExistence(timeout: 5))
         snap("custom-duration")
-        app.buttons["Cancel"].tap()
+        app.buttons["duration-cancel"].tap()
         app.buttons["Review lock"].tap()
         XCTAssertTrue(app.staticTexts["Ready to lock?"].waitForExistence(timeout: 5))
         snap("confirm")

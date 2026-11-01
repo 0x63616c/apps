@@ -91,7 +91,7 @@ func primary(_ title: String, action: @escaping () -> Void) -> some View {
 }
 struct PageTitle: View {
     var title: String
-    var body: some View { Text(title).font(.system(size: 34, weight: .semibold)).tracking(-1).frame(maxWidth: .infinity, alignment: .leading).accessibilityAddTraits(.isHeader).accessibilityIdentifier("pageHeader-\(title)") }
+    var body: some View { Text(title).font(.largeTitle.weight(.semibold)).tracking(-1).frame(maxWidth: .infinity, alignment: .leading).accessibilityAddTraits(.isHeader).accessibilityIdentifier("pageHeader-\(title)") }
 }
 
 struct HomeLockView: View {
@@ -103,7 +103,7 @@ struct HomeLockView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 Text(model.locked ? "Locked." : "Take your time back.")
-                    .font(.system(size: 34, weight: .semibold)).tracking(-1)
+                    .font(.largeTitle.weight(.semibold)).tracking(-1)
                     .accessibilityAddTraits(.isHeader).accessibilityIdentifier("pageHeader-Blockr")
                 if model.locked { ActiveView() }
                 else {
@@ -218,7 +218,7 @@ struct LockView: View {
                         Task { await model.start(group: group, seconds: duration); confirm = false; if model.locked { dismiss() } }
                     }.disabled(model.isStarting || model.locked)
                     Button("Keep choosing") { confirm = false }.frame(maxWidth: .infinity, minHeight: 44)
-                }.padding(32).frame(minWidth: 300).presentationDetents([.medium, .large])
+                }.padding(32).frame(minWidth: 300).presentationDetents([.large])
             }
         }
     }
@@ -230,12 +230,13 @@ struct ActiveView: View {
     @State private var picks = FamilyActivitySelection()
     @State private var pickingLock: Lock?
     #endif
+    @ScaledMetric(relativeTo: .largeTitle) private var timerSize = 64.0
     var body: some View {
         if let lock = model.live.last {
             VStack(alignment: .leading, spacing: 24) {
                 Image(systemName: "lock.fill").font(.largeTitle).accessibilityHidden(true)
                 Text(lock.group.name).font(.title2.weight(.medium))
-                Text(lock.end, style: .timer).font(.system(size: 64, weight: .medium)).monospacedDigit().minimumScaleFactor(0.5).lineLimit(1).accessibilityLabel("Lock ends \(lock.end.formatted())")
+                Text(lock.end, style: .timer).font(.system(size: timerSize, weight: .medium)).monospacedDigit().minimumScaleFactor(0.5).lineLimit(1).accessibilityLabel("Lock ends \(lock.end.formatted())")
                 Text("Until \(lock.end.formatted(date: .abbreviated, time: .shortened))").foregroundStyle(.secondary)
                 ForEach(model.live) { item in
                     let coverage = model.state.receipts.first { $0.lockID == item.id }?.coverage ?? .pending
@@ -303,8 +304,8 @@ struct DurationEditor: View {
             if let original {
                 Button("Delete duration", role: .destructive) { model.deleteDuration(original); if selected == original { selected = 7200 }; dismiss() }.disabled(model.locked)
             }
-            Button("Cancel") { dismiss() }
-        }.padding(32).frame(minWidth: 300).presentationDetents([.medium])
+            Button("Cancel") { dismiss() }.accessibilityIdentifier("duration-cancel")
+        }.padding(32).frame(minWidth: 300).presentationDetents([.medium, .large])
         .onAppear { if let original { days = String(original / 86400); hours = String(original % 86400 / 3600); minutes = String(original % 3600 / 60) } }
     }
     private func field(_ title: String, text: Binding<String>) -> some View {

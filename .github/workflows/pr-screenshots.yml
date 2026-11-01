@@ -76,6 +76,24 @@ jobs:
           for app in ${{ steps.apps.outputs.apps }}; do
             scripts/capture-screenshots.sh "$app" "build/pr-screenshots/$app" light
           done
+      - name: Screenshot failure details
+        if: failure() && steps.apps.outputs.apps != ''
+        run: |
+          for app in ${{ steps.apps.outputs.apps }}; do
+            for result in "build/screenshots/$app/"*.xcresult; do
+              [[ -d "$result" ]] || continue
+              xcrun xcresulttool get test-results summary --path "$result"
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.apps.outputs.apps != ''
+        with:
+          name: screenshot-test-diagnostics
+          path: |
+            build/screenshots/*/*.xcresult
+            build/pr-screenshots
+          retention-days: 7
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         if: steps.apps.outputs.apps != ''
         with:
