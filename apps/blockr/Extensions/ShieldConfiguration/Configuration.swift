@@ -9,7 +9,7 @@ final class Configuration: ShieldConfigurationDataSource {
         let title = lock?.group.name ?? "Locked"
         let subtitle = lock.map { "\(Durations.label(max(60, Int($0.remaining(at: Date()))))) left · until \($0.end.formatted(date: .omitted, time: .shortened))" } ?? "Time unavailable"
         return ShieldConfiguration(backgroundBlurStyle: .systemUltraThinMaterialDark, backgroundColor: .black,
-            icon: UIImage(systemName: "lock.fill"), title: .init(text: title, color: .white),
+            icon: UIImage(systemName: "lock.fill")?.withTintColor(.white, renderingMode: .alwaysOriginal), title: .init(text: title, color: .white),
             subtitle: .init(text: subtitle, color: .lightGray), primaryButtonLabel: .init(text: lock == nil ? "OK" : web ? "Close website" : "Close app", color: .black), primaryButtonBackgroundColor: .white)
     }
     override func configuration(shielding application: Application) -> ShieldConfiguration { configuration() }
