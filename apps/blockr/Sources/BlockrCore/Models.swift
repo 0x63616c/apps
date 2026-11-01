@@ -129,6 +129,13 @@ public struct Replica: Codable, Equatable, Sendable {
     public var visibleGroups: [Group] { groups.filter { !$0.deleted }.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending } }
     public var customDurations: [Int] { durations.filter { !$0.deleted }.map(\.seconds) }
     public func liveLocks(at now: Date) -> [Lock] { locks.filter { $0.isLive(at: now) }.sorted { $0.end < $1.end } }
+    /// A shield describes the latest relevant session actually installed on this device.
+    /// The caller matches opaque local selections without exporting them into the replica.
+    public func shieldLock(at now: Date, receipts: [Receipt], matches: (Lock) -> Bool) -> Lock? {
+        liveLocks(at: now).last { lock in
+            receipts.contains { $0.lockID == lock.id && [.active, .partial, .pending].contains($0.coverage) } && matches(lock)
+        }
+    }
     public func nextRevision(device: String) throws -> Revision {
         let counter = max(groups.map(\.revision.counter).max() ?? 0, durations.map(\.revision.counter).max() ?? 0)
         guard counter < Int64.max else { throw BlockrError.unavailable("Sync revision limit reached. Changes could not be saved.") }

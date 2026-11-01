@@ -6,10 +6,8 @@ import BlockrCore
 final class Configuration: ShieldConfigurationDataSource {
     private func configuration(web: Bool = false, matches: (FamilyActivitySelection) -> Bool) -> ShieldConfiguration {
         let state = try? Storage.read()
-        let locks = state?.replica.liveLocks(at: Date()) ?? []
-        // Concurrent groups can expire independently. Show the session shielding this item,
-        // never an unrelated remote lock with a later end time.
-        let lock = locks.last { lock in
+        // Match locally; unrelated, failed or expired sessions must not supply shield metadata.
+        let lock = state?.replica.shieldLock(at: Date(), receipts: state?.receipts ?? []) { lock in
             guard let snapshot = state?.snapshots[lock.id.uuidString] else { return false }
             return matches(Enforcement.selection(snapshot))
         }

@@ -29,7 +29,7 @@ implemented evidence from remaining acceptance gates.
 | APP-14: private CloudKit groups/locks; tokens local | not verifiable without a signed device | `App/CloudSync.swift:13` private DB, optimistic record save/retry, account detachment, durable local outbound queue; `Sources/BlockrCore/Models.swift:144` tombstone/revision/lock union tests. Tokens/receipts/attempts excluded by type. Defaults BLOCKR_CLOUD_ENABLED=NO; container/schema/profiles and two-device offline/conflict/account-switch tests outstanding. Revision exhaustion now throws instead of crashing. |
 | APP-14: iOS web domains and explicit Mac setup | not verifiable without a signed device | `Shared/Enforcement.swift:60`, `ContentFilter/Provider.swift:17`, `App/MacFilter.swift:98`. iOS typed-domain filter plus token shields; Mac XPC health acknowledgement required. BLOCKR_FILTER_ENABLED=NO honestly prevents local Mac starts. Cross-browser/QUIC/DoH/VPN/expiry/provider-restart coverage is unverified. |
 | APP-14: black Liquid Glass matching designs | fixed in this PR | `App/Views.swift:16`, `App/Groups.swift:85`, `App/App.swift:16`. Native tab/navigation/sheet chrome, opaque black content, monochrome chips. Removed routine website footer; restored compact Stats rows with definitions behind “About these stats”; added compact read-only locked Settings; corrected active title/menu type. See screen-by-screen audit below. Native accessibility/glass behavior still needs simulator/device review. |
-| APP-14: core unit tests; CI iOS/macOS builds/tests | pass | 19 Blockr tests pass on Linux Swift 6.2.1; `.github/workflows/ci.yml` app job builds both native schemes. Current branch CI evidence is recorded below after completion. |
+| APP-14: core unit tests; CI iOS/macOS builds/tests | pass | 20 Blockr tests pass on Linux Swift 6.2.1; `.github/workflows/ci.yml` app job builds both native schemes. Current branch CI evidence is recorded below after completion. |
 | APP-14: app.yml TestFlight ID/group/all extension targets | pass | `app.yml:6` apple_id 6829523373, group Internal, signed_targets includes app plus all three iOS extensions. Mac filter appears separately under macos_registration_targets; the shared release lane is iOS only, so Mac TestFlight packaging/distribution is a follow-up. `ruby scripts/check-release.rb` passes; this is wiring evidence, not delivery. |
 | APP-14: merged with CI green | pass | [PR #41](https://github.com/0x63616c/apps/pull/41) merged as `32c875b6a301e514e6f27b2b5e2979ab9fb29060`; [successful app build/test run](https://github.com/0x63616c/apps/actions/runs/41352383413). Subsequent reruns/merge-push runs are separate from that successful pre-merge run. |
 
@@ -59,7 +59,7 @@ represented as a working system shield or a signed Mac filter.
 - Revision arithmetic could trap on a decoded Int64.max counter. Edits now fail with a visible error; regression test covers the boundary.
 - Repair could replace session picks, restart its monitor and lose existing protection on failure. Picks now union with the original snapshot; existing monitors are retained; failure restores prior snapshot/receipt and reapplies the union.
 - Partial coverage could become a successful unbroken completion after repair. Coverage history now retains incomplete protection permanently, preserves first application time and excludes it from completed/time/streak stats.
-- Shield metadata used the latest lock even when an unrelated item was shielded. Match the local app/category/web token before selecting the latest relevant end; otherwise show unknown time.
+- Shield metadata used the latest lock even when an unrelated item was shielded. Match the local app/category/web token and installed coverage before selecting the latest relevant end; otherwise show unknown time (`testShieldUsesLatestRelevantLocalSession`).
 - Removed the group-editor website footer, restored compact Stats rows with definitions in an optional disclosure, and made locked Settings a compact read-only screen. Corrected Mac active title and menu timer; added remote-origin state, disabled unavailable sync, and fixed unnecessary local-picks prompt on website-only groups.
 - Restored the duration screen’s six-chip preset row, removed decorative marketing content, added the end-time preview and fixed the Review action at the bottom. Custom editor now scrolls with the keyboard and large text. Added fixture coverage for save/edit/delete and selected-preset fallback.
 - Added the active lock’s read-only group disclosure and full-unit duration accessibility labels, preserving selected traits and avoiding second-by-second timer announcements.
@@ -75,7 +75,7 @@ also extracted privately; no shared configuration was changed. These tools are n
 
 | Command | Result |
 | --- | --- |
-| `swift test --package-path apps/blockr --jobs 4` | exit 0; 19 tests |
+| `swift test --package-path apps/blockr --jobs 4` | exit 0; 20 tests |
 | `swift test --package-path packages/RDesign --jobs 4` | exit 0; 3 tests |
 | `ruby scripts/check-release.rb` | exit 0 |
 | `python3 scripts/test-changed-apps.py` | exit 0 |

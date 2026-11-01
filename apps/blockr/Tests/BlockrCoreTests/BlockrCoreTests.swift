@@ -165,4 +165,20 @@ final class BlockrCoreTests: XCTestCase {
         let legacyPartial = Receipt(lockID: UUID(), coverage: .partial, acknowledged: now)
         XCTAssertTrue(legacyPartial.updating(coverage: .active, at: now).interruptionObserved)
     }
+    func testShieldUsesLatestRelevantLocalSession() throws {
+        var replica = Replica()
+        let first = try Lock(group: group(), start: now, duration: 3600, origin: "a")
+        let overlapping = try Lock(group: group(), start: now, duration: 7200, origin: "b")
+        let unrelated = try Lock(group: group(), start: now, duration: 14400, origin: "c")
+        replica.locks = [unrelated, first, overlapping]
+        let receipts = replica.locks.map { Receipt(lockID: $0.id, coverage: .active, acknowledged: now) }
+        XCTAssertEqual(replica.shieldLock(at: now, receipts: receipts) { $0.id != unrelated.id }?.id, overlapping.id)
+        XCTAssertEqual(replica.shieldLock(at: first.end, receipts: receipts) { $0.id != unrelated.id }?.id, overlapping.id)
+        XCTAssertNil(replica.shieldLock(at: overlapping.end, receipts: receipts) { $0.id != unrelated.id })
+        let failed = [receipts[1], Receipt(lockID: overlapping.id, coverage: .failed, acknowledged: now)]
+        XCTAssertEqual(replica.shieldLock(at: now, receipts: failed) { _ in true }?.id, first.id)
+        XCTAssertNil(replica.shieldLock(at: now, receipts: []) { _ in true })
+        XCTAssertNil(replica.shieldLock(at: now, receipts: receipts) { _ in false })
+    }
+
 }
