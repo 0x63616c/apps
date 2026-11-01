@@ -169,7 +169,7 @@ platform :ios do
           )
           UI.user_error!("CI provisioning did not return a profile UUID for #{target}") if uuid.to_s.empty?
           if app["family_controls"]
-            sh("scripts/verify-blockr-profile.sh", File.join(ENV.fetch("RUNNER_TEMP"), "#{app['slug']}-#{target}.mobileprovision"), info.fetch("bundle_id"))
+            sh(File.join(REPO_ROOT, "scripts", "verify-blockr-profile.sh"), File.join(ENV.fetch("RUNNER_TEMP"), "#{app['slug']}-#{target}.mobileprovision"), info.fetch("bundle_id"))
           end
           update_code_signing_settings(
             path: File.join(app["dir"], app["project"]), targets: [target], build_configurations: ["Release"],
