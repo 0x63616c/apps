@@ -71,6 +71,16 @@ platform :ios do
       end
       if app["family_controls"] && !info["macos"]
         UI.user_error!("Family Controls registration is limited to Blockr IDs") unless app["bundle_id"] == "com.calumwebb.blockr" && (identifier == "com.calumwebb.blockr" || identifier.start_with?("com.calumwebb.blockr."))
+        # The standard capability may still be development-only after team approval.
+        # Inspect managed availability through the same ASC client; never infer distribution from its name.
+        if options[:inspect_family_controls]
+          response = Spaceship::ConnectAPI.get_available_bundle_id_capabilities(bundle_id_id: bundle.id)
+          Array(response.body["data"]).each do |capability|
+            attributes = capability["attributes"] || {}
+            next unless [capability["id"], attributes["name"], attributes["description"]].join(" ").match?(/family/i)
+            UI.message("#{identifier} available Family Controls capability: #{capability['id']} #{attributes}")
+          end
+        end
         unless bundle.get_capabilities.any? { |capability| capability.capability_type == "FAMILY_CONTROLS" }
           bundle.create_capability("FAMILY_CONTROLS")
           UI.success("Enabled FAMILY_CONTROLS on #{identifier}")
