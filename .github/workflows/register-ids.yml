@@ -8,10 +8,6 @@ on:
         description: 'App folder under apps/'
         type: string
         default: festr
-      inspect_family_controls:
-        description: 'Inspect Blockr managed Family Controls availability through the ASC API'
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -35,10 +31,4 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
           APP: ${{ inputs.app }}
-          INSPECT_FAMILY_CONTROLS: ${{ inputs.inspect_family_controls }}
-        run: |
-          if [[ "$INSPECT_FAMILY_CONTROLS" == true ]]; then
-            bundle exec fastlane ios register_ids app:"$APP" inspect_family_controls:true
-          else
-            bundle exec fastlane ios register_ids app:"$APP"
-          fi
+        run: bundle exec fastlane ios register_ids app:"$APP"
