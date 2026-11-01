@@ -116,6 +116,12 @@ jobs:
           security list-keychains -d user | xargs > "$RUNNER_TEMP/$APP-keychains-before"
           # shellcheck disable=SC2046
           security list-keychains -d user -s "$keychain" $(cat "$RUNNER_TEMP/$APP-keychains-before")
+      - name: Generate app project
+        run: |
+          if [[ -f "apps/$APP/project.yml" ]]; then
+            brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+            (cd "apps/$APP" && xcodegen generate --quiet)
+          fi
       - name: Test, upload, and distribute to the app's TestFlight group
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
