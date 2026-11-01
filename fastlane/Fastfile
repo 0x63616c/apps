@@ -56,14 +56,33 @@ platform :ios do
     app = r_app(options)
     connect_api_key
     targets = app["signed_targets"] || { app["scheme"] => { "bundle_id" => app["bundle_id"] } }
+    if app["macos_registration_targets"]
+      UI.user_error!("Mac registration is limited to Blockr") unless app["bundle_id"] == "com.calumwebb.blockr"
+      targets = targets.merge(app["macos_registration_targets"])
+    end
     targets.each do |target, info|
       identifier = info.fetch("bundle_id")
       bundle = Spaceship::ConnectAPI::BundleId.find(identifier)
       if bundle
         UI.message("Bundle ID #{identifier} already registered")
       else
-        bundle = Spaceship::ConnectAPI::BundleId.create(name: "#{app['name']} #{target}", platform: "IOS", identifier: identifier)
+        bundle = Spaceship::ConnectAPI::BundleId.create(name: "#{app['name']} #{target}", platform: info["macos"] ? "MAC_OS" : "IOS", identifier: identifier)
         UI.success("Registered bundle ID #{identifier}")
+      end
+      if app["family_controls"] && !info["macos"]
+        UI.user_error!("Family Controls registration is limited to Blockr IDs") unless app["bundle_id"] == "com.calumwebb.blockr" && (identifier == "com.calumwebb.blockr" || identifier.start_with?("com.calumwebb.blockr."))
+        unless bundle.get_capabilities.any? { |capability| capability.capability_type == "FAMILY_CONTROLS" }
+          bundle.create_capability("FAMILY_CONTROLS")
+          UI.success("Enabled FAMILY_CONTROLS on #{identifier}")
+        end
+        UI.message("#{identifier}: distribution support must also be present in its regenerated App Store profile")
+      end
+      if info["macos"]
+        UI.user_error!("Only Blockr Mac identifiers may be changed") unless ["com.calumwebb.blockr", "com.calumwebb.blockr.ContentFilter"].include?(identifier)
+        Array(info["capabilities"]).each do |capability|
+          UI.user_error!("Unexpected Blockr Mac capability") unless ["NETWORK_EXTENSIONS", "SYSTEM_EXTENSION_INSTALL"].include?(capability)
+          bundle.create_capability(capability) unless bundle.get_capabilities.any? { |existing| existing.capability_type == capability }
+        end
       end
       types = bundle.get_capabilities.map(&:capability_type)
       if types.include?("APP_GROUPS")
@@ -146,9 +165,13 @@ platform :ios do
           uuid = get_provisioning_profile(
             api_key: api_key, app_identifier: info.fetch("bundle_id"),
             provisioning_name: info.fetch("profile_name"), ignore_profiles_with_different_name: true,
-            output_path: ENV.fetch("RUNNER_TEMP"), filename: "#{app['slug']}-#{target}.mobileprovision"
+            output_path: ENV.fetch("RUNNER_TEMP"), filename: "#{app['slug']}-#{target}.mobileprovision",
+            force: app["regenerate_profiles"] == true
           )
           UI.user_error!("CI provisioning did not return a profile UUID for #{target}") if uuid.to_s.empty?
+          if app["family_controls"]
+            sh(File.join(REPO_ROOT, "scripts", "verify-blockr-profile.sh"), File.join(ENV.fetch("RUNNER_TEMP"), "#{app['slug']}-#{target}.mobileprovision"), info.fetch("bundle_id"))
+          end
           update_code_signing_settings(
             path: File.join(app["dir"], app["project"]), targets: [target], build_configurations: ["Release"],
             use_automatic_signing: false, team_id: "X9E4HG27NK", code_sign_identity: "Apple Distribution",

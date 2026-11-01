@@ -88,6 +88,11 @@ jobs:
       APP: ${{ matrix.app }}
     steps:
       - uses: actions/checkout@v4
+      - name: Select app toolchain
+        run: |
+          if dir=$(ruby scripts/app-config.rb "$APP" developer_dir 2>/dev/null); then
+            echo "DEVELOPER_DIR=$dir" >> "$GITHUB_ENV"
+          fi
       - name: Core tests
         run: |
           if [[ "$(ruby scripts/app-config.rb "$APP" swift_package 2>/dev/null)" == "true" ]]; then
@@ -112,6 +117,20 @@ jobs:
         run: |
           xcodebuild -project "$(ruby scripts/app-config.rb "$APP" project_path)" -scheme "$(ruby scripts/app-config.rb "$APP" scheme)" \
             -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build -quiet
+
+      - name: Build native macOS app when declared
+        timeout-minutes: 15
+        run: |
+          if scheme=$(ruby scripts/app-config.rb "$APP" macos_scheme 2>/dev/null); then
+            xcodebuild -project "$(ruby scripts/app-config.rb "$APP" project_path)" -scheme "$scheme" \
+              -destination 'generic/platform=macOS' -configuration Debug -jobs 4 CODE_SIGNING_ALLOWED=NO build -quiet
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always() && matrix.app == 'blockr'
+        with:
+          name: blockr-generated-project
+          path: apps/blockr/Blockr.xcodeproj
+          if-no-files-found: error
 
   template:
     needs: changes
