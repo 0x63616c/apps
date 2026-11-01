@@ -19,10 +19,10 @@ import UIKit
                 if let lock = model.live.last {
                     Text(lock.group.name).font(.headline)
                     Text(lock.end, style: .timer).font(.system(size: 48, weight: .medium, design: .rounded)).monospacedDigit()
-                    Text("\(model.state.receipts.first(where: { $0.lockID == lock.id })?.coverage == .active ? "Active" : "Not protected on this Mac") · until \(lock.end.formatted(date: .omitted, time: .shortened))").foregroundStyle(.secondary)
+                    Text("\(model.state.receipts.first(where: { $0.lockID == lock.id })?.coverage == .active ? "Active" : model.state.receipts.first(where: { $0.lockID == lock.id })?.coverage == .partial ? "Websites only" : "Not protected on this Mac") · until \(lock.end.formatted(date: .omitted, time: .shortened))").foregroundStyle(.secondary)
                 } else { Text("Nothing locked").foregroundStyle(.secondary) }
                 OpenWindowButton(title: model.locked ? "Open Blockr" : "Start a lock")
-            }.padding(24).frame(width: 340).background(.black)
+            }.padding(24).frame(width: 340).background(.black).preferredColorScheme(.dark).tint(.white)
         }.menuBarExtraStyle(.window)
         #else
         WindowGroup { RootView().environmentObject(model).preferredColorScheme(.dark).tint(.white) }
@@ -38,7 +38,7 @@ private struct OpenWindowButton: View {
             openWindow(id: "main")
             NSApp.activate(ignoringOtherApps: true)
             NotificationCenter.default.post(name: .init("BlockrShowLock"), object: nil)
-        }.buttonStyle(.borderedProminent)
+        }.buttonStyle(.borderedProminent).tint(.white).foregroundStyle(.black)
     }
 }
 #endif

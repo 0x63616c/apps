@@ -70,7 +70,7 @@ struct WelcomeView: View {
             Button("Open Settings") { openSettings() }
             #else
             Text("Groups and lock schedules, together on your Mac.").foregroundStyle(.secondary)
-            Text("App blocking is unavailable on macOS. Timed website protection requires a content filter that is not included in this build.").foregroundStyle(.secondary)
+            Text("App blocking is unavailable on macOS. Website locks need a signed content filter and your approval in Settings.").foregroundStyle(.secondary)
             primary("Continue") { Task { await model.authorize() } }
             #endif
             Spacer()
