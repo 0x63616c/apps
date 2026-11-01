@@ -61,6 +61,7 @@ represented as a working system shield or a signed Mac filter.
 - Partial coverage could become a successful unbroken completion after repair. Coverage history now retains incomplete protection permanently, preserves first application time and excludes it from completed/time/streak stats.
 - Shield metadata used the latest lock even when an unrelated item was shielded. Match the local app/category/web token before selecting the latest relevant end; otherwise show unknown time.
 - Removed the group-editor website footer, restored compact Stats rows with definitions in an optional disclosure, and made locked Settings a compact read-only screen. Corrected Mac active title and menu timer; added remote-origin state, disabled unavailable sync, and fixed unnecessary local-picks prompt on website-only groups.
+- Restored the duration screen’s six-chip preset row, removed decorative marketing content, added the end-time preview and fixed the Review action at the bottom. Custom editor now scrolls with the keyboard and large text. Added fixture coverage for save/edit/delete and selected-preset fallback.
 - Added the active lock’s read-only group disclosure and full-unit duration accessibility labels, preserving selected traits and avoiding second-by-second timer announcements.
 - Extended fixture UI screenshots with locked Settings and a reset-disabled assertion.
 

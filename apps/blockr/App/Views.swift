@@ -152,6 +152,7 @@ struct LockView: View {
     private enum Modal: String, Identifiable { case custom, confirmation; var id: String { rawValue } }
     @State private var modal: Modal?
     @State private var editingDuration: Int?
+    @ScaledMetric(relativeTo: .body) private var chipWidth = 48.0
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         ScrollView {
@@ -159,8 +160,6 @@ struct LockView: View {
                 PageTitle(title: model.locked ? "Locked." : "Start a lock")
                 if model.locked { ActiveView() }
                 else {
-                    Image(systemName: "lock.shield").font(.system(size: 56, weight: .ultraLight)).frame(maxWidth: .infinity).padding(.vertical, 16).accessibilityHidden(true)
-                    Text("A little space.").font(.title.weight(.medium))
                     if model.groups.isEmpty {
                         Text("Create a group in Groups to get started.").foregroundStyle(.secondary)
                     } else {
@@ -168,8 +167,8 @@ struct LockView: View {
                             Text("Choose a group").tag(Optional<UUID>.none)
                             ForEach(model.groups) { Text($0.name).tag(Optional($0.id)) }
                         }.pickerStyle(.menu).frame(minHeight: 44)
-                        Text("For how long?").font(.title3.weight(.medium))
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 78))], spacing: 12) {
+                        Text("How long?").font(.title3.weight(.medium))
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: chipWidth), spacing: 8)], spacing: 8) {
                             ForEach(Durations.sorted(custom: model.state.replica.customDurations), id: \.self) { seconds in
                                 Button { duration = seconds } label: {
                                     Text(Durations.label(seconds)).font(.body.weight(.medium)).frame(maxWidth: .infinity).frame(height: 48).contentShape(Rectangle())
@@ -185,7 +184,7 @@ struct LockView: View {
                                         }
                                     }
                             }
-                            Button { editingDuration = nil; modal = .custom } label: { Image(systemName: "plus").frame(maxWidth: .infinity).frame(height: 48) }.buttonStyle(.bordered).accessibilityLabel("Add custom duration")
+                            Button { editingDuration = nil; modal = .custom } label: { Image(systemName: "plus").frame(maxWidth: .infinity).frame(height: 48) }.buttonStyle(.plain).background(Color(white: 0.08), in: RoundedRectangle(cornerRadius: 14)).accessibilityLabel("Add custom duration")
                         }
                         if !model.state.replica.customDurations.isEmpty {
                             Menu("Edit saved duration") {
@@ -202,11 +201,16 @@ struct LockView: View {
                         #else
                         MacFilterSetupView(filter: model.filter)
                         #endif
-                        primary("Review lock") { modal = .confirmation }.disabled(selectedGroup == nil || model.isStarting)
+                        Text("Ends \(Date().addingTimeInterval(Double(duration)).formatted(date: .abbreviated, time: .shortened))").foregroundStyle(.secondary)
                     }
                 }
             }.padding(24).frame(maxWidth: 600)
         }.background(.black)
+        .safeAreaInset(edge: .bottom) {
+            if !model.locked && !model.groups.isEmpty {
+                primary("Review lock") { modal = .confirmation }.disabled(selectedGroup == nil || model.isStarting).padding(24).background(.black)
+            }
+        }
         .onAppear { if selectedGroup == nil { selectedGroup = model.groups.first?.id } }
         .sheet(item: $modal) { presented in
             if presented == .custom { DurationEditor(selected: $duration, original: editingDuration) }
@@ -305,26 +309,28 @@ struct DurationEditor: View {
     @State private var minutes = ""
     @State private var validation: String?
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            Text(original == nil ? "Custom duration" : "Edit duration").font(.title.weight(.semibold))
-            HStack {
-                field("Days", text: $days); field("Hours", text: $hours); field("Minutes", text: $minutes)
-            }
-            Text("15 minutes to 7 days").foregroundStyle(.secondary)
-            if let validation { Text(validation) }
-            primary("Save duration") {
-                do {
-                    let value = try Durations.parse(days: days, hours: hours, minutes: minutes)
-                    model.error = nil
-                    model.saveDuration(value, replacing: original)
-                    if model.error == nil { selected = value; dismiss() }
-                } catch { validation = error.localizedDescription }
-            }.disabled(model.locked)
-            if let original {
-                Button("Delete duration", role: .destructive) { model.deleteDuration(original); if selected == original { selected = 7200 }; dismiss() }.disabled(model.locked)
-            }
-            Button("Cancel") { dismiss() }.accessibilityIdentifier("duration-cancel")
-        }.padding(32).frame(minWidth: 300).presentationDetents([.medium, .large])
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                Text(original == nil ? "Custom duration" : "Edit duration").font(.title.weight(.semibold))
+                HStack {
+                    field("Days", text: $days); field("Hours", text: $hours); field("Minutes", text: $minutes)
+                }
+                Text("15 minutes to 7 days").foregroundStyle(.secondary)
+                if let validation { Text(validation) }
+                primary("Save duration") {
+                    do {
+                        let value = try Durations.parse(days: days, hours: hours, minutes: minutes)
+                        model.error = nil
+                        model.saveDuration(value, replacing: original)
+                        if model.error == nil { selected = value; dismiss() }
+                    } catch { validation = error.localizedDescription }
+                }.disabled(model.locked)
+                if let original {
+                    Button("Delete duration", role: .destructive) { model.deleteDuration(original); if selected == original { selected = 7200 }; dismiss() }.disabled(model.locked)
+                }
+                Button("Cancel") { dismiss() }.accessibilityIdentifier("duration-cancel")
+            }.padding(32)
+        }.scrollDismissesKeyboard(.interactively).frame(minWidth: 300).presentationDetents([.medium, .large])
         .onAppear { if let original { days = String(original / 86400); hours = String(original % 86400 / 3600); minutes = String(original % 3600 / 60) } }
     }
     private func field(_ title: String, text: Binding<String>) -> some View {

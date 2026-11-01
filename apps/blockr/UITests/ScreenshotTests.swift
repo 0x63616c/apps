@@ -23,6 +23,7 @@ final class ScreenshotTests: XCTestCase {
         app.buttons["Start a lock"].tap()
         XCTAssertTrue(app.staticTexts["pageHeader-Start a lock"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Add custom duration"].waitForExistence(timeout: 5))
+        snap("duration")
         app.buttons["Add custom duration"].tap()
         XCTAssertTrue(app.staticTexts["Custom duration"].waitForExistence(timeout: 5))
         snap("custom-duration")
@@ -39,6 +40,34 @@ final class ScreenshotTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Settings are locked until your lock ends."].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["Reset this device"].isEnabled)
         snap("settings-locked")
+    }
+    @MainActor func testSavedDurationLifecycle() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["--screenshots"]
+        app.launch()
+        XCTAssertTrue(app.buttons["Start a lock"].waitForExistence(timeout: 15))
+        app.buttons["Start a lock"].tap()
+        app.buttons["Add custom duration"].tap()
+        let hours = app.textFields["Hours"]
+        XCTAssertTrue(hours.waitForExistence(timeout: 5))
+        hours.tap(); hours.typeText("1")
+        let minutes = app.textFields["Minutes"]
+        minutes.tap(); minutes.typeText("30")
+        if !app.buttons["Save duration"].isHittable { app.swipeUp() }
+        app.buttons["Save duration"].tap()
+        let custom = app.buttons["1 hour, 30 minutes"]
+        XCTAssertTrue(custom.waitForExistence(timeout: 5))
+        XCTAssertTrue(custom.isSelected)
+        snap("duration-saved")
+        app.buttons["Edit saved duration"].tap()
+        app.buttons["1h 30m"].tap()
+        XCTAssertTrue(app.staticTexts["Edit duration"].waitForExistence(timeout: 5))
+        snap("duration-edit")
+        if !app.buttons["Delete duration"].isHittable { app.swipeUp() }
+        app.buttons["Delete duration"].tap()
+        XCTAssertTrue(custom.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["2 hours"].isSelected)
     }
     @MainActor private func snap(_ name: String) {
         let shot = XCUIScreen.main.screenshot()
