@@ -33,13 +33,13 @@
 		55E8B8B92CD3285BA60A2DAE /* Storage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06F9052405B3D765F5CADDE1 /* Storage.swift */; };
 		582841B35820CAED386D700F /* FilterHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0987E9366A86C4C0504D7E /* FilterHealth.swift */; };
 		5D5FC0AD52908D05012302C3 /* Enforcement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DC2506462F390F8634620C6 /* Enforcement.swift */; };
+		5EADD8D74358CD9CCE565FEE /* com.calumwebb.blockr.ContentFilter.systemextension in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 8A42E4DEDC899E2E24466136 /* com.calumwebb.blockr.ContentFilter.systemextension */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		5EC254CB2FBD236CAFE41EB6 /* FilterHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0987E9366A86C4C0504D7E /* FilterHealth.swift */; };
 		77F228C94D9A010CF37310F3 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 3F8780BA7D72C41D37EAB666 /* PrivacyInfo.xcprivacy */; };
 		825905FD99074360ECB7D613 /* Storage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06F9052405B3D765F5CADDE1 /* Storage.swift */; };
 		82ACE12378D38C5F3E802E7B /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B40106A8737A438B92E762E /* Model.swift */; };
 		8C2C394BF97498A05DD9F7CF /* BlockrCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7C9DF576CBCF73ECE19EC0C1 /* BlockrCore */; };
 		9542E23D7F6EFCFA84865CC0 /* Enforcement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DC2506462F390F8634620C6 /* Enforcement.swift */; };
-		A422EF7C39D37BE9FA912E90 /* ContentFilter.systemextension in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 151143A360CF2F70DFA041AC /* ContentFilter.systemextension */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A5C4417C09945CA3EDEC5A92 /* Action.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B12984D9877B83CCC89DFA0 /* Action.swift */; };
 		A789E9F962E71B1A3AE7D2B8 /* DeviceActivityMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E91C0161468FA1A8399D7D17 /* DeviceActivityMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A86D601ED12EE96BE15E8CCE /* Storage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06F9052405B3D765F5CADDE1 /* Storage.swift */; };
@@ -119,7 +119,7 @@
 			dstPath = Contents/Library/SystemExtensions;
 			dstSubfolderSpec = 1;
 			files = (
-				A422EF7C39D37BE9FA912E90 /* ContentFilter.systemextension in Embed Dependencies */,
+				5EADD8D74358CD9CCE565FEE /* com.calumwebb.blockr.ContentFilter.systemextension in Embed Dependencies */,
 			);
 			name = "Embed Dependencies";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -129,7 +129,6 @@
 /* Begin PBXFileReference section */
 		06F9052405B3D765F5CADDE1 /* Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Storage.swift; sourceTree = "<group>"; };
 		0B1F11AAA7E0CDC6798FB6F7 /* Blockr.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Blockr.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		151143A360CF2F70DFA041AC /* ContentFilter.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = ContentFilter.systemextension; sourceTree = BUILT_PRODUCTS_DIR; };
 		1F9718AA76A07A0936F9041E /* BlockrMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BlockrMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		28035DE5F425F36AAA35B75B /* CloudSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSync.swift; sourceTree = "<group>"; };
 		288EB74F259C9684F552458A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -149,6 +148,7 @@
 		79BF73FE4ECF6364F7B11825 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		81D7304A20449577E184CEB6 /* Monitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Monitor.swift; sourceTree = "<group>"; };
 		824D0FA7398F437196EE4D75 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		8A42E4DEDC899E2E24466136 /* com.calumwebb.blockr.ContentFilter.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = com.calumwebb.blockr.ContentFilter.systemextension; sourceTree = BUILT_PRODUCTS_DIR; };
 		95FE4FB952A9F4B41461C820 /* Views.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views.swift; sourceTree = "<group>"; };
 		973E364F3BA0DB6125B2557D /* ContentFilter.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ContentFilter.entitlements; sourceTree = "<group>"; };
 		99259667B949384325A122AA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -243,7 +243,7 @@
 				0B1F11AAA7E0CDC6798FB6F7 /* Blockr.app */,
 				1F9718AA76A07A0936F9041E /* BlockrMac.app */,
 				DB6D842236B534D00B0C7B89 /* BlockrUITests.xctest */,
-				151143A360CF2F70DFA041AC /* ContentFilter.systemextension */,
+				8A42E4DEDC899E2E24466136 /* com.calumwebb.blockr.ContentFilter.systemextension */,
 				E91C0161468FA1A8399D7D17 /* DeviceActivityMonitor.appex */,
 				65BAFE4FDA33F497B5D1CCF5 /* ShieldAction.appex */,
 				9938BC4ABB2A8D4CF686FF97 /* ShieldConfiguration.appex */,
@@ -393,7 +393,7 @@
 				1C5DC6FD2C48F0A8C676D24E /* BlockrCore */,
 			);
 			productName = ContentFilter;
-			productReference = 151143A360CF2F70DFA041AC /* ContentFilter.systemextension */;
+			productReference = 8A42E4DEDC899E2E24466136 /* com.calumwebb.blockr.ContentFilter.systemextension */;
 			productType = "com.apple.product-type.system-extension";
 		};
 		4745A39CC00D02F03D3FEB02 /* BlockrMac */ = {
@@ -719,6 +719,8 @@
 					"@executable_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.calumwebb.blockr.ContentFilter;
+				PRODUCT_MODULE_NAME = ContentFilter;
+				PRODUCT_NAME = com.calumwebb.blockr.ContentFilter;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
 			};
@@ -826,6 +828,8 @@
 					"@executable_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.calumwebb.blockr.ContentFilter;
+				PRODUCT_MODULE_NAME = ContentFilter;
+				PRODUCT_NAME = com.calumwebb.blockr.ContentFilter;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
 			};
