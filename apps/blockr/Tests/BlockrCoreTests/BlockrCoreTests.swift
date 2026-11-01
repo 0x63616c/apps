@@ -137,4 +137,74 @@ final class BlockrCoreTests: XCTestCase {
         let text = String(decoding: data, as: UTF8.self)
         XCTAssertFalse(text.contains("selection")); XCTAssertFalse(text.contains("token")); XCTAssertFalse(text.contains("receipt"))
     }
+    func testRevisionExhaustionDoesNotCrash() throws {
+        var replica = Replica()
+        replica.groups = [group(Int64.max)]
+        XCTAssertThrowsError(try replica.nextRevision(device: "a"))
+        replica.groups = [group(41)]
+        XCTAssertEqual(try replica.nextRevision(device: "a").counter, 42)
+    }
+    func testPartialRepairCannotInventUnbrokenLock() throws {
+        let lock = try Lock(group: group(), start: now, duration: 3600, origin: "a")
+        let pending = Receipt(lockID: lock.id, coverage: .pending, acknowledged: now)
+        let partial = pending.updating(coverage: .partial, at: now)
+        let repaired = partial.updating(coverage: .active, at: now.addingTimeInterval(1800))
+        let completed = repaired.updating(coverage: .completed, at: lock.end)
+        XCTAssertTrue(completed.interruptionObserved)
+        XCTAssertEqual(Statistics(locks: [lock], receipts: [completed], now: lock.end).completed, 0)
+        XCTAssertEqual(Statistics(locks: [lock], receipts: [completed], now: lock.end).timeLocked, 0)
+    }
+    func testReceiptPreservesFirstApplicationAndFailureAcrossRetry() {
+        let pending = Receipt(lockID: UUID(), coverage: .pending, acknowledged: now)
+        let active = pending.updating(coverage: .active, at: now.addingTimeInterval(10))
+        let failed = active.updating(coverage: .failed, at: now.addingTimeInterval(20))
+        let repaired = failed.updating(coverage: .active, at: now.addingTimeInterval(30))
+        XCTAssertTrue(repaired.interruptionObserved)
+        XCTAssertEqual(repaired.appliedAt, now.addingTimeInterval(10))
+        XCTAssertFalse(active.interruptionObserved)
+        let legacyPartial = Receipt(lockID: UUID(), coverage: .partial, acknowledged: now)
+        XCTAssertTrue(legacyPartial.updating(coverage: .active, at: now).interruptionObserved)
+    }
+    func testShieldUsesLatestRelevantLocalSession() throws {
+        var replica = Replica()
+        let first = try Lock(group: group(), start: now, duration: 3600, origin: "a")
+        let overlapping = try Lock(group: group(), start: now, duration: 7200, origin: "b")
+        let unrelated = try Lock(group: group(), start: now, duration: 14400, origin: "c")
+        replica.locks = [unrelated, first, overlapping]
+        let receipts = replica.locks.map { Receipt(lockID: $0.id, coverage: .active, acknowledged: now) }
+        XCTAssertEqual(replica.shieldLock(at: now, receipts: receipts) { $0.id != unrelated.id }?.id, overlapping.id)
+        XCTAssertEqual(replica.shieldLock(at: first.end, receipts: receipts) { $0.id != unrelated.id }?.id, overlapping.id)
+        XCTAssertNil(replica.shieldLock(at: overlapping.end, receipts: receipts) { $0.id != unrelated.id })
+        let failed = [receipts[1], Receipt(lockID: overlapping.id, coverage: .failed, acknowledged: now)]
+        XCTAssertEqual(replica.shieldLock(at: now, receipts: failed) { _ in true }?.id, first.id)
+        XCTAssertNil(replica.shieldLock(at: now, receipts: []) { _ in true })
+        XCTAssertNil(replica.shieldLock(at: now, receipts: receipts) { _ in false })
+    }
+
+    func testInstallationReservationRejectsConcurrentStartAndPreservesIdentity() throws {
+        let lockID = UUID(), attempt = UUID()
+        let pending = try Receipt.beginInstallation(lockID: lockID, previous: nil, id: attempt, at: now)
+        XCTAssertThrowsError(try Receipt.beginInstallation(lockID: lockID, previous: pending, id: UUID(), at: now))
+        let active = pending.updating(coverage: .active, at: now)
+        XCTAssertFalse(pending.hasInstalledCoverage)
+        XCTAssertTrue(active.hasInstalledCoverage)
+        let partial = pending.updating(coverage: .partial, at: now)
+        XCTAssertTrue(try Receipt.beginInstallation(lockID: lockID, previous: partial, id: UUID(), at: now).hasInstalledCoverage)
+        XCTAssertEqual(active.installationID, attempt)
+        XCTAssertThrowsError(try Receipt.beginInstallation(lockID: lockID, previous: active, id: UUID(), at: now))
+        let failed = pending.updating(coverage: .failed, at: now)
+        let replacement = try Receipt.beginInstallation(lockID: lockID, previous: failed, id: UUID(), at: now)
+        XCTAssertNotEqual(replacement.installationID, attempt)
+        XCTAssertTrue(replacement.interruptionObserved)
+    }
+    func testStartupRecoveryWaitsForLeaseAndLegacyReceiptsDecode() throws {
+        let pending = try Receipt.beginInstallation(lockID: UUID(), previous: nil, id: UUID(), at: now)
+        XCTAssertFalse(pending.installationNeedsRecovery(at: now.addingTimeInterval(59)))
+        XCTAssertTrue(pending.installationNeedsRecovery(at: now.addingTimeInterval(60)))
+        XCTAssertFalse(pending.updating(coverage: .active, at: now).installationNeedsRecovery(at: now.addingTimeInterval(120)))
+        let legacy = Receipt(lockID: UUID(), coverage: .partial, acknowledged: now)
+        let data = try JSONEncoder().encode(legacy)
+        XCTAssertFalse(String(decoding: data, as: UTF8.self).contains("installationID"))
+        XCTAssertNil(try JSONDecoder().decode(Receipt.self, from: data).installationID)
+    }
 }

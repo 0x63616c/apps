@@ -19,12 +19,21 @@ import BlockrCore
         self.request = request
         OSSystemExtensionManager.shared.submitRequest(request)
     }
-    func requestNeedsUserApproval(_ request: OSSystemExtensionRequest) { status = .awaitingApproval }
-    func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) { status = .error(error.localizedDescription) }
-    func request(_ request: OSSystemExtensionRequest, actionForReplacingExtension existing: OSSystemExtensionProperties, withExtension ext: OSSystemExtensionProperties) -> OSSystemExtensionRequest.ReplacementAction { .replace }
-    func request(_ request: OSSystemExtensionRequest, didFinishWithResult result: OSSystemExtensionRequest.Result) {
-        guard result == .completed else { status = .error("Restart this Mac to finish filter setup."); return }
-        Task { await configure() }
+    nonisolated func requestNeedsUserApproval(_ request: OSSystemExtensionRequest) {
+        Task { @MainActor [weak self] in self?.status = .awaitingApproval }
+    }
+    nonisolated func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
+        let message = error.localizedDescription
+        Task { @MainActor [weak self] in self?.status = .error(message) }
+    }
+    nonisolated func request(_ request: OSSystemExtensionRequest, actionForReplacingExtension existing: OSSystemExtensionProperties, withExtension ext: OSSystemExtensionProperties) -> OSSystemExtensionRequest.ReplacementAction { .replace }
+    nonisolated func request(_ request: OSSystemExtensionRequest, didFinishWithResult result: OSSystemExtensionRequest.Result) {
+        let completed = result == .completed
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            guard completed else { self.status = .error("Restart this Mac to finish filter setup."); return }
+            await self.configure()
+        }
     }
     private func configure() async {
         do {
@@ -32,7 +41,6 @@ import BlockrCore
             try await manager.loadFromPreferences()
             let configuration = NEFilterProviderConfiguration()
             configuration.filterSockets = true
-            configuration.filterBrowsers = true
             configuration.filterDataProviderBundleIdentifier = FilterIdentity.bundleID
             manager.providerConfiguration = configuration
             manager.localizedDescription = "Blockr website protection"
@@ -102,7 +110,7 @@ struct MacFilterSetupView: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack { Text("Website protection"); Spacer(); Text(filter.label).foregroundStyle(.secondary) }
             if filter.status == .unavailable {
-                Text("This build needs signed Mac filter profiles before timed website protection can be enabled.").foregroundStyle(.secondary)
+                Text("Timed website protection is unavailable in this build.").foregroundStyle(.secondary)
             } else if filter.status != .enabled {
                 if case .error(let reason) = filter.status { Text(reason).foregroundStyle(.secondary) }
                 Text("Approve Blockr in General → Login Items & Extensions → Network Extensions, then approve website filtering.").foregroundStyle(.secondary)
