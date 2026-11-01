@@ -39,7 +39,7 @@ struct GroupsView: View {
         }.background(.black)
         .sheet(isPresented: $editor) { GroupEditor(group: editing) }
         .confirmationDialog("Delete \(deleting?.name ?? "group")?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
-            Button("Delete group", role: .destructive) { if let deleting { model.deleteGroup(deleting) }; deleting = nil }
+            Button("Delete group") { if let deleting { model.deleteGroup(deleting) }; deleting = nil }
             Button("Keep group", role: .cancel) { deleting = nil }
         } message: { Text("Your completed lock history stays.") }
     }
@@ -75,7 +75,7 @@ struct GroupEditor: View {
                     header: { Text("Websites") }
                 if let error = model.error { Section { Text(error).accessibilityLabel("Could not save: \(error)") } }
                 if model.locked { Text("A lock started. Changes are unavailable until it ends.") }
-                if group != nil { Section { Button("Delete group", role: .destructive) { deleting = true }.disabled(model.locked) } }
+                if group != nil { Section { Button("Delete group") { deleting = true }.disabled(model.locked) } }
             }
             .scrollContentBackground(.hidden).background(.black)
             .navigationTitle(group == nil ? "New group" : "Edit group")
@@ -92,9 +92,9 @@ struct GroupEditor: View {
                     if model.error == nil { dismiss() }
                 }.disabled(model.locked) }
             }
-            .confirmationDialog("Discard changes?", isPresented: $discard) { Button("Discard", role: .destructive) { dismiss() }; Button("Keep editing", role: .cancel) {} }
+            .confirmationDialog("Discard changes?", isPresented: $discard) { Button("Discard") { dismiss() }; Button("Keep editing", role: .cancel) {} }
             .confirmationDialog("Delete this group?", isPresented: $deleting) {
-                Button("Delete group", role: .destructive) { if let group { model.deleteGroup(group); if model.error == nil { dismiss() } } }
+                Button("Delete group") { if let group { model.deleteGroup(group); if model.error == nil { dismiss() } } }
                 Button("Keep group", role: .cancel) {}
             }
             #if os(iOS)

@@ -125,7 +125,7 @@ struct HomeLockView: View {
                                 Image(systemName: "chevron.right").foregroundStyle(.secondary)
                             }.frame(minHeight: 64).contentShape(Rectangle())
                         }.buttonStyle(.plain)
-                        .contextMenu { Button("Delete group", role: .destructive) { model.deleteGroup(group) } }
+                        .contextMenu { Button("Delete group") { model.deleteGroup(group) } }
                         Divider()
                     }
                     Button { editing = nil; editor = true } label: {
@@ -180,7 +180,7 @@ struct LockView: View {
                                     .contextMenu {
                                         if !Durations.presets.contains(seconds) {
                                             Button("Edit saved duration") { editingDuration = seconds; modal = .custom }
-                                            Button("Delete duration", role: .destructive) { model.deleteDuration(seconds); if duration == seconds { duration = 7200 } }
+                                            Button("Delete duration") { model.deleteDuration(seconds); if duration == seconds { duration = 7200 } }
                                         }
                                     }
                             }
@@ -330,7 +330,7 @@ struct DurationEditor: View {
                     } catch { validation = error.localizedDescription }
                 }.disabled(model.locked)
                 if let original {
-                    Button("Delete duration", role: .destructive) { model.deleteDuration(original); if selected == original { selected = 7200 }; dismiss() }.disabled(model.locked)
+                    Button("Delete duration") { model.deleteDuration(original); if selected == original { selected = 7200 }; dismiss() }.disabled(model.locked)
                 }
                 Button("Cancel") { dismiss() }.accessibilityIdentifier("duration-cancel")
             }.padding(32)

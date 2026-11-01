@@ -62,7 +62,7 @@ struct SettingsView: View {
                     #endif
                     Divider()
                     Text("Data").font(.title2.weight(.medium))
-                    Button("Reset this device", role: .destructive) { reset = true }.disabled(model.locked)
+                    Button("Reset this device") { reset = true }.disabled(model.locked)
                     Divider()
                     Text("Blockr").font(.title2.weight(.medium))
                     Link("Privacy policy", destination: URL(string: "https://0x63616c.github.io/apps/blockr/privacy/")!).frame(minHeight: 44)
@@ -72,7 +72,7 @@ struct SettingsView: View {
             }.padding(24).frame(maxWidth: 640)
         }.background(.black)
         .confirmationDialog("Reset this device?", isPresented: $reset) {
-            Button("Reset local data", role: .destructive) {
+            Button("Reset local data") {
                 model.perform { try model.mutate { state in
                     try state.replica.requireEditable(at: Date())
                     let device = state.deviceID, account = state.accountID, linked = state.accountHasBeenLinked

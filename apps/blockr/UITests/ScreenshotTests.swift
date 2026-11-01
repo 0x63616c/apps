@@ -70,6 +70,8 @@ final class ScreenshotTests: XCTestCase {
         XCTAssertTrue(app.buttons["2 hours"].isSelected)
     }
     @MainActor private func snap(_ name: String) {
+        // Existence checks can finish while native glass/navigation chrome is still animating.
+        Thread.sleep(forTimeInterval: 0.5)
         let shot = XCUIScreen.main.screenshot()
         let attachment = XCTAttachment(screenshot: shot)
         attachment.name = name

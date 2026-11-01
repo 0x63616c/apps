@@ -24,7 +24,7 @@ implemented evidence from remaining acceptance gates.
 | APP-14: universal app, IDs, extensions, app group, team | pass | `project.yml:1` sets iOS/macOS, team X9E4HG27NK; `project.yml:26` extension template, `project.yml:46` app identity; entitlements use group.com.calumwebb.blockr. Native build evidence below; distribution entitlements remain external. |
 | APP-14: onboarding/auth/groups/uncancellable confirm/presets/custom | fixed in this PR | `App/Views.swift:54`, `App/Groups.swift:47`, `App/Model.swift:86`, `Shared/Enforcement.swift:90`. Mutation guards read current coordinated state. Repair unions immutable picks, preserves prior policy on failure and does not restart an existing monitor. `testNoSecondStartOrMutationDuringLock`, duration tests. System selection/authorization needs device acceptance. |
 | APP-14: custom shield and ShieldAction | not verifiable without a signed device | `Extensions/ShieldConfiguration/Configuration.swift:7`, `Extensions/ShieldAction/Action.swift:4`. One button returns `.close`, records a tap without clearing protection. Relevant group selection fixed; fallback stays honest. Simulator tests cannot invoke genuine system shields. |
-| APP-14: deny removal/settings lock/DeviceActivity expiry | not verifiable without a signed device | `Shared/Enforcement.swift:23`, `Shared/Enforcement.swift:66`, `Extensions/DeviceActivityMonitor/Monitor.swift:4`, `App/StatsSettings.swift:40`. Restore previous denyAppRemoval only after union expires; launch reconciliation does not claim successful continuity. Settings mutations/reset recheck live locks. Fixture UI test is extended to capture locked Settings; its new capture is still queued. Killed-app/reboot expiry and own-app exemption require device tests. |
+| APP-14: deny removal/settings lock/DeviceActivity expiry | not verifiable without a signed device | `Shared/Enforcement.swift:23`, `Shared/Enforcement.swift:66`, `Extensions/DeviceActivityMonitor/Monitor.swift:4`, `App/StatsSettings.swift:40`. Restore previous denyAppRemoval only after union expires; launch reconciliation does not claim successful continuity. Settings mutations/reset recheck live locks. Fixture capture passed, including locked Settings and the disabled reset assertion. Killed-app/reboot expiry and own-app exemption require device tests. |
 | APP-14: on-device attempts/time saved/streak/per-app stats | out of scope -> follow-up | `App/StatsSettings.swift:4`, `Sources/BlockrCore/Models.swift:186`. Only shield-button taps, completed sessions and union time are measured. Blocked opens/time saved are —; per-app usage unavailable. No DeviceActivityReport extension or seven-day baseline exists. Signed report feasibility and a separate implementation ticket are required; this checklist is not complete. Fixed partial coverage being counted as an unbroken completion (`testPartialRepairCannotInventUnbrokenLock`). |
 | APP-14: private CloudKit groups/locks; tokens local | not verifiable without a signed device | `App/CloudSync.swift:13` private DB, optimistic record save/retry, account detachment, durable local outbound queue; `Sources/BlockrCore/Models.swift:166` tombstone/revision/lock union tests. Tokens/receipts/attempts excluded by type. Defaults BLOCKR_CLOUD_ENABLED=NO; container/schema/profiles and two-device offline/conflict/account-switch tests outstanding. Revision exhaustion now throws instead of crashing. |
 | APP-14: iOS web domains and explicit Mac setup | not verifiable without a signed device | `Shared/Enforcement.swift:60`, `ContentFilter/Provider.swift:17`, `App/MacFilter.swift:107`. iOS typed-domain filter plus token shields; Mac XPC health acknowledgement required. BLOCKR_FILTER_ENABLED=NO honestly prevents local Mac starts. Cross-browser/QUIC/DoH/VPN/expiry/provider-restart coverage is unverified. |
@@ -62,10 +62,11 @@ represented as a working system shield or a signed Mac filter.
 - Partial coverage could become a successful unbroken completion after repair. Coverage history now retains incomplete protection permanently, preserves first application time and excludes it from completed/time/streak stats.
 - Shield metadata used the latest lock even when an unrelated item was shielded. Match the local app/category/web token and installed coverage before selecting the latest relevant end; otherwise show unknown time (`testShieldUsesLatestRelevantLocalSession`).
 - Removed the group-editor website footer, restored compact Stats rows with definitions in an optional disclosure, and made locked Settings a compact read-only screen. Corrected Mac active title and menu timer; added remote-origin state, disabled unavailable sync, and fixed unnecessary local-picks prompt on website-only groups.
-- Restored the duration screen’s six-chip preset row, removed decorative marketing content, added the end-time preview and fixed the Review action at the bottom. Custom editor now scrolls with the keyboard and large text. Added fixture tests for save/edit/delete and selected-preset fallback; native execution remains pending.
+- Restored the duration screen’s six-chip preset row, removed decorative marketing content, added the end-time preview and fixed the Review action at the bottom. Custom editor now scrolls with the keyboard and large text. Fixture save/edit/delete and selected-preset fallback tests passed in the linked capture.
 - Added the active lock’s read-only group disclosure and full-unit duration accessibility labels, preserving selected traits and avoiding second-by-second timer announcements.
 - Made Mac confirmation explicitly website-only, removed provisioning jargon from unavailable-filter copy, moved routine sync details into disclosure and reset details into its confirmation.
 - Native CI exposed Mac delegate isolation warnings and an unsupported `filterBrowsers` setting. Delegate entry points now explicitly hop UI updates onto the main actor; native Mac filtering uses the supported socket path. Rebuild outcome is listed below.
+- Captures exposed red app-owned delete/reset actions from destructive button roles. App-owned buttons/menus/dialog actions now use the monochrome tint; explicit delete/reset titles, confirmation dialogs and cancel actions remain. This final palette adjustment awaits wrapper capture. Added a 0.5-second screenshot settling delay after observing partially animated native glass/tab chrome.
 - Extended fixture UI screenshots with locked Settings and a reset-disabled assertion.
 
 ## Checks and evidence
@@ -92,10 +93,25 @@ CI’s actionlint v1.7.7 instead. These tools are not committed.
 | Native evidence | Result |
 | --- | --- |
 | [CI for 87a8a81](https://github.com/0x63616c/apps/actions/runs/41354293433) | success: tooling, 20 macOS core tests, iOS simulator build, native macOS build. Generated project artifact matches the checked-in project byte-for-byte. Mac delegate/unsupported-setting warnings prompted the subsequent fix. |
-| [CI after Mac delegate fix, 793d9a9](https://github.com/0x63616c/apps/actions/runs/41354671053) | tooling passed; native build queued at report preparation. |
-| [APP-15 fixture capture, 87a8a81](https://github.com/0x63616c/apps/actions/runs/41354351134) | queued at report preparation; includes all iOS UI changes. Later source change affects only Mac delegate/configuration. |
-| Final local startup guard | Linux core tests: 22 pass. Native app/extension build not run for this local-only revision; wrapper must publish and run CI under the replacement publishing rules. |
+| [CI after Mac delegate fix, 793d9a9](https://github.com/0x63616c/apps/actions/runs/41354671053) | success: tooling, 20 core tests, iOS simulator build and macOS build. No MacFilter.swift warnings remain. |
+| [APP-15 fixture capture, 87a8a81](https://github.com/0x63616c/apps/actions/runs/41354351134) | success: both UI tests passed; 12 PNGs downloaded. Reviewed home/groups, new group, duration/custom/edit/saved, confirm, active, Stats and Settings/locked Settings. Final monochrome action roles and screenshot settling delay are later local adjustments and need wrapper recapture. |
+| Final local changes | Linux core tests: 22 pass. Native build/capture not run for local startup guard, monochrome action roles and screenshot settling adjustment; wrapper must publish and run CI under the replacement publishing rules. |
 | [Before fixture capture](https://github.com/0x63616c/apps/actions/runs/41352121351) | success; `pr-screenshots/blockr/light/` downloaded and reviewed (home, stats, custom duration, active). |
+
+Native commands in the successful published CI runs (exit 0; these are not final-local-revision results):
+
+```sh
+xcodebuild -project apps/blockr/Blockr.xcodeproj -scheme Blockr -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build -quiet
+xcodebuild -project apps/blockr/Blockr.xcodeproj -scheme BlockrMac -destination 'generic/platform=macOS' -configuration Debug -jobs 4 CODE_SIGNING_ALLOWED=NO build -quiet
+scripts/capture-screenshots.sh blockr build/pr-screenshots/blockr light
+```
+
+The capture artifact is `pr-screenshots`, with files under `blockr/light/`:
+`home.png`, `groups.png`, `group-new.png`, `duration.png`, `custom-duration.png`,
+`duration-saved.png`, `duration-edit.png`, `confirm.png`, `active.png`, `stats.png`,
+`settings.png`, `settings-locked.png`. Compact rows and the duration hierarchy were
+visually checked against the references. Native glass/status/tab chrome is transient
+in some captures; the added settling delay needs a new wrapper capture.
 
 Superseded queued runs cancelled during implementation are not counted as successful
 checks. After the publishing-rule update, further pushes, workflow control and PR
@@ -122,7 +138,7 @@ account/offline/conflict/two-device delivery; Mac activation/health/restarts,
 browser transport and VPN coverage. Force unwraps in app sources are constant URLs
 or GMT time zone, not external data. Storage coordination/atomic replacement and
 corruption refusal were inspected; multi-process fault injection remains a signed
-integration gate. UI fixture tests cannot prove extension or service enforcement.
+integration gate. UI fixture tests cannot prove extension or service enforcement. Native Mac UI captures remain outstanding. Twelve iOS fixture captures passed at 87a8a81; they reveal the red actions and transient chrome addressed by subsequent local changes, so final palette/timing acceptance still needs wrapper recapture.
 
 Product follow-ups are the missing privacy-preserving stats report/baseline and
 Mac TestFlight distribution. Native VoiceOver, Dynamic Type, Reduce Transparency,
