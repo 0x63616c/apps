@@ -108,6 +108,18 @@ final class BlockrCoreTests: XCTestCase {
         let interrupted = [receipts[0], Receipt(lockID: second.id, coverage: .interrupted, acknowledged: later)]
         XCTAssertEqual(Statistics(locks: [first, second], receipts: interrupted, now: later).streak, 0)
     }
+    func testRepairCannotRestoreUnbrokenStatus() throws {
+        let lock = try Lock(group: group(), start: now, duration: 3600, origin: "a")
+        let receipt = Receipt(lockID: lock.id, coverage: .completed, acknowledged: lock.end, interruptionObserved: true, appliedAt: now)
+        let stats = Statistics(locks: [lock], receipts: [receipt], now: lock.end)
+        XCTAssertEqual(stats.streak, 0)
+        XCTAssertEqual(stats.completed, 0)
+    }
+    func testRemoteArrivalDoesNotInventLocalProtectedTime() throws {
+        let lock = try Lock(group: group(), start: now, duration: 3600, origin: "b")
+        let receipt = Receipt(lockID: lock.id, coverage: .completed, acknowledged: lock.end, appliedAt: now.addingTimeInterval(1800))
+        XCTAssertEqual(Statistics(locks: [lock], receipts: [receipt], now: lock.end).timeLocked, 1800)
+    }
     func testSyncPayloadNeverContainsTokens() throws {
         var replica = Replica(); replica.groups = [group()]
         let data = try JSONEncoder().encode(replica)

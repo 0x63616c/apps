@@ -14,7 +14,7 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var page: Page? = .lock
     var body: some View {
-        Group {
+        SwiftUI.Group {
             if !model.loaded {
                 ContentUnavailableView { Label("Storage unavailable", systemImage: "externaldrive.badge.exclamationmark") } description: { Text("Blockr could not read its shared data.") } actions: { Button("Retry") { model.refresh() } }
             } else if !model.state.onboardingComplete {
@@ -232,6 +232,7 @@ struct ActiveView: View {
     #if os(iOS)
     @State private var choosing = false
     @State private var picks = FamilyActivitySelection()
+    @State private var pickingLock: Lock?
     #endif
     var body: some View {
         if let lock = model.live.last {
@@ -242,15 +243,24 @@ struct ActiveView: View {
                 Text("Until \(lock.end.formatted(date: .abbreviated, time: .shortened))").foregroundStyle(.secondary)
                 ForEach(model.live) { item in
                     let coverage = model.state.receipts.first { $0.lockID == item.id }?.coverage ?? .pending
-                    HStack { Text(item.group.name); Spacer(); Text(coverage == .active ? "Locked" : coverage == .partial ? "Partly protected" : "Not protected here").foregroundStyle(.secondary) }
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack { Text(item.group.name); Spacer(); Text(coverage == .active ? "Locked" : coverage == .partial ? "Partly protected" : "Not protected here").foregroundStyle(.secondary) }
+                        #if os(iOS)
+                        if coverage != .active && model.authorized {
+                            Button("Pick apps for \(item.group.name)") {
+                                pickingLock = item
+                                picks = Enforcement.selection(model.state.selections[item.group.id.uuidString])
+                                choosing = true
+                            }
+                        }
+                        #endif
+                    }
                 }
                 if model.live.contains(where: { item in !model.state.receipts.contains { $0.lockID == item.id && $0.coverage == .active } }) {
                     Text("This device needs local setup. Locks on your other devices keep running.").foregroundStyle(.secondary)
                     #if os(iOS)
                     if !model.authorized {
                         Button("Allow Screen Time") { Task { await model.authorize() } }
-                    } else {
-                        Button("Pick apps on this device") { choosing = true }
                     }
                     #endif
                 }
@@ -260,8 +270,8 @@ struct ActiveView: View {
             .familyActivityPicker(isPresented: $choosing, selection: $picks)
             .onChange(of: choosing) { old, new in
                 if old && !new && Enforcement.hasSelection(picks) {
-                    for item in model.live where !model.state.receipts.contains(where: { $0.lockID == item.id && $0.coverage == .active }) {
-                        model.setUpLocalProtection(item, picks: picks)
+                    if let pickingLock, pickingLock.isLive(at: Date()) {
+                        model.setUpLocalProtection(pickingLock, picks: picks)
                     }
                 }
             }

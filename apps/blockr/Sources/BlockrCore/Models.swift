@@ -108,7 +108,12 @@ public struct Receipt: Codable, Equatable, Sendable {
     public var lockID: UUID
     public var coverage: Coverage
     public var acknowledged: Date
-    public init(lockID: UUID, coverage: Coverage, acknowledged: Date) { self.lockID = lockID; self.coverage = coverage; self.acknowledged = acknowledged }
+    public var interruptionObserved: Bool
+    public var appliedAt: Date?
+    public init(lockID: UUID, coverage: Coverage, acknowledged: Date, interruptionObserved: Bool = false, appliedAt: Date? = nil) {
+        self.lockID = lockID; self.coverage = coverage; self.acknowledged = acknowledged
+        self.interruptionObserved = interruptionObserved; self.appliedAt = appliedAt
+    }
 }
 public struct Replica: Codable, Equatable, Sendable {
     public var groups: [Group] = []
@@ -152,12 +157,13 @@ public struct Statistics: Equatable, Sendable {
     public let timeLocked: TimeInterval
     public init(locks: [Lock], receipts: [Receipt], now: Date) {
         let ended = locks.filter { $0.end <= now }.sorted { $0.end < $1.end }
-        let successful = ended.filter { lock in receipts.contains { $0.lockID == lock.id && $0.coverage == .completed } }
+        let successful = ended.filter { lock in receipts.contains { $0.lockID == lock.id && $0.coverage == .completed && !$0.interruptionObserved } }
         completed = successful.count
         // Union intervals so concurrent locks do not double-count time.
         var seconds: TimeInterval = 0, lastEnd = Date.distantPast
         for lock in successful.sorted(by: { $0.start < $1.start }) {
-            seconds += max(0, lock.end.timeIntervalSince(max(lastEnd, lock.start)))
+            let applied = receipts.first { $0.lockID == lock.id }?.appliedAt ?? lock.start
+            seconds += max(0, lock.end.timeIntervalSince(max(lastEnd, max(lock.start, applied))))
             lastEnd = max(lastEnd, lock.end)
         }
         timeLocked = seconds
