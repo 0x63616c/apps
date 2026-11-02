@@ -7,7 +7,7 @@ import BlockrCore
 
 /// One named store belongs exclusively to Blockr. The union is recomputed on every boundary.
 enum Enforcement {
-    static let store = ManagedSettingsStore(named: .init("blockr"))
+    static let store = ManagedSettingsStore(named: .init(Restore.managedSettingsStoreName))
     static let center = DeviceActivityCenter()
     static func selection(_ data: Data?) -> FamilyActivitySelection {
         guard let data, let value = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data) else { return FamilyActivitySelection() }
@@ -25,7 +25,7 @@ enum Enforcement {
     static func apply(_ state: inout LocalState, now: Date) throws {
         let live = state.replica.liveLocks(at: now).filter { lock in
             state.snapshots[lock.id.uuidString] != nil && state.receipts.contains {
-                $0.lockID == lock.id && $0.hasInstalledCoverage && ($0.coverage != .pending || center.activities.contains(DeviceActivityName(lock.id.uuidString)))
+                $0.lockID == lock.id && $0.hasInstalledCoverage
             }
         }
         if live.isEmpty {
@@ -79,11 +79,13 @@ enum Enforcement {
     }
     static func reconcile(now: Date = Date(), monitorEnded: UUID? = nil) throws {
         try Storage.update { state in
-            let authorized = AuthorizationCenter.shared.authorizationStatus == .approved
+            let status = AuthorizationCenter.shared.authorizationStatus
+            let authorization: Restore.Authorization = status == .denied ? .denied : status == .approved ? .approved : .notDetermined
+            let authorized = authorization != .denied
             for lock in state.replica.locks {
                 guard let receipt = state.receipts.first(where: { $0.lockID == lock.id }) else { continue }
                 if lock.isLive(at: now) && receipt.installationNeedsRecovery(at: now) {
-                    if center.activities.contains(DeviceActivityName(lock.id.uuidString)), state.snapshots[lock.id.uuidString] != nil, authorized {
+                    if (receipt.hasInstalledCoverage || center.activities.contains(DeviceActivityName(lock.id.uuidString))), state.snapshots[lock.id.uuidString] != nil, authorized {
                         // A recovered start cannot prove continuity across its missing completion.
                         let picks = selection(state.snapshots[lock.id.uuidString])
                         state.receipt(lock, .interrupted, now: now)
@@ -97,8 +99,38 @@ enum Enforcement {
                     state.receipt(lock, .interrupted, now: now)
                 }
             }
-            if !authorized { state.selections.removeAll() }
+            let actions = Restore.plan(locks: state.replica.locks, receipts: state.receipts,
+                snapshotsPresent: Set(state.replica.locks.filter { state.snapshots[$0.id.uuidString] != nil }.map(\.id)),
+                monitoredIDs: Set(center.activities.compactMap { UUID(uuidString: $0.rawValue) }),
+                authorization: authorization, now: now)
+            for action in actions {
+                switch action {
+                case .notProtected(let id):
+                    if let lock = state.replica.locks.first(where: { $0.id == id }),
+                       state.receipts.contains(where: { $0.lockID == id && $0.hasInstalledCoverage }) {
+                        state.receipt(lock, .interrupted, now: now)
+                    }
+                case .reschedule(let lock):
+                    // Missing monitoring means continuity is unknown, even if restoration succeeds.
+                    // Keep installed coverage so a scheduling error can never remove live shields.
+                    if let index = state.receipts.firstIndex(where: { $0.lockID == lock.id }) {
+                        state.receipts[index].interruptionObserved = true
+                    }
+                case .reapply: break // apply below recomputes the union, including overlapping locks.
+                }
+            }
             try apply(&state, now: now)
+            for action in actions {
+                guard case .reschedule(let lock) = action else { continue }
+                do {
+                    try schedule(lock, now: now, remote: false)
+                    state.monitorRestoreErrors?.removeValue(forKey: lock.id.uuidString)
+                } catch {
+                    // Persist the failure without throwing away successfully reapplied shields.
+                    if state.monitorRestoreErrors == nil { state.monitorRestoreErrors = [:] }
+                    state.monitorRestoreErrors?[lock.id.uuidString] = error.localizedDescription
+                }
+            }
         }
         // Broken installations must not keep promising a future unlock.
         let state = try Storage.read()

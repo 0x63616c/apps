@@ -16,16 +16,25 @@ import FamilyControls
     let filter = MacFilter()
     #endif
     let fixture = ProcessInfo.processInfo.arguments.contains("--screenshots")
+    private var attemptedAuthorizationRecovery = false
+    private var recoveringAuthorization = false
     private var syncTicks = 0
     private var maintenance: Task<Void, Never>?
     var live: [Lock] { state.replica.liveLocks(at: Date()) }
     var locked: Bool { !live.isEmpty }
+    var locallyProtected: Bool { live.contains { [.active, .partial].contains(coverage(on: $0)) } }
     var groups: [BlockrCore.Group] { state.replica.visibleGroups }
     init(startMaintenance: Bool = true) {
         if fixture {
             state.onboardingComplete = true
             authorized = true
             state.replica.groups = [BlockrCore.Group(name: "Social", domains: ["example.com"], categoryIntent: "Social apps", revision: Revision(1, device: "fixture"))]
+            if ProcessInfo.processInfo.arguments.contains("--unprotected-lock"),
+               let group = state.replica.groups.first,
+               let lock = try? Lock(group: group, start: Date(), duration: 3600, origin: state.deviceID) {
+                state.replica.locks = [lock]
+                state.receipt(lock, .active) // Stale receipt with a missing local snapshot.
+            }
             loaded = true
         } else {
             refresh()
@@ -49,10 +58,27 @@ import FamilyControls
         if fixture { try body(&state) } else { try Storage.update(body) }
     }
     func refresh() {
-        guard !fixture else { return }
+        guard !fixture, !recoveringAuthorization else { return }
         do {
             if !loaded { try Storage.update { _ in } }
             #if os(iOS)
+            let saved = try Storage.read()
+            if AuthorizationCenter.shared.authorizationStatus == .notDetermined,
+               !attemptedAuthorizationRecovery,
+               (!saved.receipts.isEmpty || !saved.selections.isEmpty || !saved.replica.liveLocks(at: Date()).isEmpty) {
+                attemptedAuthorizationRecovery = true
+                recoveringAuthorization = true
+                state = saved
+                loaded = true
+                Task { [weak self] in
+                    // Only the app may reauthorize; extensions reconcile without requesting access.
+                    try? await AuthorizationCenter.shared.requestAuthorization(for: .individual)
+                    guard let self else { return }
+                    self.recoveringAuthorization = false
+                    self.refresh()
+                }
+                return
+            }
             try Enforcement.reconcile()
             authorized = AuthorizationCenter.shared.authorizationStatus == .approved
             #endif
@@ -70,6 +96,8 @@ import FamilyControls
     }
     func synchronize() async {
         guard !fixture else { return }
+        if !recoveringAuthorization { attemptedAuthorizationRecovery = false }
+        refresh()
         syncStatus = .syncing
         syncStatus = await sync.synchronize()
         refresh()
@@ -184,7 +212,11 @@ import FamilyControls
             guard !locked else { throw BlockrError.locked }
             let lock = try Lock(group: group, start: Date(), duration: seconds, origin: state.deviceID)
             #if os(iOS)
-            if fixture { try state.replica.start(lock, at: Date()); state.receipt(lock, .active) }
+            if fixture {
+                try state.replica.start(lock, at: Date())
+                state.snapshots[lock.id.uuidString] = try JSONEncoder().encode(FamilyActivitySelection())
+                state.receipt(lock, .active)
+            }
             else {
                 try Enforcement.start(lock, picks: Enforcement.selection(state.selections[group.id.uuidString]))
                 startedLock = lock
@@ -233,6 +265,15 @@ import FamilyControls
         }
     }
     #endif
+    func coverage(on lock: Lock) -> Coverage {
+        let coverage = state.receipts.first { $0.lockID == lock.id }?.coverage ?? .pending
+        #if os(iOS)
+        if (!fixture && AuthorizationCenter.shared.authorizationStatus == .denied) || state.snapshots[lock.id.uuidString] == nil {
+            return .interrupted
+        }
+        #endif
+        return coverage
+    }
     var syncLabel: String {
         switch syncStatus {
         case .unavailable: "iCloud unavailable"

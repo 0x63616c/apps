@@ -11,6 +11,7 @@ struct LocalState: Codable {
     var selections: [String: Data] = [:]
     var snapshots: [String: Data] = [:]
     var receipts: [Receipt] = []
+    var monitorRestoreErrors: [String: String]?
     var attempts: [Attempt] = []
     // Optional for compatibility with state saved before local notifications.
     var immediateNotificationIDs: [String]?

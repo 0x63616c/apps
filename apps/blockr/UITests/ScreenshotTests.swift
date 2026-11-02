@@ -72,6 +72,17 @@ final class ScreenshotTests: XCTestCase {
         XCTAssertTrue(custom.waitForNonExistence(timeout: 5))
         XCTAssertTrue(app.buttons["2 hours"].isSelected)
     }
+    @MainActor func testUnprotectedActiveLock() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["--screenshots", "--unprotected-lock"]
+        app.launch()
+        let header = app.staticTexts["pageHeader-Blockr"]
+        XCTAssertTrue(header.waitForExistence(timeout: 15))
+        XCTAssertEqual(header.label, "Not protected here")
+        XCTAssertFalse(app.staticTexts["Locked"].exists)
+        snap("active-unprotected")
+    }
     @MainActor private func snap(_ name: String) {
         // Existence checks can finish while native glass/navigation chrome is still animating.
         Thread.sleep(forTimeInterval: 0.5)
