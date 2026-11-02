@@ -45,6 +45,11 @@ jobs:
           selected=$(python3 scripts/select-duo-xcode.py "$REQUESTED_DEVELOPER_DIR")
           echo "DEVELOPER_DIR=$selected" >> "$GITHUB_ENV"
           echo "Using $selected"
+      - name: Warm up CoreSimulator
+        timeout-minutes: 5
+        run: |
+          xcrun simctl list devices >/dev/null
+          xcrun simctl help >/dev/null
       - name: List simulator device types and runtimes
         run: |
           xcodebuild -version

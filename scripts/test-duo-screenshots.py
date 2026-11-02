@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.dont_write_bytecode = True
 
@@ -138,6 +139,56 @@ class XcodeSelectionTests(unittest.TestCase):
     def test_missing_xcode_fails_clearly(self):
         with self.assertRaisesRegex(ValueError, "No usable .*Xcode.*install Xcode 27.1"):
             xcode.select_xcode("/missing", self.applications)
+
+
+class SimctlTimeoutTests(unittest.TestCase):
+    def test_default_and_configured_timeout(self):
+        for value, expected in [(None, 180), ("240", 240), ("0.5", 0.5)]:
+            with self.subTest(value=value), patch.dict(os.environ), patch.object(duo.subprocess, "run") as run:
+                os.environ.pop("DUO_SIMCTL_TIMEOUT", None)
+                if value is not None:
+                    os.environ["DUO_SIMCTL_TIMEOUT"] = value
+                duo.simctl("help", "io", check=True)
+                run.assert_called_once_with(
+                    ["xcrun", "simctl", "help", "io"], text=True,
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                    timeout=expected, check=True)
+
+    def test_read_only_probe_timeout_retries_once(self):
+        for args in [("help",), ("help", "io"), ("help", "ui"), ("help", "fold"), ("list", "devices")]:
+            with self.subTest(args=args), patch.object(duo.subprocess, "run") as run:
+                result = subprocess.CompletedProcess(args, 0, stdout="capabilities")
+                run.side_effect = [subprocess.TimeoutExpired(args, 180), result]
+                self.assertIs(duo.simctl(*args), result)
+                self.assertEqual(run.call_count, 2)
+                self.assertEqual(run.call_args_list[0], run.call_args_list[1])
+
+    def test_second_timeout_is_propagated(self):
+        with patch.object(duo.subprocess, "run") as run:
+            run.side_effect = subprocess.TimeoutExpired(["help"], 180)
+            with self.assertRaises(subprocess.TimeoutExpired):
+                duo.simctl("help")
+            self.assertEqual(run.call_count, 2)
+
+    def test_other_calls_and_non_timeout_failures_are_not_retried(self):
+        for args, error in [
+            (("fold", "test", "folded"), subprocess.TimeoutExpired(["fold"], 180)),
+            (("io", "test", "screenshot"), subprocess.TimeoutExpired(["io"], 180)),
+            (("help",), subprocess.CalledProcessError(1, ["help"])),
+            (("list",), OSError("missing xcrun")),
+        ]:
+            with self.subTest(args=args, error=error), patch.object(duo.subprocess, "run") as run:
+                run.side_effect = error
+                with self.assertRaises(type(error)):
+                    duo.simctl(*args, check=True)
+                run.assert_called_once()
+
+    def test_unsuccessful_help_result_is_returned_without_retry(self):
+        with patch.object(duo.subprocess, "run") as run:
+            result = subprocess.CompletedProcess(["help", "fold"], 1, stdout="unsupported")
+            run.return_value = result
+            self.assertIs(duo.simctl("help", "fold"), result)
+            run.assert_called_once()
 
 
 class DuoCapabilitiesTests(unittest.TestCase):
