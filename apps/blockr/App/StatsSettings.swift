@@ -10,23 +10,40 @@ struct StatsView: View {
                 PageTitle(title: "Stats")
                 metric("Unbroken locks", "\(stats.streak)")
                 metric("Completed locks", "\(stats.completed)")
-                metric("Time locked", Durations.label(Int(stats.timeLocked)))
+                if model.live.isEmpty {
+                    metric("Time locked", Durations.label(Int(stats.timeLocked)))
+                } else {
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        let total = Statistics.lockedSeconds(locks: model.state.replica.locks, receipts: model.state.receipts, at: context.date)
+                        let counting = model.state.replica.liveLocks(at: context.date).contains { lock in
+                            model.state.receipts.contains { $0.lockID == lock.id && $0.hasInstalledCoverage && !$0.interruptionObserved && ($0.appliedAt ?? lock.start) <= context.date }
+                        }
+                        if !counting {
+                            metric("Time locked", Durations.label(Int(total)))
+                        } else {
+                            metric("Time locked", value: Text(context.date.addingTimeInterval(-total), style: .timer))
+                        }
+                    }
+                }
                 metric("Shield-button taps", "\(model.state.attempts.count)")
                 metric("Blocked opens", "—")
                 metric("Estimated time saved", "—")
                 DisclosureGroup("About these stats") {
                     Text("Shield taps are recorded on this device when you close a shield. They do not count every blocked open. Unbroken locks are locally completed sessions with no observed interruption.").foregroundStyle(.secondary)
-                    Text("Time saved and per-app usage are unavailable. Blockr does not have a verified usage baseline. Time locked counts overlapping completed sessions once.").foregroundStyle(.secondary)
+                    Text("Time saved and per-app usage are unavailable. Blockr does not have a verified usage baseline. Time locked includes the current installed lock and counts overlapping sessions once.").foregroundStyle(.secondary)
                 }
             }.padding(24).frame(maxWidth: 640)
         }.background(.black)
     }
     private func metric(_ label: String, _ value: String) -> some View {
+        metric(label, value: Text(value.isEmpty ? "0m" : value))
+    }
+    private func metric(_ label: String, value: Text) -> some View {
         VStack(spacing: 16) {
             HStack(alignment: .firstTextBaseline, spacing: 16) {
                 Text(label)
                 Spacer(minLength: 8)
-                Text(value.isEmpty ? "0m" : value).font(.title2.weight(.medium)).monospacedDigit().foregroundStyle(.secondary)
+                value.font(.title2.weight(.medium)).monospacedDigit().foregroundStyle(.secondary)
             }.frame(minHeight: 44)
             Divider()
         }

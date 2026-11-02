@@ -12,6 +12,8 @@ struct LocalState: Codable {
     var snapshots: [String: Data] = [:]
     var receipts: [Receipt] = []
     var attempts: [Attempt] = []
+    // Optional for compatibility with state saved before local notifications.
+    var immediateNotificationIDs: [String]?
     var previousDenyRemoval: Bool?
     var removalWasCaptured = false
     var detachedLockIDs: [UUID] = []
