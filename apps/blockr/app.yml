@@ -21,6 +21,9 @@ signed_targets:
   DeviceActivityMonitor:
     bundle_id: com.calumwebb.blockr.DeviceActivityMonitor
     profile_name: Blockr DeviceActivityMonitor CI App Store
+  DeviceActivityReport:
+    bundle_id: com.calumwebb.blockr.DeviceActivityReport
+    profile_name: Blockr DeviceActivityReport CI App Store
 macos_registration_targets:
   BlockrMac:
     bundle_id: com.calumwebb.blockr

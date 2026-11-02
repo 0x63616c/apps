@@ -4,7 +4,7 @@ set -euo pipefail
 profile=${1:?profile path required}
 identifier=${2:?Blockr bundle identifier required}
 case "$identifier" in
-  com.calumwebb.blockr|com.calumwebb.blockr.ShieldConfiguration|com.calumwebb.blockr.ShieldAction|com.calumwebb.blockr.DeviceActivityMonitor) ;;
+  com.calumwebb.blockr|com.calumwebb.blockr.ShieldConfiguration|com.calumwebb.blockr.ShieldAction|com.calumwebb.blockr.DeviceActivityMonitor|com.calumwebb.blockr.DeviceActivityReport) ;;
   *) echo 'Only Blockr profiles may be inspected by this check' >&2; exit 64 ;;
 esac
 umask 077

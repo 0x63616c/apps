@@ -1,6 +1,7 @@
 import SwiftUI
 import BlockrCore
 #if os(iOS)
+import DeviceActivity
 import FamilyControls
 #endif
 
@@ -56,6 +57,11 @@ struct GroupEditor: View {
     @State private var deleting = false
     #if os(iOS)
     @State private var selection = FamilyActivitySelection()
+    @State private var usageInterval: DateInterval = {
+        let now = Date()
+        let start = Calendar.current.date(byAdding: .day, value: -7, to: now) ?? now.addingTimeInterval(-7 * 24 * 60 * 60)
+        return DateInterval(start: start, end: now)
+    }()
     #endif
     var body: some View {
         NavigationStack {
@@ -65,6 +71,18 @@ struct GroupEditor: View {
                     #if os(iOS)
                     Button("Pick apps on this device") { picker = true }.disabled(!model.authorized)
                     Text("\(selection.applicationTokens.count) apps · \(selection.categoryTokens.count) categories · \(selection.webDomainTokens.count) websites").foregroundStyle(.secondary)
+                    if model.authorized {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Most used").font(.headline)
+                            DeviceActivityReport(.init("mostUsed"), filter: DeviceActivityFilter(
+                                segment: .daily(during: usageInterval),
+                                users: .all,
+                                devices: .init([.iPhone, .iPad])
+                            ))
+                            .frame(height: 424)
+                        }
+                        .listRowBackground(Color.black)
+                    }
                     if !model.authorized { Button("Allow Screen Time") { Task { await model.authorize() } } }
                     #else
                     Text("App selection is available on iPhone. App picks stay on each device.").foregroundStyle(.secondary)
