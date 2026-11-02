@@ -153,14 +153,14 @@ orientations = %w[UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitU
   raise "Blockr #{key} must support all orientations" unless blockr_settings.fetch(key).split == orientations
 end
 
-# Blockr regenerates all four profiles and verifies the managed entitlement before archive.
+# Blockr regenerates all five profiles and verifies the managed entitlement before archive.
 check.calls.clear
 blockr_project = File.expand_path("../apps/blockr/Blockr.xcodeproj/project.pbxproj", __dir__)
 blockr_original = File.binread(blockr_project)
 check.beta({ app: "blockr" })
 raise "Blockr signing leaked" unless File.binread(blockr_project) == blockr_original
 blockr_profiles = check.calls.select { |name, _| name == :profile }.map(&:last)
-expected_blockr_ids = ["com.calumwebb.blockr", "com.calumwebb.blockr.ShieldConfiguration", "com.calumwebb.blockr.ShieldAction", "com.calumwebb.blockr.DeviceActivityMonitor"]
+expected_blockr_ids = ["com.calumwebb.blockr", "com.calumwebb.blockr.ShieldConfiguration", "com.calumwebb.blockr.ShieldAction", "com.calumwebb.blockr.DeviceActivityMonitor", "com.calumwebb.blockr.DeviceActivityReport"]
 raise "Blockr profiles incomplete" unless blockr_profiles.map { |args| args[:app_identifier] } == expected_blockr_ids
 raise "Blockr profiles must regenerate" unless blockr_profiles.all? { |args| args[:force] == true }
 verifications = check.calls.select { |name, args| name == :sh && args.first.end_with?("verify-blockr-profile.sh") }.map(&:last)

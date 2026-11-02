@@ -68,6 +68,9 @@ targets:
       - target: ShieldConfiguration
       - target: ShieldAction
       - target: DeviceActivityMonitor
+      # XcodeGen embeds ExtensionKit products in $(EXTENSIONS_FOLDER_PATH).
+      - target: DeviceActivityReport
+        embed: true
     settings:
       base:
         INFOPLIST_FILE: App/Info.plist
@@ -126,6 +129,9 @@ targets:
     templates: [ScreenTimeExtension]
   DeviceActivityMonitor:
     templates: [ScreenTimeExtension]
+  DeviceActivityReport:
+    templates: [ScreenTimeExtension]
+    type: extensionkit-extension
   BlockrUITests:
     type: bundle.ui-testing
     platform: iOS

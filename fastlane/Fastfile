@@ -35,7 +35,7 @@ def report_screen_time_entitlements
     UI.important("Shield signing diagnostics: archive app unavailable")
     return
   end
-  apps.flat_map { |app| [app] + Dir[File.join(app, "PlugIns", "*.appex")] }.each do |bundle|
+  apps.flat_map { |app| [app] + Dir[File.join(app, "{PlugIns,Extensions}", "*.appex")] }.each do |bundle|
     begin
       xml, _stderr, status = Open3.capture3("codesign", "-d", "--entitlements", ":-", bundle)
       raise "codesign failed" unless status.success?
