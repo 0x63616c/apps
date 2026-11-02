@@ -254,7 +254,10 @@ struct ActiveView: View {
             VStack(alignment: .leading, spacing: 24) {
                 Image(systemName: "lock.fill").font(.largeTitle).accessibilityHidden(true)
                 Text(lock.group.name).font(.title2.weight(.medium))
-                Text(lock.end, style: .timer).font(.system(size: timerSize, weight: .medium)).monospacedDigit().minimumScaleFactor(0.5).lineLimit(1).accessibilityLabel("Lock ends \(lock.end.formatted())")
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    Text(Durations.clock(lock.end.timeIntervalSince(model.timerDate(context.date)), remaining: true))
+                        .font(.system(size: timerSize, weight: .medium)).monospacedDigit().minimumScaleFactor(0.5).lineLimit(1).accessibilityLabel("Lock ends \(lock.end.formatted())")
+                }
                 ElapsedLockTime(start: lock.start)
                 if lock.origin != model.state.deviceID { Text("Started on another device").foregroundStyle(.secondary) }
                 Text("Until \(lock.end.formatted(date: .abbreviated, time: .shortened))").foregroundStyle(.secondary)
@@ -344,13 +347,17 @@ struct DurationEditor: View {
 }
 
 struct ElapsedLockTime: View {
+    @EnvironmentObject private var model: Model
     let start: Date
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "lock.fill").accessibilityHidden(true)
-            Text(start, style: .timer)
-                .monospacedDigit()
-                .accessibilityLabel(Text("Locked for \(Text(start, style: .timer))"))
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                let elapsed = Durations.clock(model.timerDate(context.date).timeIntervalSince(start))
+                Text(elapsed)
+                    .monospacedDigit()
+                    .accessibilityLabel("Locked for \(elapsed)")
+            }
         }
         .font(.caption)
         .foregroundStyle(.secondary)

@@ -14,14 +14,15 @@ struct StatsView: View {
                     metric("Time locked", Durations.label(Int(stats.timeLocked)))
                 } else {
                     TimelineView(.periodic(from: .now, by: 1)) { context in
-                        let total = Statistics.lockedSeconds(locks: model.state.replica.locks, receipts: model.state.receipts, at: context.date)
-                        let counting = model.state.replica.liveLocks(at: context.date).contains { lock in
-                            model.state.receipts.contains { $0.lockID == lock.id && $0.hasInstalledCoverage && !$0.interruptionObserved && ($0.appliedAt ?? lock.start) <= context.date }
+                        let date = model.timerDate(context.date)
+                        let total = Statistics.lockedSeconds(locks: model.state.replica.locks, receipts: model.state.receipts, at: date)
+                        let counting = model.state.replica.liveLocks(at: date).contains { lock in
+                            model.state.receipts.contains { $0.lockID == lock.id && $0.hasInstalledCoverage && !$0.interruptionObserved && ($0.appliedAt ?? lock.start) <= date }
                         }
                         if !counting {
                             metric("Time locked", Durations.label(Int(total)))
                         } else {
-                            metric("Time locked", value: Text(context.date.addingTimeInterval(-total), style: .timer))
+                            metric("Time locked", Durations.clock(total))
                         }
                     }
                 }

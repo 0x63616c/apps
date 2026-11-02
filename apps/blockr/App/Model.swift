@@ -16,6 +16,9 @@ import FamilyControls
     let filter = MacFilter()
     #endif
     let fixture = ProcessInfo.processInfo.arguments.contains("--screenshots")
+    private let fixtureDate = Date()
+    // Freeze timers in synthetic screenshots; live timers use the timeline date.
+    func timerDate(_ date: Date) -> Date { fixture ? fixtureDate : date }
     private var attemptedAuthorizationRecovery = false
     private var recoveringAuthorization = false
     private var syncTicks = 0
@@ -31,9 +34,12 @@ import FamilyControls
             state.replica.groups = [BlockrCore.Group(name: "Social", domains: ["example.com"], categoryIntent: "Social apps", revision: Revision(1, device: "fixture"))]
             if ProcessInfo.processInfo.arguments.contains("--unprotected-lock"),
                let group = state.replica.groups.first,
-               let lock = try? Lock(group: group, start: Date(), duration: 3600, origin: state.deviceID) {
+               let lock = try? Lock(group: group,
+                                    start: fixtureDate.addingTimeInterval(ProcessInfo.processInfo.arguments.contains("--long-lock") ? -86400 : 0),
+                                    duration: ProcessInfo.processInfo.arguments.contains("--long-lock") ? 3 * 86400 + 3 * 3600 + 15 * 60 : 3600,
+                                    origin: state.deviceID) {
                 state.replica.locks = [lock]
-                state.receipt(lock, .active) // Stale receipt with a missing local snapshot.
+                state.receipt(lock, .active, now: lock.start) // Stale receipt with a missing local snapshot.
             }
             loaded = true
         } else {
@@ -210,12 +216,12 @@ import FamilyControls
         var startedLock: Lock?
         perform {
             guard !locked else { throw BlockrError.locked }
-            let lock = try Lock(group: group, start: Date(), duration: seconds, origin: state.deviceID)
+            let lock = try Lock(group: group, start: timerDate(Date()), duration: seconds, origin: state.deviceID)
             #if os(iOS)
             if fixture {
                 try state.replica.start(lock, at: Date())
                 state.snapshots[lock.id.uuidString] = try JSONEncoder().encode(FamilyActivitySelection())
-                state.receipt(lock, .active)
+                state.receipt(lock, .active, now: lock.start)
             }
             else {
                 try Enforcement.start(lock, picks: Enforcement.selection(state.selections[group.id.uuidString]))

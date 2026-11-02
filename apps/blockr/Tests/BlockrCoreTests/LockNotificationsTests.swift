@@ -18,13 +18,20 @@ final class LockNotificationsTests: XCTestCase {
         XCTAssertEqual(plan.map(\.id), LockNotifications.plan(for: lock, now: now.addingTimeInterval(1)).map(\.id))
         XCTAssertEqual(plan.map(\.title), ["Focus", "Focus", "Focus"])
         XCTAssertEqual(plan.map { $0.body.replacingOccurrences(of: "\u{202F}", with: " ") },
-                       ["Locked until 12:15 AM", "5 minutes left", "Unlocked"])
+                       ["Locked for 15m · until 12:15 AM", "5m left", "Unlocked"])
         XCTAssertNil(plan[0].fireDate)
         XCTAssertEqual(plan[1].fireDate, lock.end.addingTimeInterval(-300))
         XCTAssertEqual(plan[2].fireDate, lock.end)
         XCTAssertEqual(LockNotifications.unlocked(for: lock).id, plan[2].id)
         XCTAssertEqual(LockNotifications.unlocked(for: lock).body, "Unlocked")
         XCTAssertNil(LockNotifications.unlocked(for: lock).fireDate)
+    }
+
+    func testMultiDayNotificationUsesCompactDuration() throws {
+        let lock = try lock(duration: 2 * 86400 + 3 * 3600 + 15 * 60)
+        let plan = LockNotifications.plan(for: lock, now: now)
+        XCTAssertTrue(try XCTUnwrap(plan.first).body.hasPrefix("Locked for 2d 3h 15m · until "))
+        XCTAssertEqual(plan[1].body, "5m left")
     }
 
     func testDifferentLocksHaveDifferentIdentifiers() throws {

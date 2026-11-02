@@ -27,11 +27,11 @@ public enum LockNotifications {
         formatter.dateStyle = .none
         formatter.timeStyle = .short
         var result = [Notice(id: ids[0], title: lock.group.name,
-                             body: "Locked until \(formatter.string(from: lock.end))",
+                             body: "Locked for \(Durations.label(Int(lock.end.timeIntervalSince(lock.start)))) · until \(formatter.string(from: lock.end))",
                              fireDate: lock.start > now ? lock.start : nil)]
         let soon = lock.end.addingTimeInterval(-300)
         if lock.end.timeIntervalSince(lock.start) > 360 && soon > now {
-            result.append(Notice(id: ids[1], title: lock.group.name, body: "5 minutes left", fireDate: soon))
+            result.append(Notice(id: ids[1], title: lock.group.name, body: "\(Durations.label(300)) left", fireDate: soon))
         }
         result.append(Notice(id: ids[2], title: lock.group.name, body: "Unlocked", fireDate: lock.end))
         return result
