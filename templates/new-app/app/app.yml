@@ -1,3 +1,5 @@
+uses: [RDesign]
+paths: []
 # Per-app configuration read by fastlane/Fastfile, scripts/app-config.rb and the CI workflows.
 name: __NAME__
 project: __NAME__.xcodeproj

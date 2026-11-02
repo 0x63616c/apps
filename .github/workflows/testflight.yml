@@ -1,8 +1,8 @@
 name: TestFlight
 
 # On every push to main, builds and uploads each app whose binary could have changed (its
-# apps/<app>/ code, or shared packages and lanes) and whose app.yml sets testflight: true.
-# Docs, listing text and screenshot-frame changes never start an upload (scripts/changed-apps.sh --build).
+# apps/<app>/ code, or declared shared packages) and whose app.yml sets testflight: true.
+# Docs, listing text and screenshot-frame changes never start an upload (scripts/affected --intent ship).
 on:
   push:
     branches: [main]
@@ -31,16 +31,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - id: affected
+        if: github.event_name != 'workflow_dispatch'
+        uses: ./.github/actions/affected
+        with:
+          base: ${{ github.event.before }}
+          intent: ship
       - id: detect
         env:
           INPUT_APP: ${{ inputs.app }}
-          BEFORE: ${{ github.event.before }}
+          AFFECTED_APPS: ${{ steps.affected.outputs.apps }}
         run: |
           if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             [[ "$(ruby scripts/app-config.rb "$INPUT_APP" testflight)" == true ]] || { echo "::error::$INPUT_APP does not have testflight: true"; exit 1; }
             echo "apps=[\"$INPUT_APP\"]" >> "$GITHUB_OUTPUT"
           else
-            echo "apps=$(scripts/changed-apps.sh "$BEFORE" --build --only testflight)" >> "$GITHUB_OUTPUT"
+            echo "apps=$AFFECTED_APPS" >> "$GITHUB_OUTPUT"
           fi
           cat "$GITHUB_OUTPUT"
 

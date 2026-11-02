@@ -5,6 +5,7 @@ name: CI
 # macos-latest unless the MACOS_RUNNER variable selects the self-hosted Mac (README, "CI on a self-hosted Mac").
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -28,22 +29,22 @@ jobs:
         with:
           fetch-depth: 0
       - id: detect
-        env:
-          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
-        run: |
-          echo "apps=$(scripts/changed-apps.sh "$BASE")" >> "$GITHUB_OUTPUT"
-          changed() { [[ -z "$BASE" || "$BASE" =~ ^0+$ ]] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null || git diff --name-only "$BASE" HEAD | grep -E "$1" >/dev/null; }
-          changed '^(packages/RDesign/|\.github/workflows/ci\.yml)' && echo "rdesign=true" >> "$GITHUB_OUTPUT" || echo "rdesign=false" >> "$GITHUB_OUTPUT"
-          changed '^(templates/|scripts/new-app\.sh|packages/RDesign/|\.github/workflows/ci\.yml)' && echo "template=true" >> "$GITHUB_OUTPUT" || echo "template=false" >> "$GITHUB_OUTPUT"
-          cat "$GITHUB_OUTPUT"
+        uses: ./.github/actions/affected
+        with:
+          base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          intent: verify
 
   tooling:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - name: Validate app configuration
+        run: ruby scripts/app-config.rb --list
       - name: Release lane checks (no Apple access)
         run: ruby scripts/check-release.rb
+      - name: Install impact resolver dependencies
+        run: python3 -m pip install -r scripts/requirements.txt
       - name: Path filter regression checks
         run: python3 scripts/test-changed-apps.py
       - name: Duo capture and Xcode selection checks

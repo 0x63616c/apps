@@ -4,10 +4,6 @@ name: Component snapshots
 # Mac runner and uploads them as an artifact. Dispatch on a design branch, optionally with one test.
 on:
   pull_request:
-    paths:
-      - 'apps/*/StillSnapshots/**'
-      - scripts/capture-snapshots.sh
-      - .github/workflows/component-snapshots.yml
   workflow_dispatch:
     inputs:
       app:
@@ -28,7 +24,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      apps: ${{ steps.detect.outputs.apps }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: detect
+        uses: ./.github/actions/affected
+        with:
+          base: ${{ github.event.pull_request.base.sha }}
+          intent: verify
+          only: snapshot_test
+
   snapshots:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || contains(fromJSON(needs.changes.outputs.apps), 'tendr')
     runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
     timeout-minutes: 40
     env:

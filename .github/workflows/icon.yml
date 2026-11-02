@@ -2,20 +2,30 @@ name: Icon and launch screen
 
 on:
   pull_request:
-    paths:
-      - apps/tendr/scripts/render-icon.swift
-      - apps/tendr/design/icon/**
-      - apps/tendr/Still/Assets.xcassets/**
-      - apps/tendr/Still/Info.plist
-      - site/tendr/assets/*.png
-      - .github/workflows/icon.yml
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      apps: ${{ steps.detect.outputs.apps }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: detect
+        uses: ./.github/actions/affected
+        with:
+          base: ${{ github.event.pull_request.base.sha }}
+          intent: verify
+
   icon:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || contains(fromJSON(needs.changes.outputs.apps), 'tendr')
     runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
     timeout-minutes: 15
     env:
@@ -49,6 +59,8 @@ jobs:
           test -z "$(git status --porcelain)" || { echo "::error::Run 'swift apps/tendr/scripts/render-icon.swift' and commit the result"; exit 1; }
 
   launch-screen:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || contains(fromJSON(needs.changes.outputs.apps), 'tendr')
     runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
     timeout-minutes: 30
     env:

@@ -2,13 +2,6 @@ name: Duo screenshots
 
 on:
   pull_request:
-    paths:
-      - .github/workflows/duo-screenshots.yml
-      - scripts/capture-duo-screenshots.sh
-      - scripts/duo-simulator.py
-      - scripts/select-duo-xcode.py
-      - apps/tendr/**
-      - packages/RDesign/**
   workflow_dispatch:
     inputs:
       app:
@@ -30,7 +23,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      apps: ${{ steps.detect.outputs.apps }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: detect
+        uses: ./.github/actions/affected
+        with:
+          base: ${{ github.event.pull_request.base.sha }}
+          intent: verify
+          only: duo_screenshot_test
+
   screenshots:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || contains(fromJSON(needs.changes.outputs.apps), 'tendr')
     # The self-hosted runner has no Xcode 27.1 yet; do not block PRs on the Duo simulator.
     continue-on-error: ${{ github.event_name == 'pull_request' }}
     runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
