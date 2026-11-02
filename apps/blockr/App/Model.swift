@@ -179,14 +179,24 @@ import FamilyControls
         } catch { self.error = error.localizedDescription }
         refresh()
         #else
+        var startedLock: Lock?
         perform {
             guard !locked else { throw BlockrError.locked }
             let lock = try Lock(group: group, start: Date(), duration: seconds, origin: state.deviceID)
             #if os(iOS)
             if fixture { try state.replica.start(lock, at: Date()); state.receipt(lock, .active) }
-            else { try Enforcement.start(lock, picks: Enforcement.selection(state.selections[group.id.uuidString])) }
+            else {
+                try Enforcement.start(lock, picks: Enforcement.selection(state.selections[group.id.uuidString]))
+                startedLock = lock
+            }
             #endif
         }
+        #if os(iOS)
+        if let lock = startedLock {
+            await LockNotificationCenter.requestPermissionIfNeeded()
+            LockNotificationCenter.schedule(lock)
+        }
+        #endif
         #endif
         await synchronize()
     }

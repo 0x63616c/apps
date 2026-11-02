@@ -12,6 +12,8 @@ struct LocalState: Codable {
     var snapshots: [String: Data] = [:]
     var receipts: [Receipt] = []
     var attempts: [Attempt] = []
+    // Optional for compatibility with state saved before local notifications.
+    var immediateNotificationIDs: [String]?
     var previousDenyRemoval: Bool?
     var removalWasCaptured = false
     var detachedLockIDs: [UUID] = []
@@ -70,7 +72,12 @@ enum Storage {
                 return try JSONDecoder().decode(LocalState.self, from: Data(contentsOf: coordinated))
             }
         }
-        if let coordinationError { throw coordinationError }
+        // Atomic replacement guarantees a complete old or new file even without coordination.
+        // Some Screen Time extension sandboxes cannot contact filecoordinationd.
+        if coordinationError != nil || result == nil {
+            if !FileManager.default.fileExists(atPath: url.path) { return LocalState() }
+            return try JSONDecoder().decode(LocalState.self, from: Data(contentsOf: url))
+        }
         guard let result else { throw BlockrError.unavailable("Shared storage could not be read.") }
         return try result.get()
     }
