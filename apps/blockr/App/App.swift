@@ -19,8 +19,11 @@ import UserNotifications
                 Text("Blockr").font(.title2.weight(.semibold))
                 if let lock = model.live.last {
                     Text(lock.group.name).font(.headline)
-                    Text(lock.end, style: .timer).font(.system(size: 58, weight: .medium)).monospacedDigit()
-                    ElapsedLockTime(start: lock.start)
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        Text(Durations.clock(lock.end.timeIntervalSince(model.timerDate(context.date)), remaining: true))
+                            .font(.system(size: 58, weight: .medium)).monospacedDigit()
+                    }
+                    ElapsedLockTime(start: lock.start).environmentObject(model)
                     Text("\(model.state.receipts.first(where: { $0.lockID == lock.id })?.coverage == .active ? "Active" : model.state.receipts.first(where: { $0.lockID == lock.id })?.coverage == .partial ? "Websites only" : "Not protected on this Mac") · until \(lock.end.formatted(date: .omitted, time: .shortened))").foregroundStyle(.secondary)
                 } else { Text("Nothing locked").foregroundStyle(.secondary) }
                 OpenWindowButton(title: model.locked ? "Open Blockr" : "Start a lock")

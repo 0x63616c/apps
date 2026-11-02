@@ -35,6 +35,7 @@ final class ScreenshotTests: XCTestCase {
         app.buttons["Start lock"].tap()
         XCTAssertTrue(app.staticTexts["Let the time pass."].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["View group"].exists)
+        XCTAssertTrue(app.staticTexts["Locked for 0:00"].exists)
         snap("active")
         app.tabBars.buttons["Stats"].tap()
         XCTAssertTrue(app.staticTexts["pageHeader-Stats"].waitForExistence(timeout: 5))
@@ -81,7 +82,22 @@ final class ScreenshotTests: XCTestCase {
         XCTAssertTrue(header.waitForExistence(timeout: 15))
         XCTAssertEqual(header.label, "Not protected here")
         XCTAssertFalse(app.staticTexts["Locked"].exists)
+        XCTAssertTrue(app.staticTexts["Locked for 0:00"].exists)
         snap("active-unprotected")
+    }
+    @MainActor func testMultiDayActiveLock() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["--screenshots", "--unprotected-lock", "--long-lock"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["pageHeader-Blockr"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["Locked for 1d"].exists)
+        // The fixture freezes remaining time at 2d 3h 15m and elapsed time at 1d.
+        snap("active-days")
+        app.tabBars.buttons["Stats"].tap()
+        XCTAssertTrue(app.staticTexts["pageHeader-Stats"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@ AND label CONTAINS %@", "Time locked", "1d")).firstMatch.exists)
+        snap("stats-days")
     }
     @MainActor private func snap(_ name: String) {
         // Existence checks can finish while native glass/navigation chrome is still animating.

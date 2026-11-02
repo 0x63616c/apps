@@ -53,6 +53,8 @@ final class ShieldInfoTests: XCTestCase {
         let entry = info(4800)
         XCTAssertEqual(entry.title(now: now), "1h 20m")
         XCTAssertEqual(info(1).title(now: now), "1m")
+        XCTAssertEqual(info(86400).title(now: now), "1d")
+        XCTAssertEqual(info(2 * 86400 + 3 * 3600 + 15 * 60).title(now: now), "2d 3h 15m")
         let locale = Locale(identifier: "en_US_POSIX")
         let utc = TimeZone(secondsFromGMT: 0)!
         // ICU may use a narrow no-break space before AM; normalize only that locale detail.

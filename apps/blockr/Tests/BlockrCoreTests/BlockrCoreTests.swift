@@ -8,6 +8,39 @@ final class BlockrCoreTests: XCTestCase {
         XCTAssertEqual(Durations.sorted(custom: [5400, 7200, 5400, 0]), [3600, 5400, 7200, 14400, 86400, 259200])
         XCTAssertEqual(Durations.defaultValue, 7200)
     }
+    func testDurationLabelsAndClocks() {
+        let cases: [(Int, String, String)] = [
+            (3540, "59m", "59:00"),
+            (86340, "23h 59m", "23:59:00"),
+            (86400, "1d", "1d"),
+            (2 * 86400 + 3 * 3600 + 15 * 60, "2d 3h 15m", "2d 3h 15m")
+        ]
+        for (seconds, label, clock) in cases {
+            XCTAssertEqual(Durations.label(seconds), label)
+            XCTAssertEqual(Durations.clock(Double(seconds)), clock)
+            XCTAssertEqual(Durations.clock(Double(seconds), remaining: true), clock)
+        }
+        // Keep label's existing empty string for intervals below a minute.
+        XCTAssertEqual(Durations.label(0), "")
+        XCTAssertEqual(Durations.label(59), "")
+        XCTAssertEqual(Durations.label(3599), "59m")
+    }
+
+    func testDurationClockRoundingAndExpiry() {
+        XCTAssertEqual(Durations.clock(86399.5, remaining: true), "1d")
+        XCTAssertEqual(Durations.clock(86399.5), "23:59:59")
+        XCTAssertEqual(Durations.clock(86400.5, remaining: true), "1d 1m")
+        XCTAssertEqual(Durations.clock(86400.5), "1d")
+        XCTAssertEqual(Durations.clock(3599.5, remaining: true), "1:00:00")
+        XCTAssertEqual(Durations.clock(3599.5), "59:59")
+        XCTAssertEqual(Durations.clock(0.5, remaining: true), "0:01")
+        XCTAssertEqual(Durations.clock(0.5), "0:00")
+        for seconds in [0.0, -1.0] {
+            XCTAssertEqual(Durations.clock(seconds, remaining: true), "0:00")
+            XCTAssertEqual(Durations.clock(seconds), "0:00")
+        }
+    }
+
     func testDurationBoundsAndNormalization() throws {
         XCTAssertEqual(try Durations.parse(days: "", hours: "1", minutes: "30"), 5400)
         XCTAssertEqual(try Durations.parse(days: "0", hours: "0", minutes: "90"), 5400)

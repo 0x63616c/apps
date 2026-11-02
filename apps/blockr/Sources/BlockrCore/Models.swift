@@ -32,9 +32,28 @@ public enum Durations {
         return seconds
     }
     public static func sorted(custom: [Int]) -> [Int] { Array(Set(presets + custom.filter { (900...604800).contains($0) })).sorted() }
+    /// Compact whole minutes, omitting zero components (and empty below one minute).
     public static func label(_ seconds: Int) -> String {
         let days = seconds / 86400, hours = seconds % 86400 / 3600, minutes = seconds % 3600 / 60
         return [(days, "d"), (hours, "h"), (minutes, "m")].filter { $0.0 > 0 }.map { "\($0.0)\($0.1)" }.joined(separator: " ")
+    }
+
+    /// Timer style below a day; compact days/hours/minutes from one day onward.
+    /// Remaining time rounds up, elapsed time down: to seconds below a day,
+    /// to minutes at/above a day. Rounding seconds can promote 86399.5 remaining
+    /// seconds to "1d". Zero and negative intervals display "0:00".
+    public static func clock(_ seconds: TimeInterval, remaining: Bool = false) -> String {
+        let interval = max(0, seconds)
+        let wholeSeconds = Int(remaining ? ceil(interval) : floor(interval))
+        if wholeSeconds >= 86400 {
+            let minutes = Int(remaining ? ceil(interval / 60) : floor(interval / 60))
+            return label(minutes * 60)
+        }
+        let hours = wholeSeconds / 3600
+        let minutes = wholeSeconds % 3600 / 60
+        let seconds = wholeSeconds % 60
+        let tail = String(format: "%02d", seconds)
+        return hours > 0 ? "\(hours):\(String(format: "%02d", minutes)):\(tail)" : "\(minutes):\(tail)"
     }
 }
 
