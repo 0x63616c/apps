@@ -102,7 +102,7 @@ struct HomeLockView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                Text(model.locked ? "Locked." : "Take your time back.")
+                Text(model.locked ? (model.locallyProtected ? "Locked." : "Not protected here") : "Take your time back.")
                     .font(.largeTitle.weight(.semibold)).tracking(-1)
                     .accessibilityAddTraits(.isHeader).accessibilityIdentifier("pageHeader-Blockr")
                 if model.locked { ActiveView() }
@@ -259,7 +259,7 @@ struct ActiveView: View {
                 if lock.origin != model.state.deviceID { Text("Started on another device").foregroundStyle(.secondary) }
                 Text("Until \(lock.end.formatted(date: .abbreviated, time: .shortened))").foregroundStyle(.secondary)
                 ForEach(model.live) { item in
-                    let coverage = model.state.receipts.first { $0.lockID == item.id }?.coverage ?? .pending
+                    let coverage = model.coverage(on: item)
                     VStack(alignment: .leading, spacing: 8) {
                         HStack { Text(item.group.name); Spacer(); Text(coverage == .active ? "Locked" : coverage == .partial ? "Partly protected" : "Not protected here").foregroundStyle(.secondary) }
                         #if os(iOS)
@@ -273,7 +273,7 @@ struct ActiveView: View {
                         #endif
                     }
                 }
-                if model.live.contains(where: { item in !model.state.receipts.contains { $0.lockID == item.id && $0.coverage == .active } }) {
+                if model.live.contains(where: { item in model.coverage(on: item) != .active }) {
                     Text("This device needs local setup. Locks on your other devices keep running.").foregroundStyle(.secondary)
                     #if os(iOS)
                     if !model.authorized {

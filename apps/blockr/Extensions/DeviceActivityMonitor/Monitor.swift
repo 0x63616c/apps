@@ -1,6 +1,8 @@
 import DeviceActivity
 import Foundation
 final class Monitor: DeviceActivityMonitor {
+    // Every boundary restores all still-live locks, including monitors lost during an update.
+    // Authorization requests belong to the app only.
     override func intervalDidStart(for activity: DeviceActivityName) {
         super.intervalDidStart(for: activity)
         try? Enforcement.reconcile()
