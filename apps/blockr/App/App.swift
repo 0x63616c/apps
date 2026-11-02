@@ -2,6 +2,7 @@ import SwiftUI
 import BlockrCore
 #if os(iOS)
 import UIKit
+import UserNotifications
 #endif
 
 @main struct BlockrApp: App {
@@ -44,10 +45,15 @@ private struct OpenWindowButton: View {
 }
 #endif
 #if os(iOS)
-final class PushDelegate: NSObject, UIApplicationDelegate {
+final class PushDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
         if Bundle.main.object(forInfoDictionaryKey: "BlockrCloudEnabled") as? String == "YES" { application.registerForRemoteNotifications() }
         return true
+    }
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound])
     }
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
         Task { @MainActor in

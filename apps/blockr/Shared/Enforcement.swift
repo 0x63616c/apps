@@ -100,6 +100,13 @@ enum Enforcement {
             if !authorized { state.selections.removeAll() }
             try apply(&state, now: now)
         }
+        // Broken installations must not keep promising a future unlock.
+        let state = try Storage.read()
+        for lock in state.replica.locks where lock.isLive(at: now) {
+            if state.receipts.contains(where: { $0.lockID == lock.id && [.failed, .interrupted].contains($0.coverage) }) {
+                LockNotificationCenter.cancel(lock)
+            }
+        }
     }
     static func start(_ lock: Lock, picks: FamilyActivitySelection, remote: Bool = false) throws {
         guard AuthorizationCenter.shared.authorizationStatus == .approved else { throw BlockrError.unavailable("Allow Screen Time access, then pick apps on this device.") }
@@ -134,6 +141,7 @@ enum Enforcement {
                 state.receipt(lock, lock.group.requiresLocalSelection && !hasSelection(picks) ? .partial : .active)
                 try apply(&state, now: Date())
             }
+            LockNotificationCenter.schedule(lock)
         } catch {
             try Storage.update { state in
                 // A superseded attempt must never stop the replacement's monitor or clear its policy.
@@ -145,6 +153,10 @@ enum Enforcement {
                     state.receipts.append(previousReceipt)
                 } else { state.receipt(lock, .failed) }
                 try apply(&state, now: Date())
+            }
+            if let state = try? Storage.read(),
+               !state.receipts.contains(where: { $0.lockID == lock.id && $0.hasInstalledCoverage }) {
+                LockNotificationCenter.cancel(lock)
             }
             throw error
         }
