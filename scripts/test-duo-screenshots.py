@@ -35,7 +35,7 @@ elif name == "xcrun":
     if args[:2] == ["list", "devicetypes"]:
         print(json.dumps({"devicetypes": [] if mode == "missing" else [{"name":"iPhone Duo", "identifier":"mock.duo"}]}))
     elif args[:2] == ["list", "runtimes"]:
-        print(json.dumps({"runtimes":[{"platform":"iOS", "isAvailable":True,"version":"27.1","identifier":"mock.ios27"}]}))
+        print(json.dumps({"runtimes":[{"platform":"iOS", "isAvailable":True,"version":"27.1","identifier":"com.apple.CoreSimulator.SimRuntime.iOS-27-1"}]}))
     elif args[:2] == ["list", "devices"]:
         print(os.environ["MOCK_SIMULATORS"])
     elif args == ["shutdown", "stale-shutdown"]:
@@ -117,6 +117,12 @@ class XcodeSelectionTests(unittest.TestCase):
         self.install("Xcode-28.0.app", "28.0")
         missing_request = self.applications / "Xcode-27.1.app/Contents/Developer"
         self.assertEqual(xcode.select_xcode(str(missing_request), self.applications), expected)
+
+    def test_hosted_27_1_is_default_even_with_newer_rc_and_legacy_install(self):
+        expected = self.install("Xcode_27.1.app", "27.1")
+        self.install("Xcode-27.1.app", "27.1")
+        self.install("Xcode_27.2_Release_Candidate.app", "27.2")
+        self.assertEqual(xcode.select_xcode("", self.applications), expected)
 
     def test_newest_version_is_numeric_and_ignores_bundle_spelling(self):
         self.install("Xcode-27.9.app", "27.9")
@@ -207,7 +213,7 @@ class DuoCapabilitiesTests(unittest.TestCase):
 
     def test_stale_simulators_are_removed_before_creation_and_boot(self):
         commands = self.capture("default", devices={
-            "mock.ios27": [
+            "com.apple.CoreSimulator.SimRuntime.iOS-27-1": [
                 {"name": "Tendr Duo Screenshots", "udid": "stale-booted", "state": "Booted", "isAvailable": True},
                 {"name": "Tendr Screenshots", "udid": "other-capture", "state": "Booted", "isAvailable": True},
                 {"name": "Personal Tendr Duo Screenshots", "udid": "personal", "state": "Booted", "isAvailable": True},
@@ -223,7 +229,7 @@ class DuoCapabilitiesTests(unittest.TestCase):
             ["delete", "stale-booted"],
             ["shutdown", "stale-shutdown"],
             ["delete", "stale-shutdown"],
-            ["create", "Tendr Duo Screenshots", "mock.duo", "mock.ios27"],
+            ["create", "Tendr Duo Screenshots", "mock.duo", "com.apple.CoreSimulator.SimRuntime.iOS-27-1"],
             ["boot", "mock-udid"],
             ["shutdown", "mock-udid"],
             ["delete", "mock-udid"],
