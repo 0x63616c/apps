@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # One-command setup for self-hosted GitHub Actions runners on an Apple silicon Mac (for example
-# the Mac mini), for tendr and sibling repositories such as shots and festr.
+# the Mac mini), for the apps repository.
 #
 #   scripts/setup-mac-runner.sh [options] OWNER/REPO [OWNER/REPO ...]
-#   scripts/setup-mac-runner.sh --use 0x63616c/tendr 0x63616c/shots 0x63616c/festr
+#   scripts/setup-mac-runner.sh --use 0x63616c/apps
 #
 # Repositories on a personal account cannot share a runner, so this registers one runner per
 # repository, each in its own directory under ~/actions-runners and each running as its own

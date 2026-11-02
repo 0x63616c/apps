@@ -141,21 +141,9 @@ check.calls.clear
 check.metadata({ app: "tendr", skip_screenshots: "true" })
 raise "skip_screenshots option" unless check.calls.assoc(:deliver).last[:skip_screenshots]
 
-# The app and widget must each receive their own profile, and the project is restored.
 check.fail_tests = false
-check.calls.clear
 ENV["GITHUB_ACTIONS"] = "true"
 ENV.delete("R_PROFILE_UUID")
-project = File.expand_path("../apps/festr/Festr.xcodeproj/project.pbxproj", __dir__)
-original = File.binread(project)
-check.beta({ app: "festr" })
-raise "project signing leaked" unless File.binread(project) == original
-profiles = check.calls.select { |name, _| name == :profile }.map { |_, args| args[:app_identifier] }
-raise "missing widget profile" unless profiles == ["com.calumwebb.festr", "com.calumwebb.festr.widgets"]
-build = check.calls.assoc(:build).last
-raise "global profile overrides widget" if build[:xcargs].include?("PROVISIONING_PROFILE_SPECIFIER")
-raise "missing export profiles" unless build[:export_options][:provisioningProfiles].keys == profiles
-raise "wrong archive project" unless build[:project].end_with?("apps/festr/Festr.xcodeproj")
 
 # iPad multitasking requires all four orientations in the iOS app's generated Info.plist.
 blockr_spec = YAML.safe_load_file(File.expand_path("../apps/blockr/project.yml", __dir__))
@@ -178,6 +166,10 @@ raise "Blockr profiles must regenerate" unless blockr_profiles.all? { |args| arg
 verifications = check.calls.select { |name, args| name == :sh && args.first.end_with?("verify-blockr-profile.sh") }.map(&:last)
 raise "Blockr profile verification missing" unless verifications.map(&:last) == expected_blockr_ids
 raise "profile verifier must work from Fastlane's directory" unless verifications.all? { |args| args.first.start_with?("/") && File.executable?(args.first) }
+build = check.calls.assoc(:build).last
+raise "global profile overrides extensions" if build[:xcargs].include?("PROVISIONING_PROFILE_SPECIFIER")
+raise "missing export profiles" unless build[:export_options][:provisioningProfiles].keys == expected_blockr_ids
+raise "wrong archive project" unless build[:project].end_with?("apps/blockr/Blockr.xcodeproj")
 raise "non-Blockr profile regeneration changed" if profile[:force]
 
 Dir[File.expand_path("../apps/*/fastlane/metadata", __dir__)].sort.each do |metadata|

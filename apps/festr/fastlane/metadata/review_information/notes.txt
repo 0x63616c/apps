@@ -1,5 +1,0 @@
-Festr is a festival set-times planner. There is no account or sign-in, so no demo login is needed.
-
-To review: open Discover, tap a festival with set times, tap sets to add them to My Schedule (overlapping picks are flagged), then open Wallpaper to render and save a lock-screen wallpaper (Photos add-only permission). The Live Activity can be started from My Schedule on a festival day; the Preview button shows how it looks at any time.
-
-Data: festival schedules are bundled and refreshed from a JSON feed. Favourites and schedule are stored only on the device. No analytics, advertising or third-party SDKs.

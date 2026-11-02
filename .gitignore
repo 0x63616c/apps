@@ -15,9 +15,6 @@ fastlane/Preview.html
 vendor/bundle/
 fastlane/screenshots/
 
-node_modules/
-.next/
-*.tsbuildinfo
 **/fastlane/report.xml
 **/fastlane/screenshots/
 
