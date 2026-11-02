@@ -38,6 +38,7 @@ enum Enforcement {
                 store.application.denyAppRemoval = state.previousDenyRemoval
                 state.previousDenyRemoval = nil; state.removalWasCaptured = false
             }
+            try writeShieldInfo([], state: state)
             return
         }
         if !state.removalWasCaptured {
@@ -56,12 +57,25 @@ enum Enforcement {
         let ownTokens: Set<ApplicationToken> = ManagedSettings.Application(bundleIdentifier: "com.calumwebb.blockr").token.map { Set([$0]) } ?? []
         apps.subtract(ownTokens)
         guard apps.count <= 50, categories.count <= 50, websites.count <= 50, domains.count <= 50 else { throw BlockrError.unavailable("This combined lock exceeds the system’s 50-item limit.") }
+        // Publish before installing shields and before the enclosing state.json write:
+        // the first shield callback must not depend on a still-pending on-disk receipt.
+        try writeShieldInfo(live, state: state)
         store.shield.applications = apps.isEmpty ? nil : apps
         store.shield.applicationCategories = categories.isEmpty ? nil : .specific(categories, except: ownTokens)
         store.shield.webDomains = websites.isEmpty ? nil : websites
         store.shield.webDomainCategories = categories.isEmpty ? nil : .specific(categories)
         store.webContent.blockedByFilter = domains.isEmpty ? nil : .specific(domains)
         store.application.denyAppRemoval = true
+    }
+    private static func writeShieldInfo(_ locks: [Lock], state: LocalState) throws {
+        guard let defaults = UserDefaults(suiteName: Storage.appGroup) else {
+            throw BlockrError.unavailable("Shield metadata storage is unavailable.")
+        }
+        try ShieldInfo.write(locks.compactMap { lock in
+            guard let selection = state.snapshots[lock.id.uuidString] else { return nil }
+            return ShieldInfo(lockID: lock.id, groupName: lock.group.name, end: lock.end,
+                              selection: selection, domains: lock.group.domains)
+        }, to: defaults)
     }
     static func reconcile(now: Date = Date(), monitorEnded: UUID? = nil) throws {
         try Storage.update { state in
