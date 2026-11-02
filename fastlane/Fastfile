@@ -25,6 +25,33 @@ def r_app(options)
   )
 end
 
+# Best-effort evidence from the signed archive; never print the complete entitlements.
+def report_screen_time_entitlements
+  require "open3"
+  require "json"
+  archive = lane_context[SharedValues::XCODEBUILD_ARCHIVE]
+  apps = Dir[File.join(archive.to_s, "Products", "Applications", "*.app")]
+  if apps.empty?
+    UI.important("Shield signing diagnostics: archive app unavailable")
+    return
+  end
+  apps.flat_map { |app| [app] + Dir[File.join(app, "PlugIns", "*.appex")] }.each do |bundle|
+    begin
+      xml, _stderr, status = Open3.capture3("codesign", "-d", "--entitlements", ":-", bundle)
+      raise "codesign failed" unless status.success?
+      json, _stderr, parsed = Open3.capture3("plutil", "-convert", "json", "-o", "-", "-", stdin_data: xml)
+      raise "entitlements unavailable" unless parsed.success?
+      entitlements = JSON.parse(json)
+      values = ["com.apple.security.application-groups", "com.apple.developer.family-controls"].to_h { |key| [key, entitlements[key]] }
+      UI.message("#{File.basename(bundle)}: #{values.inspect}")
+    rescue StandardError
+      UI.important("Shield signing diagnostics unavailable for #{File.basename(bundle)}")
+    end
+  end
+rescue StandardError
+  UI.important("Shield signing diagnostics unavailable")
+end
+
 # Internal groups set to receive every build reject manual assignment, so skip those.
 def assignable_groups(app)
   name = app["testflight_group"]
@@ -294,6 +321,8 @@ platform :ios do
     ensure
       File.binwrite(signing_project, signing_original) if signing_original
     end
+
+    report_screen_time_entitlements if app["family_controls"]
 
     upload_to_testflight(
       api_key: api_key,
