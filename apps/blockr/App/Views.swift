@@ -255,6 +255,7 @@ struct ActiveView: View {
                 Image(systemName: "lock.fill").font(.largeTitle).accessibilityHidden(true)
                 Text(lock.group.name).font(.title2.weight(.medium))
                 Text(lock.end, style: .timer).font(.system(size: timerSize, weight: .medium)).monospacedDigit().minimumScaleFactor(0.5).lineLimit(1).accessibilityLabel("Lock ends \(lock.end.formatted())")
+                ElapsedLockTime(start: lock.start)
                 if lock.origin != model.state.deviceID { Text("Started on another device").foregroundStyle(.secondary) }
                 Text("Until \(lock.end.formatted(date: .abbreviated, time: .shortened))").foregroundStyle(.secondary)
                 ForEach(model.live) { item in
@@ -339,5 +340,19 @@ struct DurationEditor: View {
     }
     private func field(_ title: String, text: Binding<String>) -> some View {
         VStack(alignment: .leading) { Text(title).foregroundStyle(.secondary); TextField("0", text: text).textFieldStyle(.roundedBorder).accessibilityLabel(title) }
+    }
+}
+
+struct ElapsedLockTime: View {
+    let start: Date
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "lock.fill").accessibilityHidden(true)
+            Text(start, style: .timer)
+                .monospacedDigit()
+                .accessibilityLabel(Text("Locked for \(Text(start, style: .timer))"))
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
     }
 }

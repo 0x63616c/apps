@@ -191,20 +191,31 @@ public struct Statistics: Equatable, Sendable {
         let ended = locks.filter { $0.end <= now }.sorted { $0.end < $1.end }
         let successful = ended.filter { lock in receipts.contains { $0.lockID == lock.id && $0.coverage == .completed && !$0.interruptionObserved } }
         completed = successful.count
-        // Union intervals so concurrent locks do not double-count time.
-        var seconds: TimeInterval = 0, lastEnd = Date.distantPast
-        for lock in successful.sorted(by: { $0.start < $1.start }) {
-            let applied = receipts.first { $0.lockID == lock.id }?.appliedAt ?? lock.start
-            seconds += max(0, lock.end.timeIntervalSince(max(lastEnd, max(lock.start, applied))))
-            lastEnd = max(lastEnd, lock.end)
-        }
-        timeLocked = seconds
+        timeLocked = Self.lockedSeconds(locks: locks, receipts: receipts, at: now)
         var count = 0
         for lock in ended.reversed() {
             guard successful.contains(where: { $0.id == lock.id }) else { break }
             count += 1
         }
         streak = count
+    }
+    /// Completed protection plus elapsed installed protection, with overlaps counted once.
+    public static func lockedSeconds(locks: [Lock], receipts: [Receipt], at now: Date) -> TimeInterval {
+        let intervals = locks.compactMap { lock -> (start: Date, end: Date)? in
+            guard let receipt = receipts.first(where: { $0.lockID == lock.id }),
+                  !receipt.interruptionObserved,
+                  (lock.end <= now && receipt.coverage == .completed)
+                    || (lock.isLive(at: now) && receipt.hasInstalledCoverage) else { return nil }
+            let start = max(lock.start, receipt.appliedAt ?? lock.start)
+            let end = min(lock.end, now)
+            return start < end ? (start, end) : nil
+        }.sorted { $0.start < $1.start }
+        var seconds: TimeInterval = 0, lastEnd = Date.distantPast
+        for interval in intervals {
+            seconds += max(0, interval.end.timeIntervalSince(max(lastEnd, interval.start)))
+            lastEnd = max(lastEnd, interval.end)
+        }
+        return seconds
     }
 }
 

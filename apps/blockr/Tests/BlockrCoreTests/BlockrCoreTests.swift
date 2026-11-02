@@ -118,6 +118,46 @@ final class BlockrCoreTests: XCTestCase {
         let interrupted = [receipts[0], Receipt(lockID: second.id, coverage: .interrupted, acknowledged: later)]
         XCTAssertEqual(Statistics(locks: [first, second], receipts: interrupted, now: later).streak, 0)
     }
+    func testLiveInstalledTimeCountsUpFromLocalApplication() throws {
+        let lock = try Lock(group: group(), start: now, duration: 3600, origin: "b")
+        let receipt = Receipt(lockID: lock.id, coverage: .active, acknowledged: now, appliedAt: now.addingTimeInterval(120))
+        XCTAssertEqual(Statistics(locks: [lock], receipts: [receipt], now: now.addingTimeInterval(60)).timeLocked, 0)
+        XCTAssertEqual(Statistics(locks: [lock], receipts: [receipt], now: now.addingTimeInterval(300)).timeLocked, 180)
+        let later = Statistics(locks: [lock], receipts: [receipt], now: now.addingTimeInterval(301))
+        XCTAssertEqual(later.timeLocked, 181)
+        XCTAssertEqual(later.completed, 0)
+        XCTAssertEqual(later.streak, 0)
+    }
+    func testLiveAndCompletedTimeDeduplicatesEffectiveIntervals() throws {
+        let completed = try Lock(group: group(), start: now, duration: 1800, origin: "a")
+        let live = try Lock(group: group(), start: now.addingTimeInterval(900), duration: 3600, origin: "b")
+        let otherLive = try Lock(group: group(), start: now.addingTimeInterval(1200), duration: 3600, origin: "c")
+        let receipts = [
+            Receipt(lockID: completed.id, coverage: .completed, acknowledged: completed.end),
+            Receipt(lockID: live.id, coverage: .active, acknowledged: live.start),
+            Receipt(lockID: otherLive.id, coverage: .active, acknowledged: otherLive.start)
+        ]
+        XCTAssertEqual(Statistics(locks: [otherLive, live, completed], receipts: receipts, now: now.addingTimeInterval(2400)).timeLocked, 2400)
+        // Installation can reorder interval starts relative to the original schedules.
+        let delayed = Receipt(lockID: completed.id, coverage: .completed, acknowledged: completed.end, appliedAt: now.addingTimeInterval(1500))
+        XCTAssertEqual(Statistics(locks: [completed, live], receipts: [delayed, receipts[1]], now: now.addingTimeInterval(2400)).timeLocked, 1500)
+    }
+    func testLiveTimeRequiresInstalledUninterruptedCoverageAndDoesNotCountExpiredActive() throws {
+        let lock = try Lock(group: group(), start: now, duration: 3600, origin: "a")
+        let during = now.addingTimeInterval(300)
+        XCTAssertEqual(Statistics(locks: [lock], receipts: [], now: during).timeLocked, 0)
+        for coverage in [Coverage.pending, .failed, .interrupted, .completed] {
+            let receipt = Receipt(lockID: lock.id, coverage: coverage, acknowledged: now)
+            XCTAssertEqual(Statistics(locks: [lock], receipts: [receipt], now: during).timeLocked, 0)
+        }
+        let interrupted = Receipt(lockID: lock.id, coverage: .active, acknowledged: now, interruptionObserved: true, appliedAt: now)
+        XCTAssertEqual(Statistics(locks: [lock], receipts: [interrupted], now: during).timeLocked, 0)
+        let active = Receipt(lockID: lock.id, coverage: .active, acknowledged: now, appliedAt: now)
+        XCTAssertEqual(Statistics(locks: [lock], receipts: [active], now: lock.end).timeLocked, 0)
+        XCTAssertEqual(Statistics(locks: [lock], receipts: [active], now: now.addingTimeInterval(-1)).timeLocked, 0)
+        let installing = Receipt(lockID: lock.id, coverage: .pending, acknowledged: now, appliedAt: now)
+        XCTAssertEqual(Statistics(locks: [lock], receipts: [installing], now: during).timeLocked, 300)
+    }
     func testRepairCannotRestoreUnbrokenStatus() throws {
         let lock = try Lock(group: group(), start: now, duration: 3600, origin: "a")
         let receipt = Receipt(lockID: lock.id, coverage: .completed, acknowledged: lock.end, interruptionObserved: true, appliedAt: now)
