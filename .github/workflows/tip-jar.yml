@@ -2,21 +2,30 @@ name: Tip jar
 
 on:
   pull_request:
-    paths:
-      - apps/tendr/Still/Features/Journal/Tips.swift
-      - apps/tendr/Still/Features/Journal/JournalView.swift
-      - apps/tendr/StillUITests/TipJarTests.swift
-      - apps/tendr/Tendr.storekit
-      - apps/tendr/Still.xcodeproj/**
-      - packages/RDesign/Sources/RDesign/TipJar.swift
-      - .github/workflows/tip-jar.yml
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      apps: ${{ steps.detect.outputs.apps }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: detect
+        uses: ./.github/actions/affected
+        with:
+          base: ${{ github.event.pull_request.base.sha }}
+          intent: verify
+
   tip-jar:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || contains(fromJSON(needs.changes.outputs.apps), 'tendr')
     runs-on: ${{ startsWith(vars.MACOS_RUNNER, '[') && fromJSON(vars.MACOS_RUNNER) || vars.MACOS_RUNNER || 'macos-latest' }}
     timeout-minutes: 30
     env:

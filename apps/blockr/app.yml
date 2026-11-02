@@ -1,3 +1,5 @@
+uses: []
+paths: []
 name: Blockr
 project: Blockr.xcodeproj
 scheme: Blockr

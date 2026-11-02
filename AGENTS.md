@@ -6,6 +6,7 @@
 - Black, white and graphite only; no green or teal. Keep copy minimal. Tendr dose entry uses mg only; preserve historical records and do not re-enable syringe units. No drug brand names or medical claims in listing copy or screenshots.
 - Use **bun**, not npm or pnpm, for JavaScript tooling.
 - Run core gates with `swift test --package-path apps/<app>` and `swift test --package-path packages/RDesign`. Native simulator builds need macOS/Xcode 26.2+. Tendr and Blockr projects are generated from app-local `project.yml`.
+- Change impact comes from `scripts/affected <base> --intent verify|ship` and app-local `uses`/`paths`. Tooling edits verify every app and ship nothing; only changed apps with `testflight: true` upload. See [docs/RELEASE.md](docs/RELEASE.md).
 - Shared release entrypoint: [fastlane/Fastfile](fastlane/Fastfile), configured by `apps/<app>/app.yml`. Read [docs/RELEASE.md](docs/RELEASE.md); `ruby scripts/check-release.rb` checks lane mechanics without Apple access. Uploading an IPA does not prove processing or internal-group availability.
 - Pages source is `site/<app>`; `site/.legacy-root` preserves Tendr’s live URLs until the rename described in [docs/RENAME.md](docs/RENAME.md). Do not publish or rename repositories without authorization.
 - Keep credentials, signing assets and personal health data out of commits. Use synthetic fixtures for screenshots.
