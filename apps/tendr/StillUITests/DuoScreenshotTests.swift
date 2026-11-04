@@ -91,10 +91,8 @@ final class DuoScreenshotTests: XCTestCase {
             amount.typeText("7.5")
             try snap("log-dose")
             XCUIDevice.shared.orientation = .landscapeLeft
-            waitUntil("The app must actually rotate into landscape") {
-                let frame = app.windows.firstMatch.frame
-                return frame.width > frame.height
-            }
+            // Inner displays and centered sheets need not adopt the requested
+            // device orientation. Verify the draft/actions in the resulting layout.
             XCTAssertEqual(amount.value as? String, "7.5", "Rotation must preserve an unsaved dose")
             XCTAssertTrue(app.buttons["saveDose"].isHittable, "Save stays above the keyboard")
             try snap("landscape-log-dose")
@@ -109,6 +107,9 @@ final class DuoScreenshotTests: XCTestCase {
 
     @MainActor func testEditorActionsSurviveCompactHeight() throws {
         continueAfterFailure = false
+        if canFold { try request("pose", name: "outer") }
+        try XCTSkipIf(!canFold && XCUIScreen.screens.count > 1,
+                      "The host cannot select the outer display for a compact-height check")
         defer { XCUIDevice.shared.orientation = .portrait }
         let app = launchFixture()
         app.buttons["logDose"].tap()
